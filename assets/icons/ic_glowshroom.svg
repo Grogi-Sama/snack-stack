@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <filter id="soft-blur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.5"/></filter>
+    <filter id="glow2" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="2.2"/></filter>
+    <radialGradient id="g-shroom-a" cx="35%" cy="28%" r="80%">
+      <stop offset="0" stop-color="#DFFFF6"/><stop offset="0.45" stop-color="#54E0C4"/><stop offset="1" stop-color="#0E7A66"/>
+    </radialGradient>
+    <radialGradient id="g-shroom-b" cx="40%" cy="30%" r="80%">
+      <stop offset="0" stop-color="#B8FFE8"/><stop offset="0.5" stop-color="#2FAE96"/><stop offset="1" stop-color="#0A5A4C"/>
+    </radialGradient>
+    <linearGradient id="g-stem" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4A3A2A"/><stop offset="1" stop-color="#241A12"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="50" cy="90" rx="27" ry="6" fill="#000" opacity="0.28" filter="url(#soft-blur)"/>
+  <path d="M20 50 C20 74 33 87 50 87 C67 87 80 74 80 50 Z" fill="url(#g-stem)" stroke="#140D08" stroke-width="2"/>
+  <path d="M30 54 L30 78 M50 58 L50 84 M70 54 L70 78" stroke="#000" stroke-width="1.4" opacity="0.3"/>
+  <ellipse cx="50" cy="50" rx="32" ry="9" fill="#150F0A"/>
+  <path d="M22 48 Q50 62 78 48" stroke="#4C3826" stroke-width="1.6" fill="none" opacity="0.6"/>
+  <ellipse cx="36" cy="41" rx="15" ry="11" fill="url(#g-shroom-a)" stroke="#083C32" stroke-width="2.4"/>
+  <ellipse cx="62" cy="46" rx="12" ry="8.5" fill="url(#g-shroom-b)" stroke="#083C32" stroke-width="2.4"/>
+  <g fill="#043A30" opacity="0.55">
+    <circle cx="32" cy="38" r="2"/><circle cx="42" cy="44" r="1.6"/><circle cx="60" cy="43" r="1.7"/><circle cx="67" cy="49" r="1.4"/>
+  </g>
+  <g fill="#F2FFFA" filter="url(#glow2)">
+    <circle cx="32" cy="38" r="1.4" opacity="0.95"/><circle cx="60" cy="43" r="1.2" opacity="0.9"/>
+  </g>
+  <ellipse cx="31" cy="35" rx="4.5" ry="3.2" fill="#fff" opacity="0.5"/>
+  <ellipse cx="59" cy="41" rx="3.4" ry="2.4" fill="#fff" opacity="0.4"/>
+  <path d="M22 40 Q36 26 50 37" stroke="#B8FFE8" stroke-width="1.6" fill="none" opacity="0.45"/>
+</svg>

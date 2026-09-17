@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <filter id="soft-blur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.5"/></filter>
+    <filter id="glow3" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="2"/></filter>
+    <radialGradient id="g-egg" cx="34%" cy="24%" r="85%">
+      <stop offset="0" stop-color="#F0FFD8"/><stop offset="0.5" stop-color="#A8DC6C"/><stop offset="1" stop-color="#4C7C2A"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="50" cy="90" rx="21" ry="5" fill="#000" opacity="0.24" filter="url(#soft-blur)"/>
+  <path d="M50 18 C69 18 80 47 79 63 C78 82 65 92 49 91 C33 90 21 80 22 62 C23 46 33 18 50 18 Z"
+        fill="url(#g-egg)" stroke="#2E5014" stroke-width="2.6"/>
+  <path d="M50 28 L45 46 L54 46 L47 66" stroke="#2E5014" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+  <path d="M50 28 L45 46 L54 46 L47 66" stroke="#DFFFA0" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="#DFFFA0" filter="url(#glow3)" opacity="0.85">
+    <circle cx="50" cy="28" r="2"/><circle cx="47" cy="66" r="2.2"/>
+  </g>
+  <g fill="#2E5014" opacity="0.55">
+    <circle cx="40" cy="42" r="2.6"/><circle cx="60" cy="50" r="2.2"/><circle cx="46" cy="60" r="2.8"/>
+    <circle cx="66" cy="64" r="2.2"/><circle cx="36" cy="68" r="2.4"/><circle cx="60" cy="76" r="1.8"/>
+  </g>
+  <ellipse cx="38" cy="36" rx="9" ry="12" fill="#fff" opacity="0.3"/>
+  <ellipse cx="34" cy="32" rx="3" ry="4" fill="#fff" opacity="0.5"/>
+</svg>

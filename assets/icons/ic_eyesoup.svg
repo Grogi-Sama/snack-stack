@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <filter id="soft-blur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.5"/></filter>
+    <radialGradient id="g-broth" cx="35%" cy="28%" r="80%">
+      <stop offset="0" stop-color="#FFC98A"/><stop offset="0.5" stop-color="#F0793C"/><stop offset="1" stop-color="#8C1F0E"/>
+    </radialGradient>
+    <linearGradient id="g-bowl" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8A8A92"/><stop offset="1" stop-color="#4A4A52"/>
+    </linearGradient>
+    <radialGradient id="g-iris" cx="40%" cy="35%" r="70%">
+      <stop offset="0" stop-color="#7ED6C8"/><stop offset="1" stop-color="#1B4A44"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="50" cy="90" rx="27" ry="6" fill="#000" opacity="0.26" filter="url(#soft-blur)"/>
+  <path d="M18 46 C18 72 32 86 50 86 C68 86 82 72 82 46 Z" fill="url(#g-bowl)" stroke="#2A2A30" stroke-width="2.4"/>
+  <path d="M24 50 Q50 60 76 50" stroke="#2A2A30" stroke-width="1.4" fill="none" opacity="0.45"/>
+  <ellipse cx="50" cy="46" rx="32" ry="11" fill="url(#g-broth)" stroke="#5C1408" stroke-width="2"/>
+  <path d="M26 42 Q50 52 74 42" stroke="#FFDCA8" stroke-width="1.6" fill="none" opacity="0.55"/>
+  <circle cx="50" cy="46" r="12" fill="#F4FBF9" stroke="#0E2E2A" stroke-width="1.6"/>
+  <circle cx="50" cy="46" r="6.5" fill="url(#g-iris)"/>
+  <circle cx="50" cy="46" r="2.6" fill="#04120F"/>
+  <circle cx="47" cy="43" r="2.2" fill="#fff" opacity="0.9"/>
+  <path d="M28 38 Q33 30 41 34" stroke="#4C9C3D" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M62 33 Q68 26 74 32" stroke="#F0793C" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.7"/>
+  <g fill="#FFE4B0" opacity="0.85">
+    <circle cx="66" cy="52" r="2"/><circle cx="34" cy="55" r="1.6"/>
+  </g>
+  <path d="M40 20 Q38 12 42 6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.35"/>
+  <path d="M56 18 Q58 10 55 4" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.25"/>
+</svg>

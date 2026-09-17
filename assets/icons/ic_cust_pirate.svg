@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <radialGradient id="g-cust-pirate" cx="35%" cy="26%" r="80%">
+      <stop offset="0" stop-color="#E6FFC0"/><stop offset="0.5" stop-color="#9AC85C"/><stop offset="1" stop-color="#4C6C1E"/>
+    </radialGradient>
+  </defs>
+  <circle cx="50" cy="50" r="35" fill="url(#g-cust-pirate)" stroke="#2E4A0E" stroke-width="2.8"/>
+  <ellipse cx="38" cy="34" rx="16" ry="9" fill="#fff" opacity="0.2"/>
+  <path d="M16 34 Q50 6 84 34 Q66 22 50 29 Q34 22 16 34 Z" fill="#241A12" stroke="#0E0A06" stroke-width="1.6"/>
+  <circle cx="38" cy="23" r="3.4" fill="#E8D9A0" stroke="#5C4620" stroke-width="1"/>
+  <circle cx="62" cy="48" r="9" fill="#fff" stroke="#0E1F06" stroke-width="1.6"/><circle cx="62" cy="48" r="4" fill="#0A1F06"/>
+  <circle cx="60" cy="46" r="1.4" fill="#fff"/>
+  <path d="M28 42 Q38 36 48 44" stroke="#241A12" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+  <path d="M76 58 Q92 54 90 40 Q87 52 76 52 Z" fill="#9C9CA2" stroke="#4A4A50" stroke-width="1.6"/>
+  <path d="M79 46 L84 46" stroke="#4A4A50" stroke-width="1.2"/>
+</svg>

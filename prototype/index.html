@@ -1,0 +1,2437 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Snack Stack</title>
+<link rel="icon" type="image/png" href="../assets/branding/favicon-32.png">
+<link rel="apple-touch-icon" href="../assets/branding/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Snack Stack">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+  :root{
+    --ink:#1B1F3B;
+    --ink-soft:#585F82;
+    --page-bg:#DFF3C2;
+    --page-bg-2:#8FCC4E;
+    --grass-deco:#5C9A2E;
+    --board-bg-1:#EAD9AE;
+    --board-bg-2:#C9A96B;
+    --card:#FFFBF0;
+    --card-2:#E8F2D2;
+    --tray-bg:#F5FAF7;
+    --line: rgba(27,31,59,0.12);
+    --accent:#FF8A3D;
+    --accent-ink:#7A3200;
+    --accent-2:#2EC4B6;
+    --danger:#E8503A;
+    --shadow: 0 18px 40px rgba(19,23,46,0.22);
+    --shadow-sm: 0 6px 14px rgba(19,23,46,0.14);
+
+    --tile-top:#FFFDF6;
+    --tile-base:#F1E7CC;
+    --tile-edge:#CBB37E;
+    --tile-rim: rgba(90,60,20,0.18);
+
+    --wicker-a:#B98452;
+    --wicker-b:#96693C;
+    --wicker-rim:#7A5228;
+    --wicker-rim-light:#D2A468;
+
+    --joker-top:#FFA35E;
+    --joker-base:#F07A22;
+    --joker-edge:#B85A12;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --page-bg:#10190F;
+      --page-bg-2:#0A0F09;
+      --grass-deco:#2E4A24;
+      --board-bg-1:#3A2E1C;
+      --board-bg-2:#221A0F;
+      --card:#1D2138;
+      --card-2:#182A20;
+      --tray-bg:#171A2B;
+      --ink:#F1F3FA;
+      --ink-soft:#A7AEC9;
+      --line: rgba(255,255,255,0.10);
+      --shadow: 0 18px 40px rgba(0,0,0,0.55);
+      --shadow-sm: 0 6px 14px rgba(0,0,0,0.4);
+      --tile-top:#2C2A22;
+      --tile-base:#201E17;
+      --tile-edge:#0E0D09;
+      --tile-rim: rgba(255,255,255,0.12);
+      --wicker-a:#4A3620;
+      --wicker-b:#362817;
+      --wicker-rim:#25190D;
+      --wicker-rim-light:#5A4326;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --page-bg:#10190F;
+    --page-bg-2:#0A0F09;
+    --grass-deco:#2E4A24;
+    --board-bg-1:#3A2E1C;
+    --board-bg-2:#221A0F;
+    --card:#1D2138;
+    --card-2:#182A20;
+    --tray-bg:#171A2B;
+    --ink:#F1F3FA;
+    --ink-soft:#A7AEC9;
+    --line: rgba(255,255,255,0.10);
+    --shadow: 0 18px 40px rgba(0,0,0,0.55);
+    --shadow-sm: 0 6px 14px rgba(0,0,0,0.4);
+    --tile-top:#2C2A22;
+    --tile-base:#201E17;
+    --tile-edge:#0E0D09;
+    --tile-rim: rgba(255,255,255,0.12);
+    --wicker-a:#4A3620;
+    --wicker-b:#362817;
+    --wicker-rim:#25190D;
+    --wicker-rim-light:#5A4326;
+    color-scheme: dark;
+  }
+
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html{ height:100%; }
+  body{
+    margin:0;
+    min-height:100vh; min-height:100dvh;
+    background:
+      radial-gradient(140% 80% at 50% -12%, rgba(255,255,255,0.28), transparent 58%),
+      repeating-linear-gradient(118deg, rgba(255,255,255,0.07) 0 4px, transparent 4px 12px),
+      repeating-linear-gradient(62deg, rgba(10,40,0,0.06) 0 3px, transparent 3px 14px),
+      linear-gradient(180deg, var(--page-bg), var(--page-bg-2));
+    color:var(--ink);
+    font-family:"Nunito","Segoe UI",system-ui,sans-serif;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding: max(16px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    touch-action:manipulation;
+    overflow-x:hidden;
+  }
+  h1,h2,.display{ font-family:"Baloo 2","Nunito",system-ui,sans-serif; }
+
+  .stage{ position:relative; width:100%; max-width:420px; margin:0 auto; display:flex; flex-direction:column; gap:14px; }
+
+  /* Tablet ve üzeri geniş ekranlarda kartı biraz büyüterek boş alanı azaltıyoruz,
+     ama yine de tam genişliğe yaymadan "telefon uygulaması" hissini koruyoruz. */
+  @media (min-width:600px){
+    .stage{ max-width:460px; }
+  }
+  @media (min-width:900px){
+    .stage{ max-width:500px; }
+    body{ padding-top:40px; padding-bottom:40px; }
+  }
+
+  /* Çok dar / kısa telefon ekranlarında girişteki kart yükseklik oranını
+     viewport'a göre sınırlandırıyoruz ki alt kısımdaki "Oyna" butonu her zaman
+     kaydırmaya gerek kalmadan görünsün. */
+  @media (max-height:700px){
+    body{ padding-top:12px; padding-bottom:12px; }
+  }
+
+  .grass{ position:absolute; width:34px; height:26px; color:var(--grass-deco); opacity:0.8; transform-origin:bottom center; animation: sway 3.6s ease-in-out infinite alternate; z-index:0; }
+  .grass.g1{ top:-6px; left:2%; animation-delay:-.4s; }
+  .grass.g2{ top:8px; right:4%; width:26px; height:20px; animation-delay:-1.6s; }
+  .grass.g3{ bottom:34px; left:-4px; width:30px; height:22px; animation-delay:-2.4s; }
+  .grass.g4{ bottom:10px; right:-6px; width:38px; height:28px; animation-delay:-.9s; }
+  @keyframes sway{ from{ transform:rotate(-4deg);} to{ transform:rotate(4deg);} }
+
+  .phone{
+    position:relative; z-index:1; overflow:hidden;
+    background:
+      radial-gradient(120% 70% at 20% -10%, rgba(255,255,255,0.3), transparent 55%),
+      repeating-linear-gradient(90deg, rgba(0,0,0,0.035) 0 2px, transparent 2px 40px),
+      linear-gradient(160deg, var(--board-bg-1), var(--board-bg-2));
+    border-radius:28px; box-shadow:var(--shadow);
+    padding:16px; display:flex; flex-direction:column; gap:12px; border:1px solid var(--line);
+  }
+  .phone[hidden]{ display:none; }
+
+  .start-screen{
+    align-items:center; text-align:center; padding:40px 22px 44px; gap:16px;
+    transition: opacity .22s ease, transform .22s ease;
+    aspect-ratio: 375 / 812; justify-content:space-around;
+    max-height: calc(100vh - 48px);
+    max-height: calc(100dvh - 48px);
+  }
+  .start-screen.leaving{ opacity:0; transform:scale(0.96); }
+  .start-screen > *:not(.falling-layer):not(.start-topbar):not(.overlay){ position:relative; z-index:1; }
+
+  .start-topbar{
+    position:absolute; top:12px; right:14px; z-index:2;
+    display:flex; align-items:center; gap:8px;
+  }
+  .token-badge{
+    display:flex; align-items:center; gap:5px; padding:5px 10px 5px 6px; border-radius:999px;
+    background:rgba(255,255,255,0.4); border:1px solid var(--line); color:var(--accent-ink);
+    font-family:"Baloo 2",sans-serif; font-size:0.8rem; font-weight:800; font-variant-numeric:tabular-nums;
+  }
+  .token-badge.mini{ padding:4px 9px 4px 5px; font-size:0.74rem; background:var(--tray-bg); }
+  .token-badge-wrap{ position:relative; display:inline-flex; }
+  .token-add-btn.lives-add-btn{ top:-8px; right:-10px; }
+  .calendar-btn{ width:32px; height:32px; }
+  .calendar-btn[hidden]{ display:none; }
+
+  .falling-layer{
+    position:absolute; inset:0; z-index:0; overflow:hidden; border-radius:inherit; pointer-events:none;
+  }
+  .fall-icon{
+    position:absolute; top:-15%; opacity:0.5;
+    filter: drop-shadow(0 3px 4px rgba(20,10,0,.18));
+    animation-name: fallDown; animation-timing-function: linear; animation-iteration-count: infinite;
+  }
+  @keyframes fallDown{
+    0%{ top:-15%; transform: translateX(0) rotate(0deg); }
+    50%{ transform: translateX(var(--drift, 12px)) rotate(calc(var(--rot, 20deg) * 0.5)); }
+    100%{ top:112%; transform: translateX(0) rotate(var(--rot, 20deg)); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .fall-icon{ animation:none; display:none; }
+  }
+
+  .start-tile-fan{ position:relative; width:100%; height:96px; margin-bottom:6px; }
+  .fan-tile{
+    position:absolute; left:50%; bottom:2px; width:56px; height:56px; margin-left:-28px;
+    border-radius:12px; padding:8px;
+    background: linear-gradient(160deg, var(--tile-top), var(--tile-base));
+    box-shadow: 0 4px 0 #7A5A2E, 0 6px 2px rgba(35,22,8,0.35), 0 9px 10px rgba(15,15,5,0.38), 0 0 0 1px var(--tile-rim);
+    transform-origin: bottom center;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .fan-tile svg{ width:100%; height:100%; display:block; }
+  .fan-tile.t1{ transform: translateX(-108px) rotate(-24deg); z-index:1; }
+  .fan-tile.t2{ transform: translateX(-72px)  rotate(-16deg); z-index:2; }
+  .fan-tile.t3{ transform: translateX(-36px)  rotate(-8deg);  z-index:3; }
+  .fan-tile.t4{ transform: translateX(0px)    rotate(0deg);   z-index:4; }
+  .fan-tile.t5{ transform: translateX(36px)   rotate(8deg);   z-index:5; }
+  .fan-tile.t6{ transform: translateX(72px)   rotate(16deg);  z-index:6; }
+  .fan-tile.t7{ transform: translateX(108px)  rotate(24deg);  z-index:7; }
+  .start-title-block{ display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .start-logo-img{ width:104px; height:104px; margin-bottom:2px; filter:drop-shadow(0 6px 10px rgba(0,0,0,.18)); }
+  .start-h1{ margin:0; font-size:2rem; letter-spacing:0.2px; }
+  .start-tr{ margin:0; font-size:0.85rem; font-weight:700; color:var(--ink-soft); letter-spacing:0.2px; }
+  .start-tagline{ margin:2px 0 0; font-size:0.95rem; color:var(--ink-soft); }
+
+  .lives-block{ display:flex; flex-direction:column; align-items:center; gap:6px; margin-top:2px; }
+  .lives-hearts-wrap{ position:relative; display:inline-flex; }
+  .lives-hearts{ display:flex; gap:8px; }
+  .lives-add-btn{
+    position:absolute; top:-8px; right:-14px; width:20px; height:20px; border-radius:50%;
+    background:var(--accent-2); color:#08281f; border:2px solid var(--card);
+    font-size:0.82rem; font-weight:800; line-height:1; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; touch-action:manipulation; padding:0;
+  }
+  .lives-add-btn:hover{ filter:brightness(1.08); }
+  .lives-add-btn:active{ transform:scale(0.92); }
+  .life-heart-wrap{
+    width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background: radial-gradient(circle at 33% 28%, #FFAFAF 0%, #F0455A 45%, #C21E36 82%, #A11529 100%);
+    box-shadow: 0 3px 0 #7E0F22, 0 6px 8px rgba(80,0,10,.4), inset 0 2px 2px rgba(255,255,255,.55), inset 0 -4px 5px rgba(0,0,0,.3);
+  }
+  .life-heart-wrap.empty{
+    background: radial-gradient(circle at 33% 28%, #f4f0e8 0%, #ddd6c8 45%, #b8ae9a 82%, #a39880 100%);
+    box-shadow: 0 3px 0 #8a7f68, 0 6px 8px rgba(40,30,10,.22), inset 0 2px 2px rgba(255,255,255,.5), inset 0 -4px 5px rgba(0,0,0,.18);
+  }
+  .life-heart{ width:17px; height:17px; color:#fff; filter:drop-shadow(0 1px 1px rgba(0,0,0,.3)); }
+  .life-heart-wrap.empty .life-heart{ color:#fff; opacity:.75; }
+  .lives-timer{ margin:0; font-size:0.74rem; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+  .lives-timer b{ color:var(--ink); font-weight:800; }
+
+  .game-lives-row{ display:flex; align-items:center; gap:6px; margin-bottom:2px; }
+  .lives-hearts.mini{ gap:4px; }
+  .lives-hearts.mini .life-heart-wrap{
+    width:18px; height:18px;
+    box-shadow: 0 2px 0 #7E0F22, 0 3px 4px rgba(80,0,10,.35), inset 0 1px 1px rgba(255,255,255,.55), inset 0 -2px 3px rgba(0,0,0,.3);
+  }
+  .lives-hearts.mini .life-heart-wrap.empty{ box-shadow: 0 2px 0 #8a7f68, 0 3px 4px rgba(40,30,10,.2), inset 0 1px 1px rgba(255,255,255,.5), inset 0 -2px 3px rgba(0,0,0,.18); }
+  .lives-hearts.mini .life-heart{ width:10px; height:10px; }
+  .lives-timer.mini{ font-size:0.64rem; }
+
+  .play-btn{
+    margin-top:8px; width:100%; max-width:220px; padding:15px 20px; border:none; border-radius:18px;
+    background:linear-gradient(160deg, var(--joker-top), var(--joker-base)); color:#fff;
+    font-family:inherit; font-size:1.08rem; font-weight:800; letter-spacing:.3px;
+    box-shadow:0 4px 0 var(--joker-edge), 0 9px 16px rgba(20,20,10,.3), inset 0 1px 0 rgba(255,255,255,.35);
+    cursor:pointer; touch-action:manipulation; display:flex; align-items:center; justify-content:center; gap:8px;
+    transition: transform .1s ease, box-shadow .12s ease;
+  }
+  .play-btn:active{ transform:translateY(2px); box-shadow:0 2px 0 var(--joker-edge), 0 4px 8px rgba(20,20,10,.24); }
+  .play-btn:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
+  .play-btn:disabled{
+    background:linear-gradient(160deg, #B9B9B9, #8C8C8C); cursor:not-allowed;
+    box-shadow:0 4px 0 #6E6E6E, 0 9px 16px rgba(20,20,10,.2), inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .play-btn:disabled:active{ transform:none; }
+  .start-footnote{ margin:6px 0 0; font-size:0.68rem; color:var(--ink-soft); opacity:.75; }
+
+  .heroes-btn{
+    margin-top:2px; width:100%; max-width:220px; padding:10px 16px; border-radius:14px;
+    border:1px solid var(--line); background:rgba(255,255,255,0.28); color:var(--accent-ink);
+    font-family:"Baloo 2",sans-serif; font-size:0.82rem; font-weight:700; letter-spacing:0.1px;
+    cursor:pointer; touch-action:manipulation; display:flex; align-items:center; justify-content:center; gap:7px;
+    transition: background .12s ease, transform .1s ease;
+  }
+  .heroes-btn:hover{ background:rgba(255,255,255,0.44); }
+  .heroes-btn:active{ transform:translateY(1px); }
+
+  .overlay .card.heroes-card{ max-width:320px; max-height:100%; overflow-y:auto; }
+  .heroes-sub{ margin:0 0 12px; font-size:0.76rem; color:var(--ink-soft); text-align:center; }
+  .heroes-list{ list-style:none; margin:0; padding:0; max-height:340px; overflow-y:auto; }
+  .heroes-row{
+    display:flex; align-items:center; gap:10px; padding:7px 4px; border-radius:10px;
+  }
+  .heroes-row.me{ background:rgba(255,138,61,0.14); }
+  .heroes-rank{
+    width:22px; flex-shrink:0; text-align:center; font-size:0.78rem; font-weight:800; color:var(--ink-soft);
+  }
+  .heroes-row:nth-child(1) .heroes-rank{ color:#D8A400; }
+  .heroes-row:nth-child(2) .heroes-rank{ color:#9AA0A8; }
+  .heroes-row:nth-child(3) .heroes-rank{ color:#B5722E; }
+  .heroes-name{ flex:1; font-size:0.86rem; font-weight:700; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .heroes-level{
+    flex-shrink:0; font-size:0.78rem; font-weight:800; color:var(--accent-ink);
+    background:var(--tray-bg); border-radius:8px; padding:3px 8px; font-variant-numeric:tabular-nums;
+  }
+
+  .get-lives-card{ max-width:300px; }
+  .get-lives-card h2{ margin:0 0 14px; }
+  .overlay .settings-card button.get-lives-option{
+    width:100%; display:flex; align-items:center; gap:12px; text-align:left;
+    padding:12px; margin-bottom:10px; border-radius:14px; border:1px solid var(--line);
+    background:var(--tray-bg); color:var(--ink); cursor:pointer; font-family:inherit;
+    transition: background .12s ease, transform .1s ease;
+  }
+  .overlay .settings-card button.get-lives-option:last-child{ margin-bottom:0; }
+  .overlay .settings-card button.get-lives-option:hover{ background:var(--board-bg-1); }
+  .overlay .settings-card button.get-lives-option:active{ transform:scale(0.98); }
+  .overlay .settings-card button.get-lives-option:disabled{ opacity:0.7; cursor:default; transform:none; }
+  .get-lives-icon{
+    flex-shrink:0; width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(160deg, var(--joker-top), var(--joker-base)); color:#fff;
+  }
+  .get-lives-text{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .get-lives-text b{ font-size:0.82rem; font-weight:800; line-height:1.25; }
+  .get-lives-text small{ font-size:0.72rem; color:var(--ink-soft); font-weight:600; }
+
+  .ad-overlay{ background: rgba(5,5,8,0.88); }
+  .ad-player{
+    width:100%; max-width:260px; aspect-ratio: 9 / 13; position:relative;
+    background:linear-gradient(165deg,#333,#0e0e0e); border-radius:18px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+    padding:16px; color:#fff; box-shadow:0 16px 34px rgba(0,0,0,.55);
+  }
+  .ad-player-topbar{ position:absolute; top:10px; left:10px; right:10px; display:flex; justify-content:space-between; align-items:center; }
+  .ad-player-progress, .ad-player-timer{
+    font-size:0.72rem; font-weight:800; background:rgba(255,255,255,.16); color:#fff;
+    padding:4px 9px; border-radius:999px; font-variant-numeric:tabular-nums; letter-spacing:.2px;
+  }
+  .ad-player-content{ display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .ad-player-logo{ width:64px; height:64px; filter:drop-shadow(0 4px 10px rgba(0,0,0,.4)); animation: adLogoPulse 1.4s ease-in-out infinite; }
+  @keyframes adLogoPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+  .ad-player-label{ margin:0; font-size:0.8rem; font-weight:700; color:rgba(255,255,255,.82); }
+  .ad-skip-btn{
+    position:absolute; bottom:14px; right:14px; font-family:"Baloo 2",sans-serif; font-size:0.74rem; font-weight:800;
+    border:none; border-radius:10px; padding:8px 13px; background:rgba(255,255,255,.94); color:#111; cursor:pointer;
+  }
+  .ad-skip-btn:active{ transform:scale(0.96); }
+  @media (prefers-reduced-motion: reduce){ .ad-player-logo{ animation:none; } }
+
+  .overlay .card.daily-card{ max-width:320px; max-height:100%; overflow-y:auto; }
+  .daily-sub{ margin:0 0 14px; font-size:0.76rem; color:var(--ink-soft); text-align:center; }
+  .buy-coins-sub{ margin:0 0 14px; font-size:0.76rem; color:var(--ink-soft); text-align:center; transition:color .15s ease; }
+  .overlay .card.buy-coins-card{ max-width:320px; }
+  .overlay .settings-card button.coin-pack-btn{
+    position:relative; width:100%; display:grid;
+    grid-template-columns:58px minmax(0,1fr) auto; align-items:center; column-gap:8px; text-align:left;
+    padding:10px; margin-bottom:10px; border-radius:16px; border:1px solid var(--line);
+    background:var(--tray-bg); color:var(--ink); cursor:pointer; font-family:inherit;
+    transition: background .12s ease, transform .1s ease;
+  }
+  .overlay .settings-card button.coin-pack-btn:last-child{ margin-bottom:0; }
+  .overlay .settings-card button.coin-pack-btn:hover{ background:var(--board-bg-1); }
+  .overlay .settings-card button.coin-pack-btn:active{ transform:scale(0.98); }
+  .overlay .settings-card button.coin-pack-btn.best{
+    border-color:var(--accent); box-shadow:0 0 0 2px rgba(255,138,61,.25);
+  }
+  .coin-pack-badge{
+    position:absolute; top:-9px; left:14px; background:var(--accent); color:#fff;
+    font-size:0.6rem; font-weight:800; padding:2px 8px; border-radius:999px; letter-spacing:.2px;
+    box-shadow:0 2px 4px rgba(0,0,0,.2);
+  }
+  .coin-pack-icon{
+    grid-column:1; width:58px; height:58px; border-radius:14px;
+    background:linear-gradient(160deg, #fff, var(--tray-bg));
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+  .coin-pack-icon svg{ width:82%; height:82%; display:block; filter:drop-shadow(0 3px 5px rgba(0,0,0,.22)); }
+  .coin-pack-info{ grid-column:2; min-width:0; display:flex; flex-direction:column; gap:3px; }
+  .coin-pack-name{ font-size:0.88rem; font-weight:800; line-height:1.2; }
+  .coin-pack-amount{ display:flex; flex-wrap:wrap; align-items:center; gap:2px 4px; font-size:0.84rem; font-weight:800; color:var(--accent-ink); min-width:0; }
+  .coin-pack-amount s{ font-size:0.68rem; font-weight:600; color:var(--ink-soft); opacity:.8; }
+  .coin-pack-amount svg{ width:15px; height:15px; flex-shrink:0; }
+  .coin-pack-price{
+    grid-column:3; align-self:center; font-size:0.74rem; font-weight:800; color:#fff; background:var(--joker-base);
+    padding:6px 8px; border-radius:10px; white-space:nowrap;
+  }
+  .daily-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:16px; }
+  .daily-chip{
+    position:relative; display:flex; flex-direction:column; align-items:center; gap:3px;
+    padding:8px 4px 7px; border-radius:12px; border:1px solid var(--line); background:var(--tray-bg);
+  }
+  .daily-chip-day{ font-size:0.6rem; font-weight:800; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.3px; }
+  .daily-chip-coin{ width:26px; height:26px; margin:1px 0; }
+  .daily-chip-amount{ font-size:0.7rem; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .daily-chip.today{
+    border-color:var(--accent); background:linear-gradient(160deg, var(--joker-top), var(--joker-base));
+    box-shadow:0 0 0 2px rgba(255,138,61,.3), 0 3px 8px rgba(0,0,0,.18);
+  }
+  .daily-chip.today .daily-chip-day, .daily-chip.today .daily-chip-amount{ color:#fff; text-shadow:0 1px 1px rgba(0,0,0,.25); }
+  .daily-chip.claimed{ opacity:0.65; }
+  .daily-chip.claimed .daily-chip-coin{ opacity:0.5; }
+  .daily-chip.missed{ opacity:0.42; filter:grayscale(0.5); }
+  .daily-chip.locked{ opacity:0.55; }
+  .daily-chip-check, .daily-chip-lock{
+    position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .daily-chip-check{ background:var(--accent-2); color:#08281f; }
+  .daily-chip-check svg{ width:11px; height:11px; }
+  .daily-chip-lock{ background:var(--line); color:var(--ink-soft); }
+  .daily-chip-lock svg{ width:10px; height:10px; }
+  .daily-claim-btn{
+    width:100%; font-family:"Baloo 2",sans-serif; font-size:0.92rem; font-weight:800; border:none;
+    border-radius:14px; padding:13px 16px; color:#fff; cursor:pointer;
+    background:linear-gradient(160deg, var(--joker-top), var(--joker-base));
+    box-shadow:0 4px 0 var(--joker-edge), 0 8px 14px rgba(20,20,10,.28);
+    animation: dailyPulse 1.6s ease-in-out infinite;
+  }
+  .daily-claim-btn:disabled{
+    animation:none; background:linear-gradient(160deg,#B9B9B9,#8C8C8C); box-shadow:0 4px 0 #6E6E6E; cursor:default;
+  }
+  @keyframes dailyPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.035); } }
+  @media (prefers-reduced-motion: reduce){ .daily-claim-btn{ animation:none; } }
+
+  .topbar{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .title-block{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .title-block h1{ margin:0; font-size:1.4rem; letter-spacing:0.2px; text-wrap:balance; }
+  .title-block h1 .tr-name{ font-size:0.62rem; font-weight:600; color:var(--ink-soft); letter-spacing:0; vertical-align:middle; }
+  .title-block .sub{
+    margin:0; font-family:"Baloo 2","Nunito",sans-serif; font-size:0.86rem; font-weight:800;
+    color:var(--accent-ink); letter-spacing:0.2px; text-shadow:0 1px 0 rgba(255,255,255,.45);
+  }
+  .icon-btns{ display:flex; gap:8px; flex-shrink:0; }
+  .icon-btn{
+    width:36px; height:36px; border-radius:12px; border:1px solid var(--line);
+    background:var(--tray-bg); color:var(--ink);
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    transition:transform .12s ease, background .12s ease;
+  }
+  .icon-btn:hover{ background:var(--board-bg-1); }
+  .icon-btn:active{ transform:scale(0.92); }
+  .icon-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .icon-btn svg{ width:17px; height:17px; }
+  .icon-btn .off{ display:none; }
+
+  .stats{ display:flex; gap:14px; font-size:0.78rem; color:var(--ink-soft); padding:0 2px; font-variant-numeric: tabular-nums; }
+  .stats b{ color:var(--ink); }
+
+  .board{
+    position:relative; width:100%; margin:0 auto; aspect-ratio: 320 / 280; border-radius:20px; overflow:hidden;
+    background:
+      radial-gradient(120% 90% at 20% 0%, rgba(255,255,255,0.25), transparent 55%),
+      repeating-linear-gradient(90deg, rgba(0,0,0,0.03) 0 2px, transparent 2px 40px),
+      linear-gradient(160deg, var(--board-bg-1), var(--board-bg-2));
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+  .board-inner{ position:absolute; top:0; left:0; width:320px; height:280px; transform-origin: top left; }
+
+  .tile{
+    position:absolute; width:58px; height:58px; border-radius:10px; overflow:hidden;
+    touch-action:manipulation;
+    background: linear-gradient(160deg, var(--tile-top), var(--tile-base));
+    box-shadow:
+      0 4px 0 #7A5A2E, 0 7px 2px rgba(35,22,8,0.4),
+      0 15px 16px rgba(15,15,5,0.5),
+      0 0 0 1px var(--tile-rim);
+    display:flex; align-items:center; justify-content:center;
+    transition: filter .15s ease, transform .12s ease, opacity .18s ease, box-shadow .12s ease;
+  }
+  .tile svg{ width:100%; height:100%; display:block; position:relative; }
+  .tile::after, .slot::after, .flying-tile::after{
+    content:""; position:absolute; inset:0; pointer-events:none; border-radius:inherit;
+    background: radial-gradient(120% 120% at 50% 42%, transparent 42%, rgba(220,182,124,0.22) 75%, rgba(150,110,62,0.38) 100%);
+    mix-blend-mode: screen;
+  }
+  .tile::before{
+    content:""; position:absolute; inset:0; pointer-events:none; border-radius:inherit; z-index:2;
+    box-shadow: inset 0 2px 2px rgba(255,255,255,0.45), inset 0 -6px 8px rgba(0,0,0,0.5), inset 3px 0 4px rgba(255,255,255,0.12), inset -3px 0 4px rgba(0,0,0,0.22);
+  }
+
+  .tile.visible{ cursor:pointer; }
+  .tile.visible:hover{
+    transform:translateY(-2px); z-index:30 !important;
+    box-shadow: 0 5px 0 var(--tile-edge), 0 10px 16px rgba(20,30,10,0.3),
+      inset 0 1px 0 rgba(255,255,255,0.7), inset 0 -2px 2px rgba(0,0,0,0.08), 0 0 0 1px var(--tile-rim);
+  }
+  .tile.visible:active{
+    transform:translateY(2px);
+    box-shadow: 0 1px 0 var(--tile-edge), 0 2px 5px rgba(20,30,10,0.25),
+      inset 0 1px 0 rgba(255,255,255,0.5), 0 0 0 1px var(--tile-rim);
+  }
+  .tile.visible:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; z-index:30; }
+  .tile.covered{ cursor:default; filter:brightness(0.8) saturate(0.82); }
+  .armed-remove .tile.visible{ cursor:crosshair; }
+  .armed-remove .tile.visible:hover{ filter:hue-rotate(-30deg) saturate(1.3); }
+
+  .kitchen{ display:flex; }
+  .basket{
+    position:relative; width:100%; padding:16px 14px 16px; overflow:hidden;
+    background: repeating-linear-gradient(90deg, var(--wicker-a) 0 10px, var(--wicker-b) 10px 20px);
+    border-radius:20px;
+    box-shadow: 0 6px 0 #5A3E1E, 0 10px 3px rgba(25,15,5,.45), 0 18px 18px rgba(10,10,4,.5), 0 0 0 1px var(--wicker-rim);
+  }
+  .basket::before{
+    content:""; position:absolute; left:0; right:0; top:-8px; height:12px;
+    background: linear-gradient(180deg, var(--wicker-rim-light), var(--wicker-rim)); border-radius:8px;
+  }
+  .basket::after{
+    content:""; position:absolute; inset:0; pointer-events:none; border-radius:inherit; z-index:5;
+    box-shadow: inset 0 3px 4px rgba(255,244,220,.35), inset 0 -8px 10px rgba(0,0,0,.5), inset 5px 0 6px rgba(255,255,255,.08), inset -5px 0 6px rgba(0,0,0,.28);
+  }
+  .basket.cooking{ animation: basketPulse .5s ease; }
+  @keyframes basketPulse{ 0%,100%{ transform:scale(1);} 40%{ transform:scale(1.025);} }
+
+  .tray{ position:relative; display:grid; grid-template-columns:repeat(7, 1fr); gap:6px; }
+  .slot{
+    position:relative; aspect-ratio:1; border-radius:9px; overflow:hidden;
+    background: linear-gradient(160deg, var(--tile-top), var(--tile-base));
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 3px 0 #7A5A2E, 0 5px 2px rgba(35,22,8,.35), 0 7px 8px rgba(15,15,5,.4), inset 0 1px 2px rgba(255,255,255,.5), inset 0 -3px 4px rgba(0,0,0,.4);
+    transition: background .15s ease;
+  }
+  .slot svg{ width:100%; height:100%; display:block; }
+  .slot.danger{ box-shadow: 0 2px 0 var(--danger), 0 3px 5px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.6); }
+  .slot.land{ animation: land .26s ease; }
+  .slot.matching{ animation: burstPop .38s ease forwards; }
+
+  @keyframes land{ 0%{ transform:scale(0.65);} 55%{ transform:scale(1.2);} 100%{ transform:scale(1);} }
+  @keyframes burstPop{
+    0%{ transform:scale(1); opacity:1; }
+    35%{ transform:scale(1.3) rotate(6deg); opacity:1; }
+    100%{ transform:scale(0.15) rotate(14deg); opacity:0; }
+  }
+
+  .flying-tile{
+    position:absolute; border-radius:14px; overflow:hidden;
+    background: linear-gradient(160deg, var(--tile-top), var(--tile-base));
+    box-shadow: var(--shadow-sm), 0 0 0 1px var(--line), inset 0 2px 3px rgba(255,255,255,.4), inset 0 -4px 5px rgba(0,0,0,.4);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .flying-tile svg{ width:100%; height:100%; display:block; }
+  .particle{ position:absolute; width:8px; height:8px; border-radius:50%; }
+
+  @media (prefers-reduced-motion: reduce){
+    .tile, .icon-btn, .slot, .flying-tile, .particle, .grass, .joker, .basket{ transition:none !important; animation:none !important; }
+  }
+
+  .jokers{ display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:2px; }
+  .joker-wrap{ position:relative; }
+  .joker{
+    width:100%; aspect-ratio:1/1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    padding:6px 4px; border:none; border-radius:12px; color:#fff;
+    touch-action:manipulation;
+    background: linear-gradient(160deg, var(--joker-top), var(--joker-base));
+    box-shadow: 0 3px 0 var(--joker-edge), 0 6px 10px rgba(20,20,10,0.22), inset 0 1px 0 rgba(255,255,255,.35);
+    cursor:pointer; transition: filter .15s ease, transform .1s ease, box-shadow .12s ease;
+  }
+  .joker svg{ width:21px; height:21px; filter:drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
+  .joker-label{ font-size:0.7rem; font-weight:800; line-height:1.15; text-align:center; letter-spacing:0.1px; text-shadow:0 1px 1px rgba(0,0,0,.3); }
+  .joker-count{ font-size:0.62rem; font-weight:700; opacity:.92; }
+  .joker:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--joker-edge), 0 2px 4px rgba(20,20,10,.2); }
+  .joker:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
+  .joker.used{ filter:grayscale(0.75) opacity(0.6); cursor:default; }
+  .joker.armed{ box-shadow: 0 0 0 3px var(--accent-2), 0 3px 0 var(--joker-edge), 0 6px 10px rgba(20,20,10,0.22); }
+  .joker-plus{
+    position:absolute; top:-5px; right:-5px; width:17px; height:17px; border-radius:50%;
+    background:var(--accent-2); color:#08281f; border:2px solid var(--card);
+    font-size:0.72rem; font-weight:800; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; line-height:1; touch-action:manipulation;
+  }
+  .joker-plus:hover{ filter:brightness(1.08); }
+  .joker-plus:focus-visible{ outline:2px solid var(--ink); outline-offset:1px; }
+
+  .overlay{
+    position:absolute; inset:0; z-index:50; background: rgba(10,12,22,0.55);
+    display:flex; align-items:center; justify-content:center; padding:20px;
+    opacity:0; pointer-events:none; transition:opacity .2s ease;
+  }
+  .overlay.show{ opacity:1; pointer-events:auto; }
+  .overlay .card{
+    background:var(--card); border-radius:18px; padding:22px 20px; text-align:center;
+    max-width:260px; box-shadow:var(--shadow); border:1px solid var(--line);
+  }
+  .overlay .card h2{ margin:0 0 6px; font-size:1.2rem; }
+  .overlay .card p{ margin:0 0 16px; font-size:0.85rem; color:var(--ink-soft); }
+  .overlay-actions{ display:flex; flex-direction:column; gap:8px; }
+  .overlay .card button{
+    font-family:"Baloo 2",sans-serif; font-size:0.95rem; border:none; border-radius:12px;
+    padding:10px 18px; background:var(--accent); color:var(--accent-ink); cursor:pointer; box-shadow:var(--shadow-sm);
+  }
+  .overlay .card button:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
+  .overlay .card button.ghost{
+    background:transparent; color:var(--ink-soft); box-shadow:none; border:1px solid var(--line);
+  }
+
+  .settings-card{
+    max-width:300px; width:100%; text-align:left; position:relative;
+    padding:24px 20px 20px; max-height:100%; overflow-y:auto;
+  }
+  .settings-card h2{ margin:0 0 14px; font-size:1.15rem; text-align:center; }
+  .overlay .settings-card button.settings-close{
+    position:absolute; top:10px; right:10px; width:28px; height:28px; padding:0; border-radius:50%;
+    border:none; background:var(--tray-bg); color:var(--ink-soft); cursor:pointer; font-family:inherit;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .overlay .settings-card button.settings-close:hover{ background:var(--board-bg-1); }
+  .settings-section{ margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--line); }
+  .settings-section:last-of-type{ border-bottom:none; margin-bottom:18px; padding-bottom:0; }
+  .settings-section h3{
+    margin:0 0 10px; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.5px;
+    color:var(--ink-soft); font-weight:800;
+  }
+  .settings-sound-row{ display:flex; align-items:center; gap:12px; }
+  .overlay .settings-sound-row button.icon-btn{
+    flex-shrink:0; cursor:pointer; width:36px; height:36px; padding:0; font-family:inherit;
+    border-radius:12px; border:1px solid var(--line); background:var(--tray-bg); color:var(--ink);
+  }
+  .overlay .settings-sound-row button.icon-btn:hover{ background:var(--board-bg-1); }
+  .volume-slider{ flex:1; accent-color:var(--accent); height:20px; cursor:pointer; }
+  .settings-switch-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .settings-switch-label{ display:flex; align-items:center; gap:8px; font-size:0.88rem; font-weight:700; color:var(--ink); }
+  .switch{ position:relative; display:inline-block; width:42px; height:24px; flex-shrink:0; }
+  .switch input{ position:absolute; opacity:0; width:100%; height:100%; margin:0; cursor:pointer; }
+  .switch-track{ position:absolute; inset:0; background:var(--line); border-radius:999px; transition:background .15s ease; }
+  .switch-thumb{
+    position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%;
+    background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.3); transition:transform .15s ease;
+  }
+  .switch input:checked + .switch-track{ background:var(--accent); }
+  .switch input:checked + .switch-track .switch-thumb{ transform:translateX(18px); }
+  .switch input:focus-visible + .switch-track{ outline:2px solid var(--ink); outline-offset:2px; }
+  .overlay .settings-card button.settings-quit-btn{
+    width:100%; font-family:"Baloo 2",sans-serif; font-size:0.9rem; font-weight:700; border:1px solid var(--line);
+    border-radius:12px; padding:11px 14px; background:transparent; color:var(--danger); cursor:pointer;
+  }
+  .overlay .settings-card button.settings-quit-btn:hover{ background:rgba(232,80,58,0.08); }
+
+  .board-frame{ position:relative; }
+  .note{ text-align:center; font-size:0.74rem; color:var(--ink-soft); margin:0; position:relative; z-index:1; }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700&family=Nunito:wght@400;600;700&display=swap">
+</head>
+<body>
+
+<!-- Özgün karakter/yemek ikon seti: hiçbir telifli görsele dayanmaz, kendi çizimimiz -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <filter id="soft-blur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.5"/></filter>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="1.6"/></filter>
+    <filter id="glow2" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="2.2"/></filter>
+    <filter id="glow3" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="2"/></filter>
+
+    <symbol id="ic-grass-deco" viewBox="0 0 32 24">
+      <path d="M4 24 Q2 12 6 2" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M13 24 Q13 8 17 0" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M22 24 Q24 12 28 4" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </symbol>
+
+    <!-- Yemekler: gerçek meyve/sebze görselleri -->
+    <symbol id="ic-apple" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_apple.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-carrot" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_carrot.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-eggplant" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_eggplant.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-banana" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_banana.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-broccoli" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_broccoli.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-strawberry" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_strawberry.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-garlic" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_garlic.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-orange" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_orange.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-pepper" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_pepper.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-croissant" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_croissant.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-grapes" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_grapes.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-cheese" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_cheese.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-tomato" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_tomato.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-corn" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_corn.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-chicken" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_chicken.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-bread" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_bread.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-candy" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_candy.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-lemonade" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_lemonade.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-avocado" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_avocado.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-pancake" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_pancake.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-sardine" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_sardine.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-pineapple" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_pineapple.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-pizza" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_pizza.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-lobster" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_lobster.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-salad" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_salad.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-cocktail" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_cocktail.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-cake" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_cake.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-danish" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_danish.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-duck" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_duck.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-ramen" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_ramen.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-steak" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_steak.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-asparagus" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_asparagus.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-cookies" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_cookies.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-crab" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_crab.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-artichoke" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_artichoke.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-sushi" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_sushi.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+
+    <symbol id="ic-coin" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_coin.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-coin-stack" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_coin_stack.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-coin-pouch" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_coin_pouch.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-coin-chest1" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_coin_chest1.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+    <symbol id="ic-coin-chest2" viewBox="0 0 100 100">
+      <image href="../assets/icons/ic_coin_chest2.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+    </symbol>
+
+    <symbol id="ic-calendar" viewBox="0 0 24 24">
+      <rect x="3" y="5" width="18" height="16" rx="2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M3 9.5h18M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="8" cy="14" r="1.3" fill="currentColor"/>
+      <circle cx="12" cy="14" r="1.3" fill="currentColor"/>
+      <circle cx="16" cy="14" r="1.3" fill="currentColor"/>
+    </symbol>
+
+    <symbol id="ic-lock" viewBox="0 0 24 24">
+      <rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <symbol id="ic-check" viewBox="0 0 24 24">
+      <path d="M4 12.5 9.5 18 20 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <!-- Müşteriler -->
+    <symbol id="ic-cust-octo" viewBox="0 0 100 100">
+      <defs><radialGradient id="g-cust-octo" cx="35%" cy="26%" r="80%"><stop offset="0" stop-color="#C8FFF2"/><stop offset="0.5" stop-color="#4FCBB0"/><stop offset="1" stop-color="#146054"/></radialGradient></defs>
+      <g stroke="#0E3A32" stroke-width="5.5" fill="none" stroke-linecap="round">
+        <path d="M24 66 Q20 80 26 88"/><path d="M34 72 Q30 86 36 94"/><path d="M50 74 Q50 88 50 96"/><path d="M66 72 Q70 86 64 94"/><path d="M76 66 Q80 80 74 88"/>
+      </g>
+      <g stroke="#3EBFA2" stroke-width="2.4" fill="none" stroke-linecap="round">
+        <path d="M24 66 Q20 80 26 88"/><path d="M50 74 Q50 88 50 96"/><path d="M76 66 Q80 80 74 88"/>
+      </g>
+      <circle cx="50" cy="46" r="35" fill="url(#g-cust-octo)" stroke="#0E3A32" stroke-width="2.8"/>
+      <ellipse cx="38" cy="30" rx="16" ry="10" fill="#fff" opacity="0.22"/>
+      <circle cx="38" cy="42" r="10" fill="#fff" stroke="#0E3A32" stroke-width="1.6"/><circle cx="62" cy="42" r="10" fill="#fff" stroke="#0E3A32" stroke-width="1.6"/>
+      <circle cx="38" cy="43" r="4.4" fill="#0A1F1B"/><circle cx="62" cy="43" r="4.4" fill="#0A1F1B"/>
+      <circle cx="36.5" cy="41" r="1.4" fill="#fff"/><circle cx="60.5" cy="41" r="1.4" fill="#fff"/>
+    </symbol>
+
+    <symbol id="ic-cust-pirate" viewBox="0 0 100 100">
+      <defs><radialGradient id="g-cust-pirate" cx="35%" cy="26%" r="80%"><stop offset="0" stop-color="#E6FFC0"/><stop offset="0.5" stop-color="#9AC85C"/><stop offset="1" stop-color="#4C6C1E"/></radialGradient></defs>
+      <circle cx="50" cy="50" r="35" fill="url(#g-cust-pirate)" stroke="#2E4A0E" stroke-width="2.8"/>
+      <ellipse cx="38" cy="34" rx="16" ry="9" fill="#fff" opacity="0.2"/>
+      <path d="M16 34 Q50 6 84 34 Q66 22 50 29 Q34 22 16 34 Z" fill="#241A12" stroke="#0E0A06" stroke-width="1.6"/>
+      <circle cx="38" cy="23" r="3.4" fill="#E8D9A0" stroke="#5C4620" stroke-width="1"/>
+      <circle cx="62" cy="48" r="9" fill="#fff" stroke="#0E1F06" stroke-width="1.6"/><circle cx="62" cy="48" r="4" fill="#0A1F06"/>
+      <circle cx="60" cy="46" r="1.4" fill="#fff"/>
+      <path d="M28 42 Q38 36 48 44" stroke="#241A12" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+      <path d="M76 58 Q92 54 90 40 Q87 52 76 52 Z" fill="#9C9CA2" stroke="#4A4A50" stroke-width="1.6"/>
+      <path d="M79 46 L84 46" stroke="#4A4A50" stroke-width="1.2"/>
+    </symbol>
+
+    <symbol id="ic-cust-cyclops" viewBox="0 0 100 100">
+      <defs><radialGradient id="g-cust-cyclops" cx="35%" cy="26%" r="80%"><stop offset="0" stop-color="#FFE0B0"/><stop offset="0.5" stop-color="#F5943E"/><stop offset="1" stop-color="#A03E10"/></radialGradient></defs>
+      <circle cx="50" cy="50" r="35" fill="url(#g-cust-cyclops)" stroke="#6C260A" stroke-width="2.8"/>
+      <ellipse cx="38" cy="34" rx="16" ry="9" fill="#fff" opacity="0.22"/>
+      <polygon points="34,18 42,30 28,30" fill="#6C260A"/><polygon points="66,18 72,30 58,30" fill="#6C260A"/>
+      <circle cx="50" cy="48" r="16" fill="#fff" stroke="#6C260A" stroke-width="1.8"/>
+      <circle cx="50" cy="48" r="7.5" fill="#3A1A0C"/>
+      <circle cx="47" cy="45" r="2.4" fill="#fff"/>
+      <path d="M40 68 Q50 74 60 68" stroke="#6C260A" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+    </symbol>
+
+    <symbol id="ic-cust-triEye" viewBox="0 0 100 100">
+      <defs><radialGradient id="g-cust-tri" cx="35%" cy="26%" r="80%"><stop offset="0" stop-color="#D8E8FF"/><stop offset="0.5" stop-color="#6C94D8"/><stop offset="1" stop-color="#2A3C6C"/></radialGradient></defs>
+      <circle cx="50" cy="50" r="35" fill="url(#g-cust-tri)" stroke="#182236" stroke-width="2.8"/>
+      <ellipse cx="38" cy="34" rx="16" ry="9" fill="#fff" opacity="0.2"/>
+      <circle cx="38" cy="42" r="7.5" fill="#fff" stroke="#182236" stroke-width="1.4"/>
+      <circle cx="62" cy="42" r="7.5" fill="#fff" stroke="#182236" stroke-width="1.4"/>
+      <circle cx="50" cy="60" r="7.5" fill="#fff" stroke="#182236" stroke-width="1.4"/>
+      <circle cx="38" cy="42" r="3.2" fill="#101A2E"/><circle cx="62" cy="42" r="3.2" fill="#101A2E"/><circle cx="50" cy="60" r="3.2" fill="#101A2E"/>
+      <circle cx="36.5" cy="40.5" r="1" fill="#fff"/><circle cx="60.5" cy="40.5" r="1" fill="#fff"/><circle cx="48.5" cy="58.5" r="1" fill="#fff"/>
+    </symbol>
+
+    <symbol id="ic-cust-horned" viewBox="0 0 100 100">
+      <defs><radialGradient id="g-cust-horned" cx="35%" cy="26%" r="80%"><stop offset="0" stop-color="#D8FFB0"/><stop offset="0.5" stop-color="#6CAA3E"/><stop offset="1" stop-color="#2E5C14"/></radialGradient></defs>
+      <circle cx="50" cy="52" r="35" fill="url(#g-cust-horned)" stroke="#1C3A0A" stroke-width="2.8"/>
+      <ellipse cx="38" cy="36" rx="16" ry="9" fill="#fff" opacity="0.2"/>
+      <path d="M30 22 Q27 8 40 12 Q35 20 38 28 Z" fill="#EFE7C8" stroke="#8C7A48" stroke-width="1.4"/>
+      <path d="M70 22 Q73 8 60 12 Q65 20 62 28 Z" fill="#EFE7C8" stroke="#8C7A48" stroke-width="1.4"/>
+      <circle cx="38" cy="46" r="8" fill="#0E2606" stroke="#1C3A0A" stroke-width="1"/><circle cx="62" cy="46" r="8" fill="#0E2606" stroke="#1C3A0A" stroke-width="1"/>
+      <circle cx="36" cy="44" r="1.6" fill="#fff"/><circle cx="60" cy="44" r="1.6" fill="#fff"/>
+      <path d="M34 68 Q50 80 66 68 L61 76 L54 71 L50 78 L46 71 L39 76 Z" fill="#fff" stroke="#1C3A0A" stroke-width="1.4"/>
+    </symbol>
+
+    <symbol id="ic-cust-tentabeard" viewBox="0 0 100 100">
+      <defs><radialGradient id="g-cust-tb" cx="35%" cy="26%" r="80%"><stop offset="0" stop-color="#F5DCFF"/><stop offset="0.5" stop-color="#B85EC8"/><stop offset="1" stop-color="#5C1E6C"/></radialGradient></defs>
+      <g stroke="#3A0E42" stroke-width="4.6" fill="none" stroke-linecap="round">
+        <path d="M36 70 Q34 84 38 92"/><path d="M46 74 Q44 88 48 96"/><path d="M56 74 Q58 88 54 96"/><path d="M64 70 Q66 84 62 92"/>
+      </g>
+      <circle cx="50" cy="46" r="33" fill="url(#g-cust-tb)" stroke="#3A0E42" stroke-width="2.8"/>
+      <ellipse cx="38" cy="30" rx="15" ry="9" fill="#fff" opacity="0.22"/>
+      <circle cx="38" cy="42" r="8.5" fill="#fff" stroke="#3A0E42" stroke-width="1.6"/><circle cx="62" cy="42" r="8.5" fill="#fff" stroke="#3A0E42" stroke-width="1.6"/>
+      <circle cx="38" cy="43" r="3.6" fill="#2A0A30"/><circle cx="62" cy="43" r="3.6" fill="#2A0A30"/>
+      <circle cx="36.5" cy="41" r="1.2" fill="#fff"/><circle cx="60.5" cy="41" r="1.2" fill="#fff"/>
+    </symbol>
+
+    <!-- Aşçı ve tencere -->
+    <symbol id="ic-chef" viewBox="0 0 100 120">
+      <defs>
+        <radialGradient id="g-chef-skin" cx="35%" cy="25%" r="80%"><stop offset="0" stop-color="#D8FFB0"/><stop offset="0.5" stop-color="#7CC24E"/><stop offset="1" stop-color="#3A6C22"/></radialGradient>
+        <linearGradient id="g-chef-coat" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#DDD5C0"/></linearGradient>
+      </defs>
+      <ellipse cx="50" cy="114" rx="26" ry="5" fill="#000" opacity="0.2"/>
+      <path d="M32 70 C28 90 30 108 34 114 L66 114 C70 108 72 90 68 70 Z" fill="url(#g-chef-coat)" stroke="#8C8266" stroke-width="1.8"/>
+      <rect x="40" y="78" width="20" height="22" rx="4" fill="#E8DFC8" stroke="#8C8266" stroke-width="1.2"/>
+      <circle cx="44" cy="84" r="1.4" fill="#8C8266"/><circle cx="44" cy="92" r="1.4" fill="#8C8266"/>
+      <path d="M30 68 Q18 70 16 84" stroke="#3A6C22" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <circle cx="15" cy="86" r="5.5" fill="#C8895C" stroke="#7A4E2C" stroke-width="1.4"/>
+      <circle cx="50" cy="52" r="25" fill="url(#g-chef-skin)" stroke="#1E3A0E" stroke-width="2.4"/>
+      <path d="M28 46 C25 28 34 16 50 16 C66 16 75 28 72 46 C64 39 60 46 50 46 C40 46 36 39 28 46 Z" fill="#fff" stroke="#B8AE94" stroke-width="1.6"/>
+      <ellipse cx="50" cy="15" rx="19" ry="8.5" fill="#fff" stroke="#B8AE94" stroke-width="1.4"/>
+      <circle cx="38" cy="28" r="4" fill="#fff" opacity="0.8"/>
+      <circle cx="40" cy="50" r="6.4" fill="#0E2606" stroke="#1E3A0E" stroke-width="1"/><circle cx="60" cy="50" r="6.4" fill="#0E2606" stroke="#1E3A0E" stroke-width="1"/>
+      <circle cx="38" cy="48" r="1.6" fill="#fff"/><circle cx="58" cy="48" r="1.6" fill="#fff"/>
+      <path d="M42 61 Q50 66 58 61" stroke="#1E3A0E" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    </symbol>
+
+    <symbol id="ic-pot" viewBox="0 0 60 50">
+      <defs><linearGradient id="g-pot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9A9AA2"/><stop offset="1" stop-color="#4A4A52"/></linearGradient></defs>
+      <ellipse cx="30" cy="46" rx="22" ry="4" fill="#000" opacity="0.2"/>
+      <path d="M8 22 C8 36 18 44 30 44 C42 44 52 36 52 22 Z" fill="url(#g-pot)" stroke="#242428" stroke-width="1.6"/>
+      <path d="M14 26 Q30 34 46 26" stroke="#1C1C20" stroke-width="1.2" opacity="0.4" fill="none"/>
+      <ellipse cx="30" cy="22" rx="22" ry="6" fill="#3A3A40" stroke="#1C1C20" stroke-width="1.4"/>
+      <ellipse cx="30" cy="21" rx="18" ry="4" fill="#5A5A62"/>
+      <rect x="2" y="18" width="10" height="5" rx="2.5" fill="#4A4A50" stroke="#242428" stroke-width="1"/>
+      <rect x="48" y="18" width="10" height="5" rx="2.5" fill="#4A4A50" stroke="#242428" stroke-width="1"/>
+      <ellipse cx="20" cy="16" rx="6" ry="2.4" fill="#fff" opacity="0.25"/>
+    </symbol>
+
+    <symbol id="ic-heart" viewBox="0 0 24 24">
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/>
+    </symbol>
+
+    <symbol id="ic-gear" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <symbol id="ic-close" viewBox="0 0 24 24">
+      <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+      <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+    </symbol>
+
+    <symbol id="ic-moon" viewBox="0 0 24 24">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <symbol id="ic-trophy" viewBox="0 0 24 24">
+      <path d="M7 4h10v5a5 5 0 0 1-10 0V4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M7 6H4a2 2 0 0 0 0 4h1.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M17 6h3a2 2 0 0 1 0 4h-1.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M12 14v3.5M8.5 21h7M9.5 17.8h5v1.7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <symbol id="ic-gem" viewBox="0 0 24 24">
+      <path d="M5 8.5 8 3h8l3 5.5-9.5 12z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M5 8.5h14M9.5 3l-1.8 5.5L12 20.5l4.3-12L14.5 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <symbol id="ic-video" viewBox="0 0 24 24">
+      <rect x="2.5" y="5.5" width="13" height="13" rx="2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M15.5 10 21 7v10l-5.5-3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <symbol id="ic-gift" viewBox="0 0 24 24">
+      <rect x="3" y="9" width="18" height="12" rx="1.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M3 13h18M12 9v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M12 9H8.2a2.4 2.4 0 1 1 0-4.8C10.8 4.2 12 9 12 9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M12 9h3.8a2.4 2.4 0 1 0 0-4.8C13.2 4.2 12 9 12 9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <!-- Joker ikonları -->
+    <symbol id="ic-joker-shuffle" viewBox="0 0 24 24">
+      <path d="M2 18h3.5c1.6 0 3-1 3.7-2.5L12 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M2 6h3.5c1.6 0 3 1 3.7 2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="m18 3 3 3-3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M13.5 8.5 15 6.5c.9-1.2 2.3-2 3.8-2H22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="m18 21 3-3-3-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M9 15.5 8 17c-.9 1.2-2.3 2-3.8 2H2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="ic-joker-restart" viewBox="0 0 24 24">
+      <path d="M21 12a9 9 0 1 1-2.6-6.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M21 3v6h-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="ic-joker-remove" viewBox="0 0 24 24">
+      <rect x="5" y="5" width="14" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="2"/>
+      <line x1="5" y1="19" x2="19" y2="5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="ic-joker-undo" viewBox="0 0 24 24">
+      <path d="M9 14 4 9l5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M4 9h10.5A5.5 5.5 0 0 1 20 14.5v0A5.5 5.5 0 0 1 14.5 20H11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="stage">
+  <svg class="grass g1" viewBox="0 0 32 24"><use href="#ic-grass-deco"></use></svg>
+  <svg class="grass g2" viewBox="0 0 32 24"><use href="#ic-grass-deco"></use></svg>
+  <svg class="grass g3" viewBox="0 0 32 24"><use href="#ic-grass-deco"></use></svg>
+  <svg class="grass g4" viewBox="0 0 32 24"><use href="#ic-grass-deco"></use></svg>
+
+  <div class="phone start-screen" id="startScreen">
+    <div class="falling-layer" id="fallingLayer" aria-hidden="true"></div>
+    <div class="start-topbar">
+      <div class="token-badge-wrap">
+        <div class="token-badge">
+          <svg viewBox="0 0 100 100" width="20" height="20"><use href="#ic-coin"></use></svg>
+          <span id="tokenBalance">30</span>
+        </div>
+        <button class="lives-add-btn token-add-btn" id="buyCoinsBtn" title="Snack Coin satın al" aria-label="Snack Coin satın al">+</button>
+      </div>
+      <button class="icon-btn calendar-btn" id="calendarBtn" title="Günlük ödüller" aria-label="Günlük ödüller" hidden>
+        <svg viewBox="0 0 24 24" width="17" height="17"><use href="#ic-calendar"></use></svg>
+      </button>
+    </div>
+    <div class="start-tile-fan" aria-hidden="true">
+      <div class="fan-tile t1"><svg viewBox="0 0 100 100"><use href="#ic-strawberry"></use></svg></div>
+      <div class="fan-tile t2"><svg viewBox="0 0 100 100"><use href="#ic-carrot"></use></svg></div>
+      <div class="fan-tile t3"><svg viewBox="0 0 100 100"><use href="#ic-grapes"></use></svg></div>
+      <div class="fan-tile t4"><svg viewBox="0 0 100 100"><use href="#ic-apple"></use></svg></div>
+      <div class="fan-tile t5"><svg viewBox="0 0 100 100"><use href="#ic-broccoli"></use></svg></div>
+      <div class="fan-tile t6"><svg viewBox="0 0 100 100"><use href="#ic-pizza"></use></svg></div>
+      <div class="fan-tile t7"><svg viewBox="0 0 100 100"><use href="#ic-avocado"></use></svg></div>
+    </div>
+    <div class="start-title-block">
+      <img class="start-logo-img" src="../assets/branding/logo_snackstack.png" alt="Snack Stack logosu">
+      <h1 class="display start-h1">Snack Stack</h1>
+      <p class="start-tr">Atıştırma Yığını</p>
+    </div>
+    <p class="start-tagline">3'le, sepetleri fulle!</p>
+
+    <div class="lives-block">
+      <div class="lives-hearts-wrap">
+        <div class="lives-hearts" id="livesHearts" aria-hidden="true"></div>
+        <button class="lives-add-btn" id="livesAddBtn" title="Can kazan" aria-label="Can kazan">+</button>
+      </div>
+      <p class="lives-timer" id="livesTimer" hidden>Canlar yenilenir: <b id="livesCountdown">00:00:00</b></p>
+    </div>
+
+    <div class="overlay settings-overlay" id="getLivesOverlay">
+      <div class="card settings-card get-lives-card">
+        <button class="settings-close" id="getLivesCloseBtn" aria-label="Kapat">
+          <svg viewBox="0 0 24 24" width="16" height="16"><use href="#ic-close"></use></svg>
+        </button>
+        <h2>Can Kazan</h2>
+        <button class="get-lives-option" id="buyLifeBtn">
+          <span class="get-lives-icon"><svg viewBox="0 0 100 100" width="22" height="22"><use href="#ic-coin"></use></svg></span>
+          <span class="get-lives-text"><b>Can satın al!</b><small>10 Snack Coin karşılığında 1 can</small></span>
+        </button>
+        <button class="get-lives-option" id="watchAdLifeBtn">
+          <span class="get-lives-icon"><svg viewBox="0 0 24 24" width="20" height="20"><use href="#ic-video"></use></svg></span>
+          <span class="get-lives-text"><b>Reklam izleyerek 1 can kazan!</b><small>30 saniyelik tek reklam</small></span>
+        </button>
+        <button class="get-lives-option" id="watchAdRefillBtn">
+          <span class="get-lives-icon"><svg viewBox="0 0 24 24" width="20" height="20"><use href="#ic-gift"></use></svg></span>
+          <span class="get-lives-text"><b>Reklam izleyerek tüm canlarını yenile!</b><small>2 adet 30 saniyelik reklam</small></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="overlay ad-overlay" id="adPlayerOverlay">
+      <div class="ad-player">
+        <div class="ad-player-topbar">
+          <span class="ad-player-progress" id="adProgress" hidden>Reklam <b id="adProgressNum">1</b>/2</span>
+          <span class="ad-player-timer" id="adTimer">0:30</span>
+        </div>
+        <div class="ad-player-content">
+          <svg class="ad-player-logo" viewBox="0 0 100 100"><use href="#ic-coin"></use></svg>
+          <p class="ad-player-label">Reklam oynatılıyor…</p>
+        </div>
+        <button class="ad-skip-btn" id="adSkipBtn" hidden>Reklamı Atla ▸</button>
+      </div>
+    </div>
+
+    <div class="overlay settings-overlay" id="buyCoinsOverlay">
+      <div class="card settings-card buy-coins-card">
+        <button class="settings-close" id="buyCoinsCloseBtn" aria-label="Kapat">
+          <svg viewBox="0 0 24 24" width="16" height="16"><use href="#ic-close"></use></svg>
+        </button>
+        <h2>Snack Coin Satın Al</h2>
+        <p class="buy-coins-sub" id="buyCoinsMsg">Snack Coin'ler yalnızca gerçek para ile satın alınabilir.</p>
+
+        <button class="coin-pack-btn" data-tl="29,99 TL" data-usd="$0.99">
+          <span class="coin-pack-icon"><svg viewBox="0 0 100 100"><use href="#ic-coin"></use></svg></span>
+          <span class="coin-pack-info">
+            <span class="coin-pack-name">Başlangıç Paketi</span>
+            <span class="coin-pack-amount"><s>100</s> 75 <svg viewBox="0 0 100 100"><use href="#ic-coin"></use></svg></span>
+          </span>
+          <span class="coin-pack-price"></span>
+        </button>
+
+        <button class="coin-pack-btn" data-tl="89,99 TL" data-usd="$2.99">
+          <span class="coin-pack-icon"><svg viewBox="0 0 100 100"><use href="#ic-coin-stack"></use></svg></span>
+          <span class="coin-pack-info">
+            <span class="coin-pack-name">Atıştırmalık Paketi</span>
+            <span class="coin-pack-amount"><s>350</s> 250 <svg viewBox="0 0 100 100"><use href="#ic-coin"></use></svg></span>
+          </span>
+          <span class="coin-pack-price"></span>
+        </button>
+
+        <button class="coin-pack-btn best" data-tl="199,99 TL" data-usd="$6.99">
+          <span class="coin-pack-badge">En Çok Satan</span>
+          <span class="coin-pack-icon"><svg viewBox="0 0 100 100"><use href="#ic-coin-pouch"></use></svg></span>
+          <span class="coin-pack-info">
+            <span class="coin-pack-name">Ziyafet Paketi</span>
+            <span class="coin-pack-amount"><s>900</s> 650 <svg viewBox="0 0 100 100"><use href="#ic-coin"></use></svg></span>
+          </span>
+          <span class="coin-pack-price"></span>
+        </button>
+
+        <button class="coin-pack-btn" data-tl="399,99 TL" data-usd="$13.99">
+          <span class="coin-pack-icon"><svg viewBox="0 0 100 100"><use href="#ic-coin-chest1"></use></svg></span>
+          <span class="coin-pack-info">
+            <span class="coin-pack-name">Gurme Paketi</span>
+            <span class="coin-pack-amount"><s>2.200</s> 1.500 <svg viewBox="0 0 100 100"><use href="#ic-coin"></use></svg></span>
+          </span>
+          <span class="coin-pack-price"></span>
+        </button>
+
+        <button class="coin-pack-btn" data-tl="799,99 TL" data-usd="$27.99">
+          <span class="coin-pack-icon"><svg viewBox="0 0 100 100"><use href="#ic-coin-chest2"></use></svg></span>
+          <span class="coin-pack-info">
+            <span class="coin-pack-name">Kralın Sofrası</span>
+            <span class="coin-pack-amount"><s>5.000</s> 3.500 <svg viewBox="0 0 100 100"><use href="#ic-coin"></use></svg></span>
+          </span>
+          <span class="coin-pack-price"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="overlay settings-overlay" id="dailyOverlay">
+      <div class="card settings-card daily-card">
+        <button class="settings-close" id="dailyCloseBtn" aria-label="Kapat">
+          <svg viewBox="0 0 24 24" width="16" height="16"><use href="#ic-close"></use></svg>
+        </button>
+        <h2>Günlük Giriş Ödülleri</h2>
+        <p class="daily-sub">İlk 7 gün boyunca her gün giriş yap, ödülünü topla!</p>
+        <div class="daily-grid" id="dailyGrid"></div>
+        <button class="daily-claim-btn" id="dailyClaimBtn">Günlük Ödülümü Topla!</button>
+      </div>
+    </div>
+
+    <button class="play-btn" id="playBtn">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+      Oyna
+    </button>
+    <button class="heroes-btn" id="heroesBtn">
+      <svg viewBox="0 0 24 24" width="15" height="15"><use href="#ic-trophy"></use></svg>
+      Kahramanlar Anıtı
+    </button>
+
+    <div class="overlay settings-overlay" id="heroesOverlay">
+      <div class="card settings-card heroes-card">
+        <button class="settings-close" id="heroesCloseBtn" aria-label="Kapat">
+          <svg viewBox="0 0 24 24" width="16" height="16"><use href="#ic-close"></use></svg>
+        </button>
+        <h2>Kahramanlar Anıtı</h2>
+        <p class="heroes-sub">En yüksek seviyeye ulaşan 10 oyuncu</p>
+        <ol class="heroes-list" id="heroesList"></ol>
+      </div>
+    </div>
+  </div>
+
+  <div class="phone" id="gameScreen" hidden>
+    <div class="topbar">
+      <div class="title-block">
+        <div class="game-lives-row">
+          <div class="lives-hearts mini" id="gameLivesHearts" aria-hidden="true"></div>
+          <p class="lives-timer mini" id="gameLivesTimer" hidden>Yenilenir: <b id="gameLivesCountdown">00:00:00</b></p>
+        </div>
+        <p class="sub" id="subLine">Aynı gördüğün 3 kartı üçle!</p>
+      </div>
+      <div class="icon-btns">
+        <div class="token-badge mini">
+          <svg viewBox="0 0 100 100" width="16" height="16"><use href="#ic-coin"></use></svg>
+          <span id="gameTokenBalance">30</span>
+        </div>
+        <button class="icon-btn" id="btnSettings" title="Ayarlar" aria-label="Ayarlar">
+          <svg viewBox="0 0 24 24" width="18" height="18"><use href="#ic-gear"></use></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <span>Seviye <b id="statLevel">1</b></span>
+      <span>Kalan: <b id="statRemaining">0</b></span>
+      <span>Eşleşme: <b id="statMatches">0</b></span>
+    </div>
+
+    <div class="board-frame">
+      <div class="board" id="board">
+        <div class="board-inner" id="boardInner"></div>
+      </div>
+      <div class="overlay" id="overlay">
+        <div class="card">
+          <h2 id="overlayTitle">Tebrikler!</h2>
+          <p id="overlayText">Tahtayı temizledin.</p>
+          <div class="overlay-actions">
+            <button id="overlayBtn">Tekrar Oyna</button>
+            <button id="overlayBtn2" class="ghost" hidden>Ana Menüye Dön</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="kitchen">
+      <div class="basket" id="basketEl">
+        <div class="tray" id="tray"></div>
+      </div>
+    </div>
+
+    <div class="jokers">
+      <div class="joker-wrap">
+        <button class="joker" id="jokerShuffle" data-type="shuffle" title="Kalan taşları karıştır">
+          <svg viewBox="0 0 24 24"><use href="#ic-joker-shuffle"></use></svg>
+          <span class="joker-label">Karıştır</span>
+          <span class="joker-count" id="cntShuffle">1 hak</span>
+        </button>
+        <button class="joker-plus" data-buy="shuffle" title="Joker satın al" aria-label="Karıştır jokeri satın al">+</button>
+      </div>
+      <div class="joker-wrap">
+        <button class="joker" id="jokerRestart" data-type="restartLevel" title="Bu seviyeyi baştan başlat">
+          <svg viewBox="0 0 24 24"><use href="#ic-joker-restart"></use></svg>
+          <span class="joker-label">Baştan Başla</span>
+          <span class="joker-count" id="cntRestart">1 hak</span>
+        </button>
+        <button class="joker-plus" data-buy="restartLevel" title="Joker satın al" aria-label="Baştan başlama jokeri satın al">+</button>
+      </div>
+      <div class="joker-wrap">
+        <button class="joker" id="jokerRemove" data-type="removeTile" title="Açık bir taşı doğrudan kaldır">
+          <svg viewBox="0 0 24 24"><use href="#ic-joker-remove"></use></svg>
+          <span class="joker-label">Taşı Kaldır</span>
+          <span class="joker-count" id="cntRemove">1 hak</span>
+        </button>
+        <button class="joker-plus" data-buy="removeTile" title="Joker satın al" aria-label="Taşı kaldır jokeri satın al">+</button>
+      </div>
+      <div class="joker-wrap">
+        <button class="joker" id="jokerUndo" data-type="undo" title="Son taşı geri al">
+          <svg viewBox="0 0 24 24"><use href="#ic-joker-undo"></use></svg>
+          <span class="joker-label">Geri Al</span>
+          <span class="joker-count" id="cntUndo">1 hak</span>
+        </button>
+        <button class="joker-plus" data-buy="undo" title="Joker satın al" aria-label="Geri al jokeri satın al">+</button>
+      </div>
+    </div>
+
+    <div class="overlay settings-overlay" id="settingsOverlay">
+      <div class="card settings-card">
+        <button class="settings-close" id="settingsCloseBtn" aria-label="Kapat">
+          <svg viewBox="0 0 24 24" width="16" height="16"><use href="#ic-close"></use></svg>
+        </button>
+        <h2>Ayarlar</h2>
+
+        <div class="settings-section">
+          <h3>Ses Ayarları</h3>
+          <div class="settings-sound-row">
+            <button class="icon-btn" id="settingsMuteBtn" title="Sesi kapat" aria-label="Sesi kapat">
+              <svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+              <svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><line x1="16" y1="9" x2="22" y2="15"/><line x1="22" y1="9" x2="16" y2="15"/></svg>
+            </button>
+            <input type="range" id="volumeSlider" class="volume-slider" min="0" max="100" value="80" aria-label="Ses düzeyi">
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-switch-row">
+            <span class="settings-switch-label">
+              <svg viewBox="0 0 24 24" width="16" height="16"><use href="#ic-moon"></use></svg>
+              Karanlık Mod
+            </span>
+            <label class="switch">
+              <input type="checkbox" id="darkModeToggle">
+              <span class="switch-track"><span class="switch-thumb"></span></span>
+            </label>
+          </div>
+        </div>
+
+        <button class="settings-quit-btn" id="settingsQuitBtn">Ana Menüye Dön</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // Sıra önemli: buildLevelTiles her seviyede bu dizinin BAŞINDAN itibaren bir havuz
+  // dilimi alır (config.pool kadar). Temel 9 meyve/sebze en başta (her seviyede var),
+  // ardından yeni yiyecek partileri 3'erli dalgalar halinde karışık sıralanır ki
+  // havuz büyüdükçe her iki yeni yiyecek grubundan da örnekler birlikte açılsın.
+  var ICONS = [
+    "apple","carrot","eggplant","banana","broccoli","strawberry","garlic","orange","pepper",
+    "croissant","grapes","cheese",
+    "avocado","pancake","sardine",
+    "tomato","corn","chicken",
+    "pineapple","pizza","lobster",
+    "bread","candy","lemonade",
+    "salad","cocktail","cake",
+    "danish","duck","ramen",
+    "steak","asparagus","cookies",
+    "crab","artichoke","sushi"
+  ];
+  var ICON_COLORS = {
+    apple:"#D8342A", carrot:"#E8821E", eggplant:"#5C3A82", banana:"#F0C419", broccoli:"#3E8C3A",
+    strawberry:"#E0245E", garlic:"#E8DFC6", orange:"#F2932A", pepper:"#4CA831",
+    croissant:"#D89A4A", grapes:"#8E44C8", cheese:"#F2C230", tomato:"#C81E2C", corn:"#F0C419",
+    chicken:"#B5651D", bread:"#8A5A2E", candy:"#D8203A", lemonade:"#8ECBE8",
+    avocado:"#5E8C3E", pancake:"#E8A93C", sardine:"#A8B4BE", pineapple:"#F2B705", pizza:"#E8621E",
+    lobster:"#D8402A", salad:"#5C9C42", cocktail:"#F2762E", cake:"#5C3420",
+    danish:"#E8A23C", duck:"#B5471E", ramen:"#D8443A", steak:"#7A3E22",
+    asparagus:"#5C9C42", cookies:"#8A5A2E", crab:"#D8622A", artichoke:"#6E8C4A", sushi:"#D8425A"
+  };
+  var TRAY_MAX = 7;
+  var CELL = 58;
+  var GRID_MARGIN_X = 15, GRID_MARGIN_Y = 24;
+  var CAP_OFFSET = 14; // her ek katman bir öncekinden bu kadar kayar: kısmi görünürlük hep korunur
+
+  // Seviye 1: 9 taş, tek katman (tamamen düz, hemen oynanabilir).
+  // Seviye 2: 2 katman. Seviye 3: 3 katman. ... Seviye 5'ten sonra katman sayısı artmaya devam eder,
+  // 6-7. seviyeden itibaren hem daha çok katman hem daha geniş ikon çeşitliliğiyle zorluk belirgin
+  // biçimde hissedilir. Seviye 10'dan sonra tablo en zor ayarda (10. seviye) sabitlenip tekrar eder.
+  var LEVEL_TABLE = [
+    { cols:3, rows:3, layers:1, tiers:[9],                       icons:3,  copies:3, pool:9 },
+    { cols:4, rows:3, layers:2, tiers:[12,3],                    icons:5,  copies:3, pool:9 },
+    { cols:4, rows:4, layers:3, tiers:[16,6,2],                  icons:8,  copies:3, pool:15 },
+    { cols:5, rows:4, layers:4, tiers:[20,4,2,1],                icons:9,  copies:3, pool:21 },
+    { cols:6, rows:5, layers:5, tiers:[30,14,6,3,1],             icons:9,  copies:6, pool:27 },
+    { cols:6, rows:5, layers:6, tiers:[30,15,7,4,2,2],           icons:10, copies:6, pool:27 },
+    { cols:6, rows:5, layers:7, tiers:[30,16,8,5,3,2,2],         icons:11, copies:6, pool:30 },
+    { cols:6, rows:5, layers:8, tiers:[30,16,9,6,4,3,2,2],       icons:12, copies:6, pool:33 },
+    { cols:6, rows:5, layers:8, tiers:[30,17,10,7,5,4,3,2],      icons:13, copies:6, pool:36 },
+    { cols:6, rows:5, layers:8, tiers:[30,18,11,8,6,5,4,2],      icons:14, copies:6, pool:36 }
+  ];
+  // Elle ayarlanan tablo 10. seviyede biter, ama oyuncuya asla bir "tavan" hissettirmemek için
+  // ondan sonrası prosedürel olarak üretilir ve icons/copies sonsuza dek büyümeye devam eder
+  // (üst sınır yok) — böylece hiçbir yüksek seviye bir öncekiyle birebir aynı görünmez ve
+  // zorluk gerçekten hiç durmadan artar. Oyuncu ne kadar ileri gidebileceğini asla göremez;
+  // bu tavan/tasarım bilgisi yalnızca bizim (geliştirici) tarafımızda, kodun içinde kalır.
+  function generateEndlessConfig(level){
+    var cols=6, rows=5;
+    var base = cols*rows;
+    var interiorCap = (rows-1)*(cols-1); // bir üst katmanın en fazla kaplayabileceği hücre sayısı
+    var extra = level - LEVEL_TABLE.length; // elle ayarlı tablodan sonraki her seviye için 1,2,3...
+    var layers = 8 + Math.floor(extra/4);
+    var icons = Math.min(ICONS.length, 14 + Math.floor(extra/3));
+    var copies = 6 + Math.floor(extra/6); // üst sınırsız: zorluk hiçbir zaman düzleşmez
+    var total = icons*copies;
+    var remaining = total - base;
+    // Katman başına düşen taş sayısı tahtanın kaldırabileceğinden fazla olursa katman sayısını
+    // artırarak yükü inceltiyoruz — böylece taş sayısı ne kadar büyürse büyüsün yerleşim her
+    // zaman geçerli (üst üste binmeyen) kalır.
+    while(remaining>0 && Math.ceil(remaining/(layers-1)) > interiorCap){ layers++; }
+    var extraLayers = Math.max(layers-1, 1);
+    var per = Math.floor(remaining/extraLayers);
+    var rem = remaining - per*extraLayers;
+    var tiers = [base];
+    for(var i=0;i<extraLayers;i++){ tiers.push(per + (i<rem ? 1 : 0)); }
+    return { cols:cols, rows:rows, layers:tiers.length, tiers:tiers, icons:icons, copies:copies, pool:36 };
+  }
+  function getLevelConfig(level){
+    level = Math.max(level,1);
+    if(level <= LEVEL_TABLE.length) return LEVEL_TABLE[level-1];
+    return generateEndlessConfig(level);
+  }
+
+  var board = document.getElementById("board");
+  var boardInner = document.getElementById("boardInner");
+  var trayEl = document.getElementById("tray");
+  var statLevel = document.getElementById("statLevel");
+  var statRemaining = document.getElementById("statRemaining");
+  var statMatches = document.getElementById("statMatches");
+  var overlay = document.getElementById("overlay");
+  var overlayTitle = document.getElementById("overlayTitle");
+  var overlayText = document.getElementById("overlayText");
+  var overlayBtn = document.getElementById("overlayBtn");
+  var overlayBtn2 = document.getElementById("overlayBtn2");
+  var boardFrame = document.querySelector(".board-frame");
+  var basketEl = document.getElementById("basketEl");
+
+  var state = null;
+  var uidCounter = 1;
+  var flyLayer = null;
+  var audioCtx = null;
+  var armedJoker = null;
+  var overlayAction = null;
+  var overlayAction2 = null;
+  var BOARD_W = 320, BOARD_H = 280;
+
+  function shuffle(arr){
+    for(var i=arr.length-1;i>0;i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var t=arr[i]; arr[i]=arr[j]; arr[j]=t;
+    }
+    return arr;
+  }
+
+  function buildLevelTiles(config){
+    var pool = shuffle(ICONS.slice(0, config.pool || ICONS.length));
+    var chosen = pool.slice(0, config.icons);
+    var bag = [];
+    for(var i=0;i<chosen.length;i++){ for(var k=0;k<config.copies;k++) bag.push(chosen[i]); }
+    shuffle(bag);
+
+    var cols=config.cols, rows=config.rows;
+    var bw = cols*CELL + GRID_MARGIN_X*2, bh = rows*CELL + GRID_MARGIN_Y*2;
+    var ox = GRID_MARGIN_X, oy = GRID_MARGIN_Y;
+    var minX = ox, maxX = ox + cols*CELL - CELL;
+    var minY = oy, maxY = oy + rows*CELL - CELL;
+    var idx = 0;
+    var tiles = [];
+
+    var base = [];
+    for(var r=0;r<rows;r++){ for(var c=0;c<cols;c++){ base.push({col:c,row:r}); } }
+    var prevPositions = [];
+    base.forEach(function(cell){
+      var pos = { x: ox+cell.col*CELL, y: oy+cell.row*CELL };
+      tiles.push({ id:"t"+(uidCounter++), icon:bag[idx++], layer:0, x:pos.x, y:pos.y });
+      prevPositions.push(pos);
+    });
+
+    if(config.layers>=2){
+      var inter=[];
+      for(var r2=0;r2<rows-1;r2++){ for(var c2=0;c2<cols-1;c2++){ inter.push({col:c2,row:r2}); } }
+      shuffle(inter);
+      var t1 = inter.slice(0, config.tiers[1]).map(function(cell){
+        return { x: ox+(cell.col+0.5)*CELL, y: oy+(cell.row+0.5)*CELL };
+      });
+      t1.forEach(function(pos){ tiles.push({ id:"t"+(uidCounter++), icon:bag[idx++], layer:1, x:pos.x, y:pos.y }); });
+      prevPositions = t1;
+    }
+
+    // Katman 2 ve sonrası: bir öncekinden küçük, sabit bir miktar kayarak oturur.
+    // Böylece hiçbir katman bir öncekini %100 örtmez -- her zaman kısmi bir "ucundan görünme" kalır,
+    // ve bir üst katman kalkınca hemen altındaki katman kademeli olarak ortaya çıkar.
+    for(var k=2; k<config.layers; k++){
+      shuffle(prevPositions);
+      var tk = prevPositions.slice(0, config.tiers[k]).map(function(pos){
+        var nx = Math.min(Math.max(pos.x + CAP_OFFSET, minX), maxX);
+        var ny = Math.min(Math.max(pos.y + CAP_OFFSET, minY), maxY);
+        return { x: nx, y: ny };
+      });
+      tk.forEach(function(pos){ tiles.push({ id:"t"+(uidCounter++), icon:bag[idx++], layer:k, x:pos.x, y:pos.y }); });
+      prevPositions = tk;
+    }
+
+    return { tiles: tiles, boardW: bw, boardH: bh };
+  }
+
+  function newLevel(level, jokersOverride){
+    maybeUpdateBestLevel(level);
+    var config = getLevelConfig(level);
+    var built = buildLevelTiles(config);
+    BOARD_W = built.boardW; BOARD_H = built.boardH;
+    state = {
+      level: level,
+      tiles: built.tiles,
+      tray: [],
+      status: "playing",
+      matches: 0,
+      jokers: jokersOverride || { shuffle:1, restartLevel:1, removeTile:1, undo:1 },
+      flightsInProgress: 0
+    };
+    armedJoker = null;
+    board.style.aspectRatio = BOARD_W + " / " + BOARD_H;
+    boardInner.style.width = BOARD_W + "px";
+    boardInner.style.height = BOARD_H + "px";
+    render();
+    renderTray();
+    statMatches.textContent = "0";
+    renderJokers();
+    scaleBoard();
+  }
+
+  // Gerçek dikdörtgen çakışmasına bakar: bir kart, tam olarak üstünü örten gerçek kartlar kadar gizlidir —
+  // yapay bir kırpma/karartma kuralı yok, bu yüzden görünen kısım her zaman gerçek görsel içeriğidir.
+  function coveringCount(tile){
+    if(tile.floating) return 0;
+    var n=0;
+    for(var i=0;i<state.tiles.length;i++){
+      var o = state.tiles[i];
+      if(o===tile || o.floating || o.layer<=tile.layer) continue;
+      if(Math.abs(o.x-tile.x) < CELL-1 && Math.abs(o.y-tile.y) < CELL-1) n++;
+    }
+    return n;
+  }
+
+  function render(){
+    boardInner.innerHTML = "";
+    state.tiles.slice().sort(function(a,b){ return a.layer-b.layer; }).forEach(function(tile){
+      var clickable = coveringCount(tile)===0;
+      var el = document.createElement("div");
+      el.className = "tile " + (clickable ? "visible" : "covered");
+      el.style.left = tile.x + "px";
+      el.style.top = tile.y + "px";
+      el.style.zIndex = tile.floating ? "999" : String(10 + tile.layer);
+      el.dataset.id = tile.id;
+      el.innerHTML = '<svg viewBox="0 0 100 100"><use href="#ic-'+tile.icon+'"></use></svg>';
+      if(clickable){
+        el.setAttribute("role","button");
+        el.setAttribute("tabindex","0");
+        el.setAttribute("aria-label","Taş: " + tile.icon);
+        el.addEventListener("click", function(){ handleTileClick(this.dataset.id); });
+        el.addEventListener("keydown", function(e){
+          if(e.key==="Enter" || e.key===" "){ e.preventDefault(); handleTileClick(this.dataset.id); }
+        });
+      } else {
+        el.setAttribute("tabindex","-1");
+        el.setAttribute("aria-label","Kısmen örtülü taş: " + tile.icon);
+      }
+      boardInner.appendChild(el);
+    });
+    statLevel.textContent = String(state.level);
+    statRemaining.textContent = String(state.tiles.length);
+  }
+
+  function renderTray(){
+    trayEl.innerHTML = "";
+    for(var i=0;i<TRAY_MAX;i++){
+      var slot = document.createElement("div");
+      var t = state.tray[i];
+      slot.className = "slot" + (state.tray.length>=TRAY_MAX-1 ? " danger":"") + (t && t.matched ? " matching":"");
+      if(t){
+        slot.innerHTML = '<svg viewBox="0 0 100 100"><use href="#ic-'+t.icon+'"></use></svg>';
+      }
+      trayEl.appendChild(slot);
+    }
+  }
+
+
+  function renderJokers(){
+    ["shuffle","restartLevel","removeTile","undo"].forEach(function(type){
+      var id = type==="shuffle"?"jokerShuffle":type==="restartLevel"?"jokerRestart":type==="removeTile"?"jokerRemove":"jokerUndo";
+      var cid = type==="shuffle"?"cntShuffle":type==="restartLevel"?"cntRestart":type==="removeTile"?"cntRemove":"cntUndo";
+      var btn = document.getElementById(id);
+      var cnt = document.getElementById(cid);
+      var left = state.jokers[type];
+      cnt.textContent = left>0 ? (left+" hak") : "bitti";
+      btn.classList.toggle("used", left<=0);
+      btn.classList.toggle("armed", armedJoker===type);
+    });
+    boardFrame.classList.toggle("armed-remove", armedJoker==="removeTile");
+    document.getElementById("subLine").textContent = armedJoker==="removeTile"
+      ? "Kaldırmak istediğin açık taşa dokun"
+      : "Aynı gördüğün 3 kartı üçle!";
+  }
+
+  function ensureFlyLayer(){
+    if(!flyLayer){
+      flyLayer = document.createElement("div");
+      flyLayer.id = "flyLayer";
+      flyLayer.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:9999;";
+      document.body.appendChild(flyLayer);
+    }
+    return flyLayer;
+  }
+
+  function prefersReducedMotion(){
+    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+
+  function flyToTray(sourceRect, icon, targetRect, cb){
+    var layer = ensureFlyLayer();
+    var clone = document.createElement("div");
+    clone.className = "flying-tile";
+    clone.style.width = sourceRect.width + "px";
+    clone.style.height = sourceRect.height + "px";
+    clone.style.left = sourceRect.left + "px";
+    clone.style.top = sourceRect.top + "px";
+    clone.innerHTML = '<svg viewBox="0 0 100 100"><use href="#ic-'+icon+'"></use></svg>';
+    layer.appendChild(clone);
+
+    var dx = (targetRect.left + targetRect.width/2) - (sourceRect.left + sourceRect.width/2);
+    var dy = (targetRect.top + targetRect.height/2) - (sourceRect.top + sourceRect.height/2);
+    var scale = Math.max(0.45, (targetRect.width/sourceRect.width) * 0.82);
+    var lift = -Math.max(24, Math.abs(dy)*0.3);
+
+    var anim = clone.animate([
+      { transform: "translate(0px,0px) scale(1)", offset: 0 },
+      { transform: "translate("+(dx*0.5)+"px,"+(dy*0.5+lift)+"px) scale("+((1+scale)/2)+")", offset: 0.55 },
+      { transform: "translate("+dx+"px,"+dy+"px) scale("+scale+")", offset: 1 }
+    ], { duration: 420, easing: "cubic-bezier(.33,.68,.35,1)" });
+
+    anim.onfinish = function(){ clone.remove(); cb(); };
+  }
+
+  function burst(cx, cy, color){
+    if(prefersReducedMotion()) return;
+    var layer = ensureFlyLayer();
+    for(var i=0;i<7;i++){
+      var p = document.createElement("div");
+      p.className = "particle";
+      p.style.background = color || "#FF8A3D";
+      p.style.left = (cx-4) + "px";
+      p.style.top = (cy-4) + "px";
+      layer.appendChild(p);
+      var angle = Math.random()*Math.PI*2;
+      var dist = 22 + Math.random()*20;
+      var ddx = Math.cos(angle)*dist, ddy = Math.sin(angle)*dist;
+      (function(el){
+        var anim = el.animate([
+          { transform: "translate(0,0) scale(1)", opacity: 1 },
+          { transform: "translate("+ddx+"px,"+ddy+"px) scale(0.25)", opacity: 0 }
+        ], { duration: 420 + Math.random()*140, easing: "cubic-bezier(.2,.8,.3,1)" });
+        anim.onfinish = function(){ el.remove(); };
+      })(p);
+    }
+  }
+
+  function handleTileClick(id){
+    if(!state || state.status!=="playing") return;
+    if(armedJoker==="removeTile"){
+      var idx = -1;
+      for(var i=0;i<state.tiles.length;i++){ if(state.tiles[i].id===id){ idx=i; break; } }
+      if(idx===-1) return;
+      if(coveringCount(state.tiles[idx])>0) return;
+      state.tiles.splice(idx,1);
+      state.jokers.removeTile--;
+      armedJoker = null;
+      playTone(420,0.1,"sawtooth",0.05);
+      render();
+      renderJokers();
+      checkEnd();
+      return;
+    }
+    collect(id);
+  }
+
+  function collect(id){
+    if(state.status!=="playing") return;
+    var idx=-1;
+    for(var i=0;i<state.tiles.length;i++){ if(state.tiles[i].id===id){ idx=i; break; } }
+    if(idx===-1) return;
+    var tile = state.tiles[idx];
+    if(coveringCount(tile)>0) return;
+
+    // Sepetteki hedef slot, henüz havada olan (inmemiş) taşlar da sayılarak
+    // tıklama anında rezerve edilir — böylece bir taş inmeden ikinciye (üçüncüye...)
+    // tıklansa bile her biri kendi sırasındaki boş slota, birbirini beklemeden uçar.
+    var reserved = state.tray.length + state.flightsInProgress;
+    if(reserved >= TRAY_MAX) return; // sepette yer yok, bekleyen uçuşlar dolmuş
+
+    var tileEl = boardInner.querySelector('.tile[data-id="'+id+'"]');
+    var sourceRect = tileEl ? tileEl.getBoundingClientRect() : null;
+    var targetIndex = reserved;
+    var flightState = state; // uçuş hangi seviyeye ait, iniş anında karşılaştırmak için
+
+    state.tiles.splice(idx,1);
+    render();
+
+    var slotEl = trayEl.children[targetIndex];
+    var targetRect = slotEl ? slotEl.getBoundingClientRect() : null;
+
+    state.flightsInProgress++;
+
+    function land(){
+      // Uçuş sırasında seviye yeniden başlatıldı/değişti ise (örn. "Baştan Başla" jokeri),
+      // bu taş artık eski (geçersiz) seviyeye ait — yeni duruma yazma yapılmaz.
+      if(state !== flightState) return;
+      state.flightsInProgress--;
+      // orijinal konum/katman saklanıyor ki "geri al" taşı tam olduğu yere koyabilsin
+      state.tray.push({ id: tile.id, icon: tile.icon, x: tile.x, y: tile.y, layer: tile.layer });
+      renderTray();
+      playTone(520, 0.08, "triangle", 0.045);
+      var el = trayEl.children[targetIndex];
+      if(el){ el.classList.add("land"); setTimeout(function(){ el.classList.remove("land"); }, 260); }
+      checkMatch();
+    }
+
+    if(sourceRect && targetRect && !prefersReducedMotion()){
+      flyToTray(sourceRect, tile.icon, targetRect, land);
+    } else {
+      land();
+    }
+  }
+
+  function checkMatch(){
+    // "matched" ile işaretlenmiş taşlar sayıma girmez: eş zamanlı birden fazla taş
+    // hemen art arda sepete inince checkMatch() birden çok kez tetiklenebilir; bu
+    // işaretleme aynı üçlünün iki kez "eşleşme" olarak sayılmasını / iki kez
+    // kaldırılmaya çalışılmasını engeller (uçuşlar artık birbirini beklemeden
+    // gerçekleştiği için bu durum sık karşılaşılabilir).
+    var flightState = state;
+    var counts = {};
+    state.tray.forEach(function(t){ if(!t.matched) counts[t.icon]=(counts[t.icon]||0)+1; });
+    var matchIcon = null;
+    Object.keys(counts).forEach(function(k){ if(counts[k]>=3) matchIcon=k; });
+
+    if(!matchIcon){ checkEnd(); return; }
+
+    var matchedItems = [];
+    state.tray.forEach(function(t){
+      if(!t.matched && t.icon===matchIcon && matchedItems.length<3){ t.matched = true; matchedItems.push(t); }
+    });
+
+    renderTray();
+    matchedItems.forEach(function(t){
+      var i = state.tray.indexOf(t);
+      var el = trayEl.children[i];
+      if(el){
+        var r = el.getBoundingClientRect();
+        burst(r.left+r.width/2, r.top+r.height/2, ICON_COLORS[matchIcon]);
+      }
+    });
+    playChime();
+
+    setTimeout(function(){
+      if(state !== flightState) return; // seviye bu sırada değiştiyse eski duruma yazma yapılmaz
+      state.tray = state.tray.filter(function(t){ return matchedItems.indexOf(t)===-1; });
+      state.matches++;
+      renderTray();
+      statMatches.textContent = String(state.matches);
+
+      basketEl.classList.add("cooking");
+      setTimeout(function(){ basketEl.classList.remove("cooking"); }, 500);
+
+      checkEnd();
+    }, 380);
+  }
+
+  function checkEnd(){
+    if(state.tiles.length===0 && state.status==="playing"){
+      state.status="won";
+      playWinSound();
+      showOverlay("Seviye " + state.level + " tamam!", "Tebrikler, tahtayı temizledin.", "Sonraki Seviye", function(){
+        newLevel(state.level+1);
+      });
+      return;
+    }
+    if(state.tray.length>=TRAY_MAX && state.status==="playing"){
+      state.status="lost";
+      playLoseSound();
+      spendLife();
+      if(livesData.lives > 0){
+        showOverlay("Sepet doldu", "Sepet 7 malzemeyle doldu. Tekrar deneyebilir ya da ana menüye dönebilirsin.", "Baştan Başla", function(){
+          newLevel(1);
+        }, "Ana Menüye Dön", function(){
+          goToStartScreen();
+        });
+      } else {
+        showOverlay("Canların bitti", "Sepet doldu ve son canını da kullandın. Yeni canlar gelene kadar giriş ekranından takip edebilirsin.", "Ana Menüye Dön", function(){
+          goToStartScreen();
+        });
+      }
+    }
+  }
+
+  function showOverlay(title, text, btnLabel, action, btn2Label, btn2Action){
+    overlayTitle.textContent = title;
+    overlayText.textContent = text;
+    overlayBtn.textContent = btnLabel || "Tamam";
+    overlayAction = action || null;
+    if(btn2Label){
+      overlayBtn2.textContent = btn2Label;
+      overlayBtn2.hidden = false;
+      overlayAction2 = btn2Action || null;
+    } else {
+      overlayBtn2.hidden = true;
+      overlayAction2 = null;
+    }
+    overlay.classList.add("show");
+  }
+  function hideOverlay(){ overlay.classList.remove("show"); }
+
+  function shuffleBoard(){
+    if(!state || state.status!=="playing" || state.tiles.length===0) return;
+    var icons = state.tiles.map(function(t){ return t.icon; });
+    shuffle(icons);
+    state.tiles.forEach(function(t,i){ t.icon = icons[i]; });
+    render();
+  }
+
+  function useJoker(type){
+    if(!state || state.status!=="playing" || state.jokers[type]<=0) return;
+    if(type==="removeTile"){
+      armedJoker = (armedJoker==="removeTile") ? null : "removeTile";
+      renderJokers();
+      return;
+    }
+    if(type==="undo"){
+      if(state.tray.length===0) return;
+      state.jokers.undo--;
+      var last = state.tray.pop();
+      state.tiles.push({ id:last.id, icon:last.icon, layer:last.layer, x:last.x, y:last.y });
+      render();
+      renderTray();
+      renderJokers();
+      return;
+    }
+    state.jokers[type]--;
+    if(type==="shuffle"){
+      shuffleBoard();
+      playTone(700,0.08,"triangle",0.05);
+    } else if(type==="restartLevel"){
+      var kept = Object.assign({}, state.jokers);
+      newLevel(state.level, kept);
+      return;
+    }
+    renderJokers();
+  }
+
+  function buyJoker(type){
+    var names = { shuffle:"Karıştır", restartLevel:"Baştan Başla", removeTile:"Taşı Kaldır", undo:"Geri Al" };
+    showOverlay(
+      names[type] + " jokerini yenile",
+      "Gerçek uygulamada burada mağazanın (App Store / Google Play) satın alma ekranı açılır. Bu prototipte jokerini hemen yeniliyoruz.",
+      "Tamam, Yenile",
+      function(){
+        if(state){ state.jokers[type] = 1; renderJokers(); }
+      }
+    );
+  }
+
+  function scaleBoard(){
+    // Önce olası bir önceki kısıtlamayı temizle ki doğal (üst sınırsız) genişliği ölçebilelim.
+    board.style.maxWidth = "";
+    var naturalWidth = board.getBoundingClientRect().width;
+
+    // Kısa telefon ekranlarında tahta, kart içindeki diğer öğelerle (üst bar, istatistik,
+    // sepet, joker butonları) birlikte ekranı taşırmasın diye kalan dikey alanı da hesaba
+    // katıyoruz — sadece genişliğe göre değil, yüksekliğe göre de sığdırıyoruz.
+    var cardRect = gameScreen.getBoundingClientRect();
+    var cardStyle = getComputedStyle(gameScreen);
+    var otherHeight = 0;
+    var inFlowCount = 0;
+    Array.prototype.forEach.call(gameScreen.children, function(child){
+      // board-frame kendisi (ölçülecek olan) ve position:absolute olan pop-up'lar
+      // (örn. ayarlar penceresi) normal akışta yer kaplamaz — bunları saymazsak
+      // "kalan yükseklik" hesaplaması hep doğru çıkar, pop-up görünmese bile.
+      if(child === boardFrame || child.classList.contains("overlay")) return;
+      otherHeight += child.getBoundingClientRect().height;
+      inFlowCount++;
+    });
+    var gapPx = parseFloat(cardStyle.rowGap || cardStyle.gap) || 0;
+    otherHeight += inFlowCount * gapPx; // board-frame de akışta olduğundan tam olarak bu kadar boşluk vardır
+    otherHeight += parseFloat(cardStyle.paddingBottom) || 0;
+
+    var availableHeight = window.innerHeight - cardRect.top - otherHeight - 16;
+    var heightConstrainedWidth = Math.max(availableHeight, 0) * (BOARD_W / BOARD_H);
+
+    var finalWidth = Math.min(naturalWidth, Math.max(heightConstrainedWidth, 160));
+    if(finalWidth < naturalWidth - 1){
+      board.style.maxWidth = finalWidth + "px";
+    }
+
+    var rect = board.getBoundingClientRect();
+    var scale = rect.width / BOARD_W;
+    boardInner.style.transform = "scale(" + scale + ")";
+  }
+
+  function ensureAudio(){
+    if(!audioCtx){ try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
+    return audioCtx;
+  }
+  function playTone(freq, dur, type, vol){
+    if(soundVolume <= 0) return;
+    var ctx = ensureAudio();
+    if(!ctx) return;
+    if(ctx.state==="suspended"){ ctx.resume(); }
+    var o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type || "sine";
+    o.frequency.value = freq;
+    g.gain.value = (vol || 0.06) * soundVolume;
+    o.connect(g); g.connect(ctx.destination);
+    var now = ctx.currentTime;
+    g.gain.setValueAtTime(g.gain.value, now);
+    g.gain.exponentialRampToValueAtTime(0.0001, now+dur);
+    o.start(now); o.stop(now+dur);
+  }
+  function playChime(){
+    playTone(660, 0.12, "triangle", 0.05);
+    setTimeout(function(){ playTone(880, 0.12, "triangle", 0.05); }, 70);
+    setTimeout(function(){ playTone(1100, 0.16, "triangle", 0.055); }, 140);
+  }
+  function playWinSound(){
+    [523,659,784,1047].forEach(function(f,i){ setTimeout(function(){ playTone(f,0.18,"triangle",0.05); }, i*90); });
+  }
+  function playLoseSound(){
+    [392,330,262].forEach(function(f,i){ setTimeout(function(){ playTone(f,0.22,"sine",0.05); }, i*110); });
+  }
+
+  document.getElementById("overlayBtn").addEventListener("click", function(){
+    hideOverlay();
+    var a = overlayAction; overlayAction = null;
+    if(a) a();
+  });
+  overlayBtn2.addEventListener("click", function(){
+    hideOverlay();
+    var a = overlayAction2; overlayAction2 = null;
+    if(a) a();
+  });
+  // ---- Ayarlar: ses düzeyi + karanlık mod (yerel olarak bu tarayıcıda saklanır) ----
+  var SETTINGS_KEY = "snackstack_settings_v1";
+  function loadSettings(){
+    var d = null;
+    try{ d = JSON.parse(localStorage.getItem(SETTINGS_KEY)); }catch(e){}
+    if(!d) d = {};
+    if(typeof d.volume !== "number") d.volume = 0.8;
+    if(typeof d.darkMode !== "boolean"){
+      d.darkMode = !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    }
+    return d;
+  }
+  function saveSettings(){ try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(appSettings)); }catch(e){} }
+  var appSettings = loadSettings();
+  var soundVolume = appSettings.volume;
+  var lastVolumeBeforeMute = soundVolume > 0 ? soundVolume : 0.6;
+
+  function applyDarkMode(){
+    document.documentElement.setAttribute("data-theme", appSettings.darkMode ? "dark" : "light");
+  }
+  applyDarkMode();
+
+  var settingsOverlay = document.getElementById("settingsOverlay");
+  var settingsMuteBtn = document.getElementById("settingsMuteBtn");
+  var volumeSlider = document.getElementById("volumeSlider");
+  var darkModeToggle = document.getElementById("darkModeToggle");
+
+  function renderSoundUI(){
+    var muted = soundVolume <= 0;
+    settingsMuteBtn.querySelector(".on").style.display = muted ? "none" : "";
+    settingsMuteBtn.querySelector(".off").style.display = muted ? "" : "none";
+    settingsMuteBtn.title = muted ? "Sesi aç" : "Sesi kapat";
+    settingsMuteBtn.setAttribute("aria-label", settingsMuteBtn.title);
+    volumeSlider.value = Math.round(soundVolume*100);
+  }
+  renderSoundUI();
+  darkModeToggle.checked = appSettings.darkMode;
+
+  document.getElementById("btnSettings").addEventListener("click", function(){
+    settingsOverlay.classList.add("show");
+  });
+  document.getElementById("settingsCloseBtn").addEventListener("click", function(){
+    settingsOverlay.classList.remove("show");
+  });
+  settingsOverlay.addEventListener("click", function(e){
+    if(e.target === settingsOverlay) settingsOverlay.classList.remove("show");
+  });
+
+  settingsMuteBtn.addEventListener("click", function(){
+    if(soundVolume > 0){
+      lastVolumeBeforeMute = soundVolume;
+      soundVolume = 0;
+    } else {
+      soundVolume = lastVolumeBeforeMute > 0 ? lastVolumeBeforeMute : 0.6;
+    }
+    appSettings.volume = soundVolume; saveSettings();
+    renderSoundUI();
+  });
+  volumeSlider.addEventListener("input", function(){
+    soundVolume = Number(volumeSlider.value)/100;
+    if(soundVolume>0) lastVolumeBeforeMute = soundVolume;
+    appSettings.volume = soundVolume; saveSettings();
+    renderSoundUI();
+  });
+  volumeSlider.addEventListener("change", function(){
+    if(soundVolume>0) playTone(700,0.07,"triangle",0.05);
+  });
+
+  darkModeToggle.addEventListener("change", function(){
+    appSettings.darkMode = darkModeToggle.checked;
+    saveSettings();
+    applyDarkMode();
+  });
+
+  document.getElementById("settingsQuitBtn").addEventListener("click", function(){
+    settingsOverlay.classList.remove("show");
+    showOverlay(
+      "Emin misin?",
+      "Ana menüye dönmek üzeresiniz, canın gitmiş sayılacak.",
+      "Vazgeç", null,
+      "Evet, Çık", function(){
+        spendLife();
+        goToStartScreen();
+      }
+    );
+  });
+
+  document.querySelectorAll(".joker").forEach(function(btn){
+    btn.addEventListener("click", function(){ useJoker(this.dataset.type); });
+  });
+  document.querySelectorAll(".joker-plus").forEach(function(btn){
+    btn.addEventListener("click", function(e){ e.stopPropagation(); buyJoker(this.dataset.buy); });
+  });
+
+  window.addEventListener("resize", scaleBoard);
+  if(window.ResizeObserver){ new ResizeObserver(scaleBoard).observe(board); }
+
+  // ---- Snack Coins (Atıştırmalık Tokenleri) ------------------------------------
+  // Not: Gerçek bir hesap/ödeme sistemi olmadığından bakiye bu cihazda localStorage
+  // ile saklanır. Yeni her hesap 30 coin ile başlar.
+  var TOKENS_KEY = "snackstack_tokens_v1";
+  function loadTokens(){
+    var raw = null;
+    try{ raw = localStorage.getItem(TOKENS_KEY); }catch(e){}
+    if(raw === null){
+      raw = "30";
+      try{ localStorage.setItem(TOKENS_KEY, raw); }catch(e){}
+    }
+    return parseInt(raw, 10) || 0;
+  }
+  var tokenBalance = loadTokens();
+  function saveTokens(){ try{ localStorage.setItem(TOKENS_KEY, String(tokenBalance)); }catch(e){} }
+  function renderTokensUI(){
+    document.getElementById("tokenBalance").textContent = String(tokenBalance);
+    document.getElementById("gameTokenBalance").textContent = String(tokenBalance);
+  }
+  function addTokens(n){ tokenBalance += n; saveTokens(); renderTokensUI(); }
+  function spendTokens(n){
+    if(tokenBalance < n) return false;
+    tokenBalance -= n; saveTokens(); renderTokensUI();
+    return true;
+  }
+  renderTokensUI();
+
+  // ---- Can (life) sistemi -----------------------------------------------------
+  // Not: Gerçek App Store / Google Play girişine bağlı hesap senkronizasyonu için
+  // bir backend + mağaza SDK'sı gerekir; bu yalnızca statik bir HTML prototipi
+  // olduğundan burada "hesap" localStorage ile bu cihaz/tarayıcıya bağlı olarak
+  // simüle edilir. Canlar her gece yerel saatle 00:00'da (gece yarısında) toplu
+  // olarak tam dolar — kayan bir "son kullanımdan 24 saat sonra" mantığı DEĞİL,
+  // sabit bir takvim/duvar saati sıfırlaması. Reklam/satın alma ile kazanılan
+  // canlar bu sıfırlama saatini hiçbir şekilde değiştirmez (todayStr() aşağıda,
+  // günlük ödüller bölümünde tanımlı — fonksiyon hoisting sayesinde buradan
+  // erişilebilir).
+  var LIVES_MAX = 3;
+  var LIVES_KEY = "snackstack_lives_v1";
+
+  function loadLives(){
+    var data = null;
+    try{ data = JSON.parse(localStorage.getItem(LIVES_KEY)); }catch(e){}
+    if(!data || typeof data.lives!=="number") data = { lives: LIVES_MAX, resetDate: todayStr() };
+    if(data.resetDate !== todayStr()){
+      data.lives = LIVES_MAX;
+      data.resetDate = todayStr();
+    }
+    return data;
+  }
+  function saveLives(){ try{ localStorage.setItem(LIVES_KEY, JSON.stringify(livesData)); }catch(e){} }
+
+  var livesData = loadLives();
+  saveLives();
+
+  function spendLife(){
+    if(livesData.lives > 0){
+      livesData.lives--;
+      saveLives();
+    }
+    renderLives();
+  }
+
+  function nextMidnightMs(){
+    var d = new Date();
+    d.setHours(24, 0, 0, 0);
+    return d.getTime();
+  }
+
+  function pad2(n){ return n<10 ? "0"+n : ""+n; }
+  function formatCountdown(ms){
+    if(ms<0) ms=0;
+    var totalSec = Math.floor(ms/1000);
+    var h=Math.floor(totalSec/3600), m=Math.floor((totalSec%3600)/60), s=totalSec%60;
+    return pad2(h)+":"+pad2(m)+":"+pad2(s);
+  }
+
+  var livesHeartsEl = document.getElementById("livesHearts");
+  var livesTimerEl = document.getElementById("livesTimer");
+  var livesCountdownEl = document.getElementById("livesCountdown");
+  var playBtnEl = document.getElementById("playBtn");
+  var gameLivesHeartsEl = document.getElementById("gameLivesHearts");
+  var gameLivesTimerEl = document.getElementById("gameLivesTimer");
+  var gameLivesCountdownEl = document.getElementById("gameLivesCountdown");
+
+  function renderHeartsInto(container){
+    container.innerHTML = "";
+    for(var i=0;i<LIVES_MAX;i++){
+      var full = i < livesData.lives;
+      container.insertAdjacentHTML("beforeend",
+        '<span class="life-heart-wrap'+(full?"":" empty")+'">'
+        + '<svg class="life-heart" viewBox="0 0 24 24"><use href="#ic-heart"></use></svg>'
+        + '</span>');
+    }
+  }
+
+  function renderLives(){
+    renderHeartsInto(livesHeartsEl);
+    renderHeartsInto(gameLivesHeartsEl);
+    var refilling = livesData.lives < LIVES_MAX;
+    livesTimerEl.hidden = !refilling;
+    gameLivesTimerEl.hidden = !refilling;
+    playBtnEl.disabled = livesData.lives <= 0;
+    if(refilling){
+      var txt = formatCountdown(nextMidnightMs() - Date.now());
+      livesCountdownEl.textContent = txt;
+      gameLivesCountdownEl.textContent = txt;
+    }
+  }
+
+  setInterval(function(){
+    if(livesData.resetDate !== todayStr()){
+      livesData.lives = LIVES_MAX;
+      livesData.resetDate = todayStr();
+      saveLives();
+    }
+    renderLives();
+  }, 1000);
+  renderLives();
+
+  // ---- Giriş ekranı arka planı: yavaşça düşen yiyecek/içecek ikonları ----------
+  (function initFallingBg(){
+    var layer = document.getElementById("fallingLayer");
+    if(!layer) return;
+    var icons = ["apple","strawberry","carrot","broccoli","pizza","cocktail","cake","grapes","lemonade","pineapple","croissant","avocado"];
+    var html = "";
+    for(var i=0;i<16;i++){
+      var icon = icons[Math.floor(Math.random()*icons.length)];
+      var left = Math.round(Math.random()*94);
+      var size = Math.round(20 + Math.random()*22);
+      var duration = (9 + Math.random()*9).toFixed(1);
+      var delay = (-Math.random()*duration).toFixed(1);
+      var drift = Math.round(Math.random()*44-22);
+      var rot = Math.round(Math.random()*70-35);
+      html += '<svg class="fall-icon" viewBox="0 0 100 100" style="left:'+left+'%;width:'+size+'px;height:'+size+'px;'
+            + 'animation-duration:'+duration+'s;animation-delay:'+delay+'s;--drift:'+drift+'px;--rot:'+rot+'deg;">'
+            + '<use href="#ic-'+icon+'"></use></svg>';
+    }
+    layer.innerHTML = html;
+  })();
+
+  // Giriş ekranı: oyun durumu ("newLevel") kullanıcı "Oyna"ya basana kadar kurulmaz —
+  // hem gizliyken boyutu 0 olan tahtayı ölçme sorununu baştan önler hem de oyuncu
+  // ekrana girer girmez taze bir tahtayla karşılaşır.
+  var startScreen = document.getElementById("startScreen");
+  var gameScreen = document.getElementById("gameScreen");
+  playBtnEl.addEventListener("click", function(){
+    if(livesData.lives <= 0) return;
+    startScreen.classList.add("leaving");
+    setTimeout(function(){
+      startScreen.hidden = true;
+      gameScreen.hidden = false;
+      newLevel(1);
+    }, 200);
+  });
+  function goToStartScreen(){
+    gameScreen.hidden = true;
+    startScreen.hidden = false;
+    renderLives();
+    void startScreen.offsetWidth; // geçiş animasyonunun oynaması için zorla reflow
+    startScreen.classList.remove("leaving");
+  }
+
+  // ---- Kahramanlar Anıtı ---------------------------------------------------
+  // Not: Gerçek çok-oyunculu bir skor tablosu için sunucu tarafında paylaşılan
+  // bir veritabanı gerekir; bu statik prototipte sadece BU cihazdaki en yüksek
+  // seviye localStorage'da tutulur ve örnek (kurgusal) isimlerle birlikte
+  // gösterilir — "top 10" hissi verir ama gerçek diğer oyunculardan gelmez.
+  var BEST_LEVEL_KEY = "snackstack_best_level_v1";
+  function loadBestLevel(){
+    var v = 0;
+    try{ v = parseInt(localStorage.getItem(BEST_LEVEL_KEY), 10) || 0; }catch(e){}
+    return v;
+  }
+  var bestLevel = loadBestLevel();
+  function maybeUpdateBestLevel(level){
+    if(level > bestLevel){
+      bestLevel = level;
+      try{ localStorage.setItem(BEST_LEVEL_KEY, String(bestLevel)); }catch(e){}
+    }
+  }
+
+  var MOCK_HEROES = [
+    { name:"Elmalı Ece",    level:42 },
+    { name:"Kaşıkçı Kemal", level:38 },
+    { name:"Brokoli Baran", level:35 },
+    { name:"Sepetçi Su",    level:31 },
+    { name:"Turşucu Tuna",  level:27 },
+    { name:"Avokado Ada",   level:23 },
+    { name:"Mangal Mert",   level:19 },
+    { name:"Limonata Leyla",level:14 },
+    { name:"Cimcik Cem",    level:9 }
+  ];
+
+  function renderHeroes(){
+    var list = document.getElementById("heroesList");
+    var rows = MOCK_HEROES.map(function(h){ return { name:h.name, level:h.level, me:false }; });
+    rows.push({ name:"Sen", level: Math.max(bestLevel,1), me:true });
+    rows.sort(function(a,b){ return b.level - a.level; });
+    rows = rows.slice(0, 10);
+    list.innerHTML = rows.map(function(r, i){
+      return '<li class="heroes-row'+(r.me?" me":"")+'">'
+        + '<span class="heroes-rank">'+(i+1)+'</span>'
+        + '<span class="heroes-name">'+r.name+'</span>'
+        + '<span class="heroes-level">Sv. '+r.level+'</span>'
+        + '</li>';
+    }).join("");
+  }
+
+  var heroesOverlay = document.getElementById("heroesOverlay");
+  document.getElementById("heroesBtn").addEventListener("click", function(){
+    renderHeroes();
+    heroesOverlay.classList.add("show");
+  });
+  document.getElementById("heroesCloseBtn").addEventListener("click", function(){
+    heroesOverlay.classList.remove("show");
+  });
+  heroesOverlay.addEventListener("click", function(e){
+    if(e.target === heroesOverlay) heroesOverlay.classList.remove("show");
+  });
+
+  // ---- Can Kazan ------------------------------------------------------------
+  // Not: Burada gerçek bir ödeme altyapısı ya da reklam SDK'sı yok — bu statik
+  // prototipte "Can satın al" ve "Reklam izle" seçenekleri simüle edilir (gerçek
+  // para/reklam olmadan doğrudan can ekler); reklam seçeneklerinde kısa bir
+  // "oynatılıyor" bekleme animasyonu var ki akış gerçek entegrasyona hazır dursun.
+  function grantLives(n){
+    // Not: Bu, canların gece yarısı sıfırlama tarihini (resetDate) hiç değiştirmez —
+    // reklam/satın alma ile kazanılan canlar günlük yenilenme saatini etkilemez.
+    livesData.lives = Math.min(LIVES_MAX, livesData.lives + n);
+    saveLives();
+    renderLives();
+  }
+  function refillAllLives(){
+    livesData.lives = LIVES_MAX;
+    saveLives();
+    renderLives();
+  }
+  // Reklam oynatma simülasyonu: gerçek bir reklam SDK'sı yok, bu yalnızca akışı
+  // (süre, "reklamı atla" düğmesinin belirli bir süre sonra belirmesi, çoklu reklam
+  // zinciri) göstermek için görsel bir simülasyondur. Bu, canların gece yarısı
+  // yenilenme takvimini (resetDate) HİÇ etkilemez — sadece grantLives/refillAllLives
+  // çağrılarıyla doğrudan can ekler.
+  var adPlayerOverlay = document.getElementById("adPlayerOverlay");
+  var adTimerEl = document.getElementById("adTimer");
+  var adSkipBtn = document.getElementById("adSkipBtn");
+  var adProgressEl = document.getElementById("adProgress");
+  var adProgressNumEl = document.getElementById("adProgressNum");
+
+  function formatAdTime(s){
+    var m = Math.floor(s/60), sec = s%60;
+    return m + ":" + (sec<10 ? "0"+sec : sec);
+  }
+  function playSimulatedAd(durationSec, skipAfterSec){
+    return new Promise(function(resolve){
+      var elapsed = 0;
+      adSkipBtn.hidden = true;
+      adTimerEl.textContent = formatAdTime(durationSec);
+      adPlayerOverlay.classList.add("show");
+
+      var timer = setInterval(function(){
+        elapsed++;
+        var remaining = Math.max(durationSec - elapsed, 0);
+        adTimerEl.textContent = formatAdTime(remaining);
+        if(elapsed >= skipAfterSec) adSkipBtn.hidden = false;
+        if(remaining <= 0) finish();
+      }, 1000);
+
+      function finish(){
+        clearInterval(timer);
+        adPlayerOverlay.classList.remove("show");
+        adSkipBtn.onclick = null;
+        resolve();
+      }
+      adSkipBtn.onclick = function(){
+        if(elapsed >= skipAfterSec) finish();
+      };
+    });
+  }
+
+  var getLivesOverlay = document.getElementById("getLivesOverlay");
+  document.getElementById("livesAddBtn").addEventListener("click", function(){
+    getLivesOverlay.classList.add("show");
+  });
+  document.getElementById("getLivesCloseBtn").addEventListener("click", function(){
+    getLivesOverlay.classList.remove("show");
+  });
+  getLivesOverlay.addEventListener("click", function(e){
+    if(e.target === getLivesOverlay) getLivesOverlay.classList.remove("show");
+  });
+
+  // ---- Snack Coin satın alma ----------------------------------------------
+  // Not: Snack Coin'ler yalnızca gerçek para ile satın alınabilir ve bu statik
+  // prototipte gerçek bir ödeme altyapısı/mağaza SDK'sı yok — bu yüzden paket
+  // butonları coin EKLEMEZ, sadece bunu açıkça belirten bir mesaj gösterir.
+  // Gerçek entegrasyonda her paket butonu ilgili mağaza satın alma akışını başlatır.
+  var buyCoinsOverlay = document.getElementById("buyCoinsOverlay");
+  var buyCoinsMsg = document.getElementById("buyCoinsMsg");
+  var buyCoinsMsgDefault = buyCoinsMsg.textContent;
+  // Kullanıcının tarayıcı diline göre TL ya da $ göster (kaba bir bölge tahmini;
+  // gerçek bir mağaza entegrasyonunda bu bilgi mağazanın kendisinden gelir).
+  (function setCoinPackPrices(){
+    var isTurkish = ((navigator.language || navigator.userLanguage || "").toLowerCase().indexOf("tr") === 0);
+    document.querySelectorAll(".coin-pack-btn").forEach(function(btn){
+      var priceEl = btn.querySelector(".coin-pack-price");
+      priceEl.textContent = isTurkish ? btn.dataset.tl : btn.dataset.usd;
+    });
+  })();
+  document.getElementById("buyCoinsBtn").addEventListener("click", function(){
+    buyCoinsOverlay.classList.add("show");
+  });
+  document.getElementById("buyCoinsCloseBtn").addEventListener("click", function(){
+    buyCoinsOverlay.classList.remove("show");
+  });
+  buyCoinsOverlay.addEventListener("click", function(e){
+    if(e.target === buyCoinsOverlay) buyCoinsOverlay.classList.remove("show");
+  });
+  document.querySelectorAll(".coin-pack-btn").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      buyCoinsMsg.textContent = "Bu prototipte gerçek ödeme altyapısı bulunmuyor.";
+      buyCoinsMsg.style.color = "var(--danger)";
+      setTimeout(function(){
+        buyCoinsMsg.textContent = buyCoinsMsgDefault;
+        buyCoinsMsg.style.color = "";
+      }, 1800);
+    });
+  });
+  var buyLifeBtn = document.getElementById("buyLifeBtn");
+  buyLifeBtn.addEventListener("click", function(){
+    var label = buyLifeBtn.querySelector(".get-lives-text small");
+    var prevText = label.textContent;
+    if(spendTokens(10)){
+      grantLives(1);
+      getLivesOverlay.classList.remove("show");
+    } else {
+      label.textContent = "Yetersiz Snack Coin! (10 gerekli)";
+      label.style.color = "var(--danger)";
+      setTimeout(function(){
+        label.textContent = prevText;
+        label.style.color = "";
+      }, 1600);
+    }
+  });
+  document.getElementById("watchAdLifeBtn").addEventListener("click", function(){
+    getLivesOverlay.classList.remove("show");
+    adProgressEl.hidden = true;
+    playSimulatedAd(30, 5).then(function(){
+      grantLives(1);
+    });
+  });
+  document.getElementById("watchAdRefillBtn").addEventListener("click", function(){
+    getLivesOverlay.classList.remove("show");
+    adProgressEl.hidden = false;
+    adProgressNumEl.textContent = "1";
+    playSimulatedAd(30, 5).then(function(){
+      adProgressNumEl.textContent = "2";
+      return playSimulatedAd(30, 5);
+    }).then(function(){
+      refillAllLives();
+    });
+  });
+
+  // ---- Günlük Giriş Ödülleri --------------------------------------------------
+  // Not: "Hesap" bu cihazda localStorage ile takip edilir; ilk açılıştan itibaren
+  // 7 takvim günü boyunca aktif kalan bir ödül şeridi. Bir gün atlanırsa o günün
+  // ödülü kaçırılmış sayılır ama pencere yine de tam 7 gün sonra kapanır.
+  var DAILY_KEY = "snackstack_daily_v1";
+  var DAILY_REWARDS = [5, 15, 30, 50, 50, 65, 70];
+
+  function todayStr(){
+    var d = new Date();
+    function p(n){ return n < 10 ? "0"+n : ""+n; }
+    return d.getFullYear() + "-" + p(d.getMonth()+1) + "-" + p(d.getDate());
+  }
+  function daysBetween(a, b){
+    var da = new Date(a + "T00:00:00");
+    var db = new Date(b + "T00:00:00");
+    return Math.round((db - da) / 86400000);
+  }
+  function loadDaily(){
+    var d = null;
+    try{ d = JSON.parse(localStorage.getItem(DAILY_KEY)); }catch(e){}
+    if(!d || !d.firstDate){
+      d = { firstDate: todayStr(), claimed: {}, lastPromptDate: null };
+      try{ localStorage.setItem(DAILY_KEY, JSON.stringify(d)); }catch(e){}
+    }
+    return d;
+  }
+  var dailyData = loadDaily();
+  function saveDaily(){ try{ localStorage.setItem(DAILY_KEY, JSON.stringify(dailyData)); }catch(e){} }
+  function currentDayIndex(){ return daysBetween(dailyData.firstDate, todayStr()) + 1; }
+
+  var dailyOverlay = document.getElementById("dailyOverlay");
+  var calendarBtn = document.getElementById("calendarBtn");
+  var dailyClaimBtn = document.getElementById("dailyClaimBtn");
+
+  function renderDailyModal(){
+    var day = currentDayIndex();
+    var grid = document.getElementById("dailyGrid");
+    grid.innerHTML = DAILY_REWARDS.map(function(amount, i){
+      var d = i + 1;
+      var cls;
+      if(dailyData.claimed[d]) cls = "claimed";
+      else if(d === day) cls = "today";
+      else if(d < day) cls = "missed";
+      else cls = "locked";
+      var badge = "";
+      if(cls === "claimed") badge = '<span class="daily-chip-check"><svg viewBox="0 0 24 24"><use href="#ic-check"></use></svg></span>';
+      else if(cls === "locked") badge = '<span class="daily-chip-lock"><svg viewBox="0 0 24 24"><use href="#ic-lock"></use></svg></span>';
+      return '<div class="daily-chip '+cls+'">'
+        + '<span class="daily-chip-day">Gün '+d+'</span>'
+        + '<svg class="daily-chip-coin" viewBox="0 0 100 100"><use href="#ic-coin"></use></svg>'
+        + '<span class="daily-chip-amount">'+amount+'</span>'
+        + badge
+        + '</div>';
+    }).join("");
+
+    if(day < 1 || day > 7){
+      dailyClaimBtn.hidden = true;
+    } else if(dailyData.claimed[day]){
+      dailyClaimBtn.hidden = false;
+      dailyClaimBtn.disabled = true;
+      dailyClaimBtn.textContent = "Bugünün ödülü toplandı ✓";
+    } else {
+      dailyClaimBtn.hidden = false;
+      dailyClaimBtn.disabled = false;
+      dailyClaimBtn.textContent = "Günlük Ödülümü Topla! (+" + DAILY_REWARDS[day-1] + ")";
+    }
+  }
+
+  function updateCalendarBtnVisibility(){
+    var day = currentDayIndex();
+    calendarBtn.hidden = !(day >= 1 && day <= 7);
+  }
+  updateCalendarBtnVisibility();
+
+  function openDailyModal(){
+    renderDailyModal();
+    dailyOverlay.classList.add("show");
+  }
+  calendarBtn.addEventListener("click", openDailyModal);
+  document.getElementById("dailyCloseBtn").addEventListener("click", function(){
+    dailyOverlay.classList.remove("show");
+  });
+  dailyOverlay.addEventListener("click", function(e){
+    if(e.target === dailyOverlay) dailyOverlay.classList.remove("show");
+  });
+  dailyClaimBtn.addEventListener("click", function(){
+    var day = currentDayIndex();
+    if(day < 1 || day > 7 || dailyData.claimed[day]) return;
+    dailyData.claimed[day] = true;
+    saveDaily();
+    addTokens(DAILY_REWARDS[day-1]);
+    renderDailyModal();
+    setTimeout(function(){ dailyOverlay.classList.remove("show"); }, 700);
+  });
+
+  // Yeni bir güne girildiyse ve bugünün ödülü henüz toplanmadıysa, giriş ekranı
+  // yüklendiğinde pop-up'ı otomatik göster (günde en fazla 1 kez).
+  (function maybeAutoShowDaily(){
+    var day = currentDayIndex();
+    if(day < 1 || day > 7) return;
+    if(dailyData.claimed[day]) return;
+    if(dailyData.lastPromptDate === todayStr()) return;
+    dailyData.lastPromptDate = todayStr();
+    saveDaily();
+    setTimeout(openDailyModal, 500);
+  })();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <filter id="soft-blur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.5"/></filter>
+    <radialGradient id="g-alienleg" cx="32%" cy="22%" r="85%">
+      <stop offset="0" stop-color="#EBD4FF"/><stop offset="0.5" stop-color="#9C5EDD"/><stop offset="1" stop-color="#4A1F82"/>
+    </radialGradient>
+    <linearGradient id="g-claw" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F5EEDC"/><stop offset="1" stop-color="#C9B888"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="54" cy="88" rx="24" ry="6" fill="#000" opacity="0.28" filter="url(#soft-blur)"/>
+  <path d="M40 24 C58 18 74 30 70 48 C67 61 55 66 48 77 C43 85 30 84 28 75 C26 67 35 62 37 51 C29 45 27 32 40 24 Z"
+        fill="url(#g-alienleg)" stroke="#341462" stroke-width="2.8" stroke-linejoin="round"/>
+  <path d="M42 40 Q52 43 60 39" stroke="#341462" stroke-width="2" fill="none" opacity="0.45"/>
+  <path d="M39 58 Q48 61 55 57" stroke="#341462" stroke-width="2" fill="none" opacity="0.45"/>
+  <g fill="#7C3EC2" opacity="0.55">
+    <circle cx="46" cy="33" r="2.2"/><circle cx="58" cy="42" r="1.8"/><circle cx="41" cy="63" r="2"/>
+  </g>
+  <path d="M26 72 Q22 80 27 87 Q33 90 37 84 Q40 78 34 74 Q30 70 26 72 Z" fill="url(#g-claw)" stroke="#8B7A4E" stroke-width="1.8"/>
+  <path d="M29 76 L25 80 M33 78 L30 83" stroke="#8B7A4E" stroke-width="1.6" stroke-linecap="round"/>
+  <ellipse cx="46" cy="34" rx="8" ry="12" fill="#fff" opacity="0.3"/>
+  <path d="M44 22 Q40 16 44 10" stroke="#F0E0FF" stroke-width="2.4" fill="none" stroke-linecap="round" opacity="0.55"/>
+</svg>
