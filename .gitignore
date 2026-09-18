@@ -1,6 +1,9 @@
 # Godot editor cache (auto-regenerated, no need to version)
 .godot/
 
+# MCP sunucu ayarları (API anahtarları içerir, asla commit'lenmemeli)
+.mcp.json
+
 # OS
 Thumbs.db
 .DS_Store

@@ -164,6 +164,85 @@
   .start-screen.leaving{ opacity:0; transform:scale(0.96); }
   .start-screen > *:not(.falling-layer):not(.start-topbar):not(.overlay){ position:relative; z-index:1; }
 
+  .map-screen{
+    padding:14px 14px 18px; transition: opacity .22s ease, transform .22s ease;
+    aspect-ratio: 375 / 812; max-height: calc(100vh - 48px); max-height: calc(100dvh - 48px);
+    background:
+      radial-gradient(120% 70% at 20% -10%, rgba(255,255,255,0.25), transparent 55%),
+      url(../assets/map/greenvalley/textures/grass.png);
+    background-size: auto, 220px 220px;
+    background-repeat: no-repeat, repeat;
+  }
+  .map-screen.leaving{ opacity:0; transform:scale(0.96); }
+  .map-topbar{ display:flex; align-items:center; gap:10px; }
+  .map-title{ margin:0; flex:1; text-align:center; font-size:1.05rem; margin-right:34px; }
+  .map-path{
+    position:relative; flex:1; overflow-y:auto; overflow-x:hidden;
+    display:flex; flex-direction:column-reverse; align-items:stretch;
+    padding:20px 8px; -webkit-overflow-scrolling:touch;
+  }
+  .map-lines{ position:absolute; top:0; left:0; z-index:0; pointer-events:none; }
+  .map-decor{ position:absolute; z-index:0; pointer-events:none; filter:drop-shadow(0 3px 3px rgba(20,40,10,.25)); }
+  .map-signpost{
+    position:relative; z-index:1; align-self:center; width:64px; height:auto;
+    margin:4px 0 2px; pointer-events:none; filter:drop-shadow(0 3px 3px rgba(20,40,10,.25));
+  }
+  .map-line-path{
+    fill:none; stroke:var(--ink-soft); stroke-width:3; stroke-linecap:round;
+    stroke-dasharray:2 12; opacity:.55;
+  }
+  .map-node-wrap{ position:relative; z-index:1; display:flex; margin:8px 0; }
+  .map-node-wrap.side-a{ justify-content:flex-start; padding-left:16%; }
+  .map-node-wrap.side-b{ justify-content:flex-end; padding-right:16%; }
+  .map-star-badge{
+    position:absolute; top:-6px; right:-6px; width:22px; height:22px; border-radius:50%;
+    background:linear-gradient(160deg, #FFD873, #F0A93A); box-shadow:0 2px 4px rgba(0,0,0,.25), 0 0 0 2px var(--card);
+    display:flex; align-items:center; justify-content:center; color:#fff; z-index:2;
+  }
+  .map-star-badge svg{ width:13px; height:13px; }
+  .map-node{
+    width:54px; height:54px; border-radius:50%; border:none; padding:0; position:relative;
+    display:flex; align-items:center; justify-content:center;
+    font-family:"Baloo 2",sans-serif; font-weight:800; font-size:1.05rem; color:#fff;
+    cursor:default;
+  }
+  .map-node svg{ width:22px; height:22px; }
+  .map-node.state-done{
+    background:linear-gradient(160deg, #9BE39F, #4CAF63);
+    box-shadow:0 4px 0 #2E7D42, 0 6px 10px rgba(20,50,20,.22), inset 0 1px 0 rgba(255,255,255,.4);
+    color:#fff; cursor:pointer; touch-action:manipulation;
+  }
+  .map-node.state-done:active{ transform:translateY(2px); }
+  .map-node.state-done:disabled{ opacity:.6; cursor:default; }
+  .map-node.state-locked{
+    background:rgba(245,239,224,0.5); color:rgba(88,95,130,0.4);
+    box-shadow:inset 0 0 0 1px var(--line);
+  }
+  .map-lock-badge{
+    position:absolute; top:-6px; right:-6px; width:20px; height:20px; border-radius:50%;
+    background:var(--ink-soft); box-shadow:0 2px 4px rgba(0,0,0,.2), 0 0 0 2px var(--card);
+    display:flex; align-items:center; justify-content:center; color:#fff; z-index:2;
+  }
+  .map-lock-badge svg{ width:11px; height:11px; }
+  .map-node.state-current{
+    background:linear-gradient(160deg, var(--joker-top), var(--joker-base));
+    box-shadow:0 4px 0 var(--joker-edge), 0 8px 16px rgba(20,10,0,.3), 0 0 0 5px rgba(255,138,61,.22);
+    cursor:pointer; touch-action:manipulation;
+    animation: mapPulse 1.6s ease-in-out infinite;
+  }
+  .map-node.state-current:active{ transform:translateY(2px); }
+  .map-node.state-current:disabled{ opacity:.55; cursor:default; animation:none; }
+  @keyframes mapPulse{
+    0%,100%{ box-shadow:0 4px 0 var(--joker-edge), 0 8px 16px rgba(20,10,0,.3), 0 0 0 5px rgba(255,138,61,.22); }
+    50%{ box-shadow:0 4px 0 var(--joker-edge), 0 8px 16px rgba(20,10,0,.3), 0 0 0 9px rgba(255,138,61,.1); }
+  }
+  @media (prefers-reduced-motion: reduce){ .map-node.state-current{ animation:none; } }
+  .map-node-badge{
+    position:absolute; bottom:-15px; left:50%; transform:translateX(-50%);
+    font-size:0.6rem; font-weight:800; color:#fff; background:var(--accent);
+    padding:2px 8px; border-radius:999px; white-space:nowrap; box-shadow:0 2px 4px rgba(0,0,0,.2);
+  }
+
   .start-topbar{
     position:absolute; top:12px; right:14px; z-index:2;
     display:flex; align-items:center; gap:8px;
@@ -797,6 +876,10 @@
       <path d="M4 12.5 9.5 18 20 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
     </symbol>
 
+    <symbol id="ic-star" viewBox="0 0 24 24">
+      <path d="M12 2.5l2.9 6.06 6.6.72-4.9 4.6 1.28 6.58L12 17.3l-5.88 3.16L7.4 13.9l-4.9-4.6 6.6-.72z" fill="currentColor"/>
+    </symbol>
+
     <!-- Müşteriler -->
     <symbol id="ic-cust-octo" viewBox="0 0 100 100">
       <defs><radialGradient id="g-cust-octo" cx="35%" cy="26%" r="80%"><stop offset="0" stop-color="#C8FFF2"/><stop offset="0.5" stop-color="#4FCBB0"/><stop offset="1" stop-color="#146054"/></radialGradient></defs>
@@ -1049,62 +1132,6 @@
       </div>
     </div>
 
-    <div class="overlay settings-overlay" id="buyCoinsOverlay">
-      <div class="card settings-card buy-coins-card">
-        <button class="settings-close" id="buyCoinsCloseBtn" aria-label="Kapat">
-          <svg viewBox="0 0 24 24" width="16" height="16"><use href="#ic-close"></use></svg>
-        </button>
-        <h2>Snack Coin Satın Al</h2>
-        <p class="buy-coins-sub" id="buyCoinsMsg">Snack Coin'ler yalnızca gerçek para ile satın alınabilir.</p>
-
-        <button class="coin-pack-btn" data-tl="29,99 TL" data-usd="$0.99">
-          <span class="coin-pack-icon"><svg viewBox="0 0 100 100"><use href="#ic-coin"></use></svg></span>
-          <span class="coin-pack-info">
-            <span class="coin-pack-name">Başlangıç Paketi</span>
-            <span class="coin-pack-amount"><s>100</s> 75 <svg viewBox="0 0 100 100"><use href="#ic-coin"></use></svg></span>
-          </span>
-          <span class="coin-pack-price"></span>
-        </button>
-
-        <button class="coin-pack-btn" data-tl="89,99 TL" data-usd="$2.99">
-          <span class="coin-pack-icon"><svg viewBox="0 0 100 100"><use href="#ic-coin-stack"></use></svg></span>
-          <span class="coin-pack-info">
-            <span class="coin-pack-name">Atıştırmalık Paketi</span>
-            <span class="coin-pack-amount"><s>350</s> 250 <svg viewBox="0 0 100 100"><use href="#ic-coin"></use></svg></span>
-          </span>
-          <span class="coin-pack-price"></span>
-        </button>
-
-        <button class="coin-pack-btn best" data-tl="199,99 TL" data-usd="$6.99">
-          <span class="coin-pack-badge">En Çok Satan</span>
-          <span class="coin-pack-icon"><svg viewBox="0 0 100 100"><use href="#ic-coin-pouch"></use></svg></span>
-          <span class="coin-pack-info">
-            <span class="coin-pack-name">Ziyafet Paketi</span>
-            <span class="coin-pack-amount"><s>900</s> 650 <svg viewBox="0 0 100 100"><use href="#ic-coin"></use></svg></span>
-          </span>
-          <span class="coin-pack-price"></span>
-        </button>
-
-        <button class="coin-pack-btn" data-tl="399,99 TL" data-usd="$13.99">
-          <span class="coin-pack-icon"><svg viewBox="0 0 100 100"><use href="#ic-coin-chest1"></use></svg></span>
-          <span class="coin-pack-info">
-            <span class="coin-pack-name">Gurme Paketi</span>
-            <span class="coin-pack-amount"><s>2.200</s> 1.500 <svg viewBox="0 0 100 100"><use href="#ic-coin"></use></svg></span>
-          </span>
-          <span class="coin-pack-price"></span>
-        </button>
-
-        <button class="coin-pack-btn" data-tl="799,99 TL" data-usd="$27.99">
-          <span class="coin-pack-icon"><svg viewBox="0 0 100 100"><use href="#ic-coin-chest2"></use></svg></span>
-          <span class="coin-pack-info">
-            <span class="coin-pack-name">Kralın Sofrası</span>
-            <span class="coin-pack-amount"><s>5.000</s> 3.500 <svg viewBox="0 0 100 100"><use href="#ic-coin"></use></svg></span>
-          </span>
-          <span class="coin-pack-price"></span>
-        </button>
-      </div>
-    </div>
-
     <div class="overlay settings-overlay" id="dailyOverlay">
       <div class="card settings-card daily-card">
         <button class="settings-close" id="dailyCloseBtn" aria-label="Kapat">
@@ -1138,6 +1165,72 @@
     </div>
   </div>
 
+  <div class="overlay settings-overlay" id="buyCoinsOverlay">
+    <div class="card settings-card buy-coins-card">
+      <button class="settings-close" id="buyCoinsCloseBtn" aria-label="Kapat">
+        <svg viewBox="0 0 24 24" width="16" height="16"><use href="#ic-close"></use></svg>
+      </button>
+      <h2>Snack Coin Satın Al</h2>
+      <p class="buy-coins-sub" id="buyCoinsMsg">Snack Coin'ler yalnızca gerçek para ile satın alınabilir.</p>
+
+      <button class="coin-pack-btn" data-tl="29,99 TL" data-usd="$0.99">
+        <span class="coin-pack-icon"><svg viewBox="0 0 100 100"><use href="#ic-coin"></use></svg></span>
+        <span class="coin-pack-info">
+          <span class="coin-pack-name">Başlangıç Paketi</span>
+          <span class="coin-pack-amount"><s>100</s> 75 <svg viewBox="0 0 100 100"><use href="#ic-coin"></use></svg></span>
+        </span>
+        <span class="coin-pack-price"></span>
+      </button>
+
+      <button class="coin-pack-btn" data-tl="89,99 TL" data-usd="$2.99">
+        <span class="coin-pack-icon"><svg viewBox="0 0 100 100"><use href="#ic-coin-stack"></use></svg></span>
+        <span class="coin-pack-info">
+          <span class="coin-pack-name">Atıştırmalık Paketi</span>
+          <span class="coin-pack-amount"><s>350</s> 250 <svg viewBox="0 0 100 100"><use href="#ic-coin"></use></svg></span>
+        </span>
+        <span class="coin-pack-price"></span>
+      </button>
+
+      <button class="coin-pack-btn best" data-tl="199,99 TL" data-usd="$6.99">
+        <span class="coin-pack-badge">En Çok Satan</span>
+        <span class="coin-pack-icon"><svg viewBox="0 0 100 100"><use href="#ic-coin-pouch"></use></svg></span>
+        <span class="coin-pack-info">
+          <span class="coin-pack-name">Ziyafet Paketi</span>
+          <span class="coin-pack-amount"><s>900</s> 650 <svg viewBox="0 0 100 100"><use href="#ic-coin"></use></svg></span>
+        </span>
+        <span class="coin-pack-price"></span>
+      </button>
+
+      <button class="coin-pack-btn" data-tl="399,99 TL" data-usd="$13.99">
+        <span class="coin-pack-icon"><svg viewBox="0 0 100 100"><use href="#ic-coin-chest1"></use></svg></span>
+        <span class="coin-pack-info">
+          <span class="coin-pack-name">Gurme Paketi</span>
+          <span class="coin-pack-amount"><s>2.200</s> 1.500 <svg viewBox="0 0 100 100"><use href="#ic-coin"></use></svg></span>
+        </span>
+        <span class="coin-pack-price"></span>
+      </button>
+
+      <button class="coin-pack-btn" data-tl="799,99 TL" data-usd="$27.99">
+        <span class="coin-pack-icon"><svg viewBox="0 0 100 100"><use href="#ic-coin-chest2"></use></svg></span>
+        <span class="coin-pack-info">
+          <span class="coin-pack-name">Kralın Sofrası</span>
+          <span class="coin-pack-amount"><s>5.000</s> 3.500 <svg viewBox="0 0 100 100"><use href="#ic-coin"></use></svg></span>
+        </span>
+        <span class="coin-pack-price"></span>
+      </button>
+    </div>
+  </div>
+
+  <div class="phone map-screen" id="mapScreen" hidden>
+    <div class="map-topbar">
+      <button class="icon-btn" id="mapBackBtn" title="Geri" aria-label="Geri">
+        <svg viewBox="0 0 24 24" width="18" height="18"><use href="#ic-close"></use></svg>
+      </button>
+      <h2 class="map-title">Seviye Haritası</h2>
+    </div>
+    <div class="map-path" id="mapPath"></div>
+  </div>
+
   <div class="phone" id="gameScreen" hidden>
     <div class="topbar">
       <div class="title-block">
@@ -1148,9 +1241,12 @@
         <p class="sub" id="subLine">Aynı gördüğün 3 kartı üçle!</p>
       </div>
       <div class="icon-btns">
-        <div class="token-badge mini">
-          <svg viewBox="0 0 100 100" width="16" height="16"><use href="#ic-coin"></use></svg>
-          <span id="gameTokenBalance">30</span>
+        <div class="token-badge-wrap">
+          <div class="token-badge mini">
+            <svg viewBox="0 0 100 100" width="16" height="16"><use href="#ic-coin"></use></svg>
+            <span id="gameTokenBalance">30</span>
+          </div>
+          <button class="lives-add-btn token-add-btn" id="gameBuyCoinsBtn" title="Snack Coin satın al" aria-label="Snack Coin satın al">+</button>
         </div>
         <button class="icon-btn" id="btnSettings" title="Ayarlar" aria-label="Ayarlar">
           <svg viewBox="0 0 24 24" width="18" height="18"><use href="#ic-gear"></use></svg>
@@ -1424,8 +1520,9 @@
     return { tiles: tiles, boardW: bw, boardH: bh };
   }
 
-  function newLevel(level, jokersOverride){
+  function newLevel(level, jokersOverride, isReplay){
     maybeUpdateBestLevel(level);
+    saveCurrentLevel(level);
     var config = getLevelConfig(level);
     var built = buildLevelTiles(config);
     BOARD_W = built.boardW; BOARD_H = built.boardH;
@@ -1436,7 +1533,8 @@
       status: "playing",
       matches: 0,
       jokers: jokersOverride || { shuffle:1, restartLevel:1, removeTile:1, undo:1 },
-      flightsInProgress: 0
+      flightsInProgress: 0,
+      isReplay: !!isReplay
     };
     armedJoker = null;
     board.style.aspectRatio = BOARD_W + " / " + BOARD_H;
@@ -1699,9 +1797,15 @@
     if(state.tiles.length===0 && state.status==="playing"){
       state.status="won";
       playWinSound();
-      showOverlay("Seviye " + state.level + " tamam!", "Tebrikler, tahtayı temizledin.", "Sonraki Seviye", function(){
-        newLevel(state.level+1);
-      });
+      if(state.isReplay){
+        showOverlay("Seviye " + state.level + " tamam!", "Tebrikler, tahtayı temizledin.", "Haritaya Dön", function(){
+          goToMapFromGame();
+        });
+      } else {
+        showOverlay("Seviye " + state.level + " tamam!", "Tebrikler, tahtayı temizledin.", "Sonraki Seviye", function(){
+          newLevel(state.level+1);
+        });
+      }
       return;
     }
     if(state.tray.length>=TRAY_MAX && state.status==="playing"){
@@ -1710,7 +1814,7 @@
       spendLife();
       if(livesData.lives > 0){
         showOverlay("Sepet doldu", "Sepet 7 malzemeyle doldu. Tekrar deneyebilir ya da ana menüye dönebilirsin.", "Baştan Başla", function(){
-          newLevel(1);
+          newLevel(state.level, null, state.isReplay);
         }, "Ana Menüye Dön", function(){
           goToStartScreen();
         });
@@ -1770,21 +1874,29 @@
       playTone(700,0.08,"triangle",0.05);
     } else if(type==="restartLevel"){
       var kept = Object.assign({}, state.jokers);
-      newLevel(state.level, kept);
+      newLevel(state.level, kept, state.isReplay);
       return;
     }
     renderJokers();
   }
 
+  var JOKER_COST = { removeTile:2, undo:2, shuffle:5, restartLevel:5 };
   function buyJoker(type){
     var names = { shuffle:"Karıştır", restartLevel:"Baştan Başla", removeTile:"Taşı Kaldır", undo:"Geri Al" };
+    var cost = JOKER_COST[type];
+    if(tokenBalance < cost){
+      openBuyCoins("Yeterli Snack Coin'iniz bulunmamakta.", true);
+      return;
+    }
     showOverlay(
       names[type] + " jokerini yenile",
-      "Gerçek uygulamada burada mağazanın (App Store / Google Play) satın alma ekranı açılır. Bu prototipte jokerini hemen yeniliyoruz.",
-      "Tamam, Yenile",
+      cost + " Snack Coin karşılığında bu jokeri yenilemek istiyor musun?",
+      "Onayla, Satın Al",
       function(){
-        if(state){ state.jokers[type] = 1; renderJokers(); }
-      }
+        if(state && spendTokens(cost)){ state.jokers[type] = 1; renderJokers(); }
+      },
+      "Vazgeç",
+      function(){}
     );
   }
 
@@ -2066,6 +2178,8 @@
     livesTimerEl.hidden = !refilling;
     gameLivesTimerEl.hidden = !refilling;
     playBtnEl.disabled = livesData.lives <= 0;
+    var mapCurrentBtn = document.querySelector(".map-node.state-current");
+    if(mapCurrentBtn) mapCurrentBtn.disabled = livesData.lives <= 0;
     if(refilling){
       var txt = formatCountdown(nextMidnightMs() - Date.now());
       livesCountdownEl.textContent = txt;
@@ -2109,14 +2223,162 @@
   // ekrana girer girmez taze bir tahtayla karşılaşır.
   var startScreen = document.getElementById("startScreen");
   var gameScreen = document.getElementById("gameScreen");
+  var mapScreen = document.getElementById("mapScreen");
+  var mapPath = document.getElementById("mapPath");
+  var mapBackBtn = document.getElementById("mapBackBtn");
+
+  // isReplay=true: zaten tamamlanmış bir seviye tekrar oynanıyor demektir — bu durumda
+  // seviye kazanılınca ilerleme bir sonraki seviyeye atlamaz, oyuncu haritaya döner
+  // (aksi halde ileri seviyeleri "es geçmiş" gibi görünürdü).
+  function enterLevel(level, isReplay){
+    mapScreen.classList.add("leaving");
+    setTimeout(function(){
+      mapScreen.hidden = true;
+      mapScreen.classList.remove("leaving");
+      gameScreen.hidden = false;
+      newLevel(level, null, isReplay);
+    }, 200);
+  }
+  function goToMapFromGame(){
+    gameScreen.hidden = true;
+    mapScreen.hidden = false;
+    renderMap();
+  }
+
+  // Harita: oyuncunun ilerlemesini gösteren kaydırmalı bir seviye yolu.
+  // Güncel seviye VE tamamlanmış geçmiş seviyeler oynanabilir (tekrar oynama serbest);
+  // gelecek (henüz açılmamış) seviyeler kilitli kalır. İlerleme yalnızca güncel seviyeyi
+  // geçtiğinde büyür — bir geçmiş seviyeyi tekrar oynamak asla geriye almaz.
+  function renderMap(){
+    mapPath.innerHTML = "";
+    var previewAhead = 6;
+    var topLevel = currentLevel + previewAhead;
+    for(var lvl = 1; lvl <= topLevel; lvl++){
+      (function(lvl){
+        var wrap = document.createElement("div");
+        wrap.className = "map-node-wrap " + (lvl % 2 === 0 ? "side-a" : "side-b");
+        var btn = document.createElement("button");
+        var state = lvl < currentLevel ? "done" : (lvl === currentLevel ? "current" : "locked");
+        btn.className = "map-node state-" + state;
+        if(state === "done"){
+          btn.innerHTML = '<svg viewBox="0 0 24 24"><use href="#ic-check"></use></svg>'
+            + '<span class="map-star-badge"><svg viewBox="0 0 24 24"><use href="#ic-star"></use></svg></span>';
+          btn.setAttribute("aria-label", "Seviye " + lvl + " tamamlandı, tekrar oyna");
+          btn.disabled = livesData.lives <= 0;
+          btn.addEventListener("click", function(){ enterLevel(lvl, true); });
+        } else if(state === "locked"){
+          btn.innerHTML = String(lvl)
+            + '<span class="map-lock-badge"><svg viewBox="0 0 24 24"><use href="#ic-lock"></use></svg></span>';
+          btn.setAttribute("aria-label", "Seviye " + lvl + " kilitli");
+        } else {
+          btn.textContent = String(lvl);
+          btn.setAttribute("aria-label", "Seviye " + lvl + " oyna");
+          btn.disabled = livesData.lives <= 0;
+          btn.addEventListener("click", function(){ enterLevel(currentLevel, false); });
+        }
+        wrap.appendChild(btn);
+        if(state === "current"){
+          var badge = document.createElement("span");
+          badge.className = "map-node-badge";
+          badge.textContent = "OYNA";
+          wrap.appendChild(badge);
+        }
+        mapPath.appendChild(wrap);
+      })(lvl);
+    }
+    // Yolun en başında (1. seviyenin altında) bölge girişini işaretleyen tabela
+    var signpost = document.createElement("img");
+    signpost.className = "map-signpost";
+    signpost.src = "../assets/map/greenvalley/signpost.png";
+    signpost.alt = "";
+    mapPath.insertBefore(signpost, mapPath.firstChild);
+    drawMapLines();
+    drawMapDecor();
+    var currentWrap = mapPath.querySelector(".state-current");
+    if(currentWrap){
+      requestAnimationFrame(function(){
+        currentWrap.closest(".map-node-wrap").scrollIntoView({ block:"center" });
+      });
+    }
+  }
+
+  // Düğümleri sırayla birbirine bağlayan kesik çizgili yol — her düğümün gerçek
+  // ekran konumundan hesaplanır, böylece zikzak yerleşim ne olursa olsun çizgi
+  // her zaman tam düğümden düğüme gider.
+  function drawMapLines(){
+    var old = mapPath.querySelector(".map-lines");
+    if(old) old.remove();
+    var wraps = mapPath.querySelectorAll(".map-node-wrap");
+    if(wraps.length < 2) return;
+    var svgNS = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("class", "map-lines");
+    var pathRect = mapPath.getBoundingClientRect();
+    var scrollLeft = mapPath.scrollLeft, scrollTop = mapPath.scrollTop;
+    var w = mapPath.scrollWidth, h = mapPath.scrollHeight;
+    svg.setAttribute("width", w);
+    svg.setAttribute("height", h);
+    svg.setAttribute("viewBox", "0 0 " + w + " " + h);
+    var pts = Array.prototype.map.call(wraps, function(wrap){
+      var r = wrap.querySelector(".map-node").getBoundingClientRect();
+      return (r.left - pathRect.left + scrollLeft + r.width/2) + "," + (r.top - pathRect.top + scrollTop + r.height/2);
+    });
+    var path = document.createElementNS(svgNS, "path");
+    path.setAttribute("class", "map-line-path");
+    path.setAttribute("d", "M " + pts.join(" L "));
+    svg.appendChild(path);
+    mapPath.appendChild(svg);
+  }
+
+  // Yeşil Vadi teması dekorları: düğümlerin karşı kenarına serpiştirilmiş
+  // ağaç/çalı/kaya/tavşan görselleri, tamamen kozmetik ve tıklanamaz.
+  // Not: bush/rock/rabbit henüz eklenmedi (Nano Banana'dan bekleniyor) — gelince buraya eklenecek.
+  var GREENVALLEY_DECOR = [
+    "../assets/map/greenvalley/tree.png",
+    "../assets/map/greenvalley/bush.png",
+    "../assets/map/greenvalley/rock.png",
+    "../assets/map/greenvalley/rabbit.png",
+    "../assets/map/greenvalley/flowers.png"
+  ];
+  function drawMapDecor(){
+    mapPath.querySelectorAll(".map-decor").forEach(function(el){ el.remove(); });
+    var wraps = mapPath.querySelectorAll(".map-node-wrap");
+    var pathRect = mapPath.getBoundingClientRect();
+    var scrollTop = mapPath.scrollTop;
+    var pathWidth = mapPath.clientWidth;
+    wraps.forEach(function(wrap, i){
+      if(i % 2 !== 0) return;
+      var btn = wrap.querySelector(".map-node");
+      var r = btn.getBoundingClientRect();
+      var cy = r.top - pathRect.top + scrollTop + r.height/2;
+      var size = 30 + (i % 3) * 6;
+      var img = document.createElement("img");
+      img.className = "map-decor";
+      img.src = GREENVALLEY_DECOR[(i/2 | 0) % GREENVALLEY_DECOR.length];
+      img.alt = "";
+      img.style.width = size + "px";
+      img.style.height = "auto";
+      var onLeft = wrap.classList.contains("side-b");
+      img.style.left = (onLeft ? 8 : (pathWidth - size - 8)) + "px";
+      img.style.top = (cy - size/2) + "px";
+      mapPath.appendChild(img);
+    });
+  }
+
   playBtnEl.addEventListener("click", function(){
     if(livesData.lives <= 0) return;
     startScreen.classList.add("leaving");
     setTimeout(function(){
       startScreen.hidden = true;
-      gameScreen.hidden = false;
-      newLevel(1);
+      mapScreen.hidden = false;
+      renderMap();
     }, 200);
+  });
+  mapBackBtn.addEventListener("click", function(){
+    mapScreen.hidden = true;
+    startScreen.hidden = false;
+    void startScreen.offsetWidth; // geçiş animasyonunun oynaması için zorla reflow
+    startScreen.classList.remove("leaving");
   });
   function goToStartScreen(){
     gameScreen.hidden = true;
@@ -2143,6 +2405,23 @@
       bestLevel = level;
       try{ localStorage.setItem(BEST_LEVEL_KEY, String(bestLevel)); }catch(e){}
     }
+  }
+
+  // Oyuncunun kaldığı seviye: "Oyna" ve seviye kaybı sonrası "Baştan Başla" bu seviyeden
+  // devam eder — artık her zaman 1. seviyeye değil, en son oynanan seviyeye döner.
+  var CURRENT_LEVEL_KEY = "snackstack_current_level_v1";
+  function loadCurrentLevel(){
+    var v = 1;
+    try{ v = parseInt(localStorage.getItem(CURRENT_LEVEL_KEY), 10) || 1; }catch(e){}
+    return Math.max(v, 1);
+  }
+  var currentLevel = loadCurrentLevel();
+  // Yalnızca ileri yönde günceller — tamamlanmış eski bir seviyeyi tekrar oynamak
+  // (bkz. enterLevel isReplay) gerçek ilerlemeyi asla geri almaz.
+  function saveCurrentLevel(level){
+    if(level <= currentLevel) return;
+    currentLevel = level;
+    try{ localStorage.setItem(CURRENT_LEVEL_KEY, String(currentLevel)); }catch(e){}
   }
 
   var MOCK_HEROES = [
@@ -2271,8 +2550,16 @@
       priceEl.textContent = isTurkish ? btn.dataset.tl : btn.dataset.usd;
     });
   })();
-  document.getElementById("buyCoinsBtn").addEventListener("click", function(){
+  function openBuyCoins(message, isWarning){
+    buyCoinsMsg.textContent = message || buyCoinsMsgDefault;
+    buyCoinsMsg.style.color = isWarning ? "var(--danger)" : "";
     buyCoinsOverlay.classList.add("show");
+  }
+  document.getElementById("buyCoinsBtn").addEventListener("click", function(){
+    openBuyCoins();
+  });
+  document.getElementById("gameBuyCoinsBtn").addEventListener("click", function(){
+    openBuyCoins();
   });
   document.getElementById("buyCoinsCloseBtn").addEventListener("click", function(){
     buyCoinsOverlay.classList.remove("show");
