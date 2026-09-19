@@ -189,8 +189,8 @@
     position:absolute; top:22%; left:50%; transform:translateX(-50%);
     font-size:1.3rem; line-height:1; filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));
   }
-  .map-line-edge{ fill:none; stroke:#b98a4e; stroke-width:24; stroke-linecap:round; stroke-linejoin:round; opacity:.55; }
-  .map-line-path{ fill:none; stroke:#f3d597; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; }
+  .map-line-edge{ fill:none; stroke:#b98a4e; stroke-width:17; stroke-linecap:round; stroke-linejoin:round; opacity:.55; }
+  .map-line-path{ fill:none; stroke:#f3d597; stroke-width:11; stroke-linecap:round; stroke-linejoin:round; }
   .map-node-wrap{ position:relative; z-index:1; display:flex; margin:8px 0; }
   .map-node-wrap.side-a{ justify-content:flex-start; padding-left:16%; }
   .map-node-wrap.side-b{ justify-content:flex-end; padding-right:16%; }
@@ -1410,7 +1410,7 @@
   // (üst sınır yok) — böylece hiçbir yüksek seviye bir öncekiyle birebir aynı görünmez ve
   // zorluk gerçekten hiç durmadan artar. Oyuncu ne kadar ileri gidebileceğini asla göremez;
   // bu tavan/tasarım bilgisi yalnızca bizim (geliştirici) tarafımızda, kodun içinde kalır.
-  function generateEndlessConfig(level){
+  function generateEndlessConfig(level){ // level = tablo sonrasi merdiven basamagi (yuklu seviye degil)
     var cols=6, rows=5;
     var base = cols*rows;
     var interiorCap = (rows-1)*(cols-1); // bir üst katmanın en fazla kaplayabileceği hücre sayısı
@@ -1431,10 +1431,22 @@
     for(var i=0;i<extraLayers;i++){ tiers.push(per + (i<rem ? 1 : 0)); }
     return { cols:cols, rows:rows, layers:tiers.length, tiers:tiers, icons:icons, copies:copies, pool:36 };
   }
+  // Zorluk dalgalanması: merdiven basamağı (rung) yavaş yavaş artar, ama seviye numarasının
+  // onlukta kaçıncı olduğuna göre bir dalga eklenir. 10 ve katları BOSS (belirgin zor),
+  // 9. onun hazırlığı (biraz zor), 1-2 ve 5. seviyeler nefes aldıran kolay/eğlenceli seviyeler.
+  // İlk 3 seviye eğitim: dalga yok, düz artış.
+  var DIFFICULTY_WAVE = { 0:2.5, 1:-1.5, 2:-1, 3:0, 4:0.5, 5:-1.5, 6:0.5, 7:1, 8:0, 9:1.5 };
+  function levelRung(level){
+    var base = 1 + (level-1)*0.3;
+    var wave = level <= 3 ? 0 : (DIFFICULTY_WAVE[level % 10] || 0);
+    if(level < 10) wave *= 0.5; // ilk onluk daha yumuşak
+    return Math.max(1, Math.round(base + wave));
+  }
   function getLevelConfig(level){
     level = Math.max(level,1);
-    if(level <= LEVEL_TABLE.length) return LEVEL_TABLE[level-1];
-    return generateEndlessConfig(level);
+    var rung = levelRung(level);
+    if(rung <= LEVEL_TABLE.length) return LEVEL_TABLE[rung-1];
+    return generateEndlessConfig(rung);
   }
 
   var board = document.getElementById("board");
@@ -2301,7 +2313,7 @@
   // her zaman tam düğümden düğüme gider.
   // Yol örnek noktaları: dekorlar yolun üstüne binmesin diye placeDecorImg bunları kullanır.
   var mapPathSamples = [];
-  var MAP_PATH_HALF = 12;
+  var MAP_PATH_HALF = 8;
   function drawMapLines(){
     var old = mapPath.querySelector(".map-lines");
     if(old) old.remove();
@@ -2496,42 +2508,39 @@
       }
     });
 
-    // Yol kenarı: her iki düğüm arasındaki yürüme yolunun hemen yanına ağaç/çalı/taş/tavşan
+    // Yol kenarı: düğümler arasındaki yürüme yolunun iki yanına da sık sık ağaç/çalı/taş/tavşan.
+    // Her örnek noktada iki taraf ayrı ayrı şansını dener; yola ve birbirine binmezler.
+    function placeKind(kind, kk, cxp, cyp, side, gap){
+      var sz, srcName;
+      if(kind < 0.35){ sz = 55 + Math.round(seededRand(kk+3)*30); srcName = "tree"; }
+      else if(kind < 0.65){ sz = 40 + Math.round(seededRand(kk+4)*24); srcName = "bush"; }
+      else if(kind < 0.88){ sz = 36 + Math.round(seededRand(kk+5)*26); srcName = "rock"; }
+      else { sz = 22 + Math.round(seededRand(kk+6)*14); srcName = "rabbit"; }
+      var ex = cxp + side*(gap + sz/2) - sz/2;
+      var ey = cyp - sz/2;
+      if(ex < 0 || ex + sz > pathWidth) return false;
+      if(srcName === "tree") return tryPlaceTree(ex, ey, sz);
+      var ccx = ex + sz/2, ccy = ey + sz/2;
+      for(var q=0; q<placedTrees.length; q++){
+        var o = placedTrees[q], md = (sz + o.size)/2*0.8;
+        if(Math.abs(ccx - o.cx) < md && Math.abs(ccy - o.cy) < md) return false;
+      }
+      return placeDecorImg("../assets/map/greenvalley/" + srcName + ".png", ex, ey, sz);
+    }
     var segCount = Math.floor(mapPathSamples.length / 11);
+    var slotIdx = [1, 3, 5, 7, 9];
     for(var sg=0; sg<segCount; sg++){
-      for(var slot=0; slot<3; slot++){
-        var kk = (sg+1)*1000 + slot*37;
-        if(seededRand(kk) > 0.85) continue;
-        var pt = mapPathSamples[sg*11 + (slot === 0 ? 2 : slot === 1 ? 5 : 8)];
-        var kind = seededRand(kk+1);
-        var firstSide = seededRand(kk+2) < 0.5 ? -1 : 1;
+      for(var slot=0; slot<slotIdx.length; slot++){
+        var pt = mapPathSamples[sg*11 + slotIdx[slot]];
         for(var sd=0; sd<2; sd++){
-          var side = sd === 0 ? firstSide : -firstSide;
-          var sz, srcName;
-          if(kind < 0.4){ sz = 58 + Math.round(seededRand(kk+3)*30); srcName = "tree"; }
-          else if(kind < 0.65){ sz = 44 + Math.round(seededRand(kk+4)*24); srcName = "bush"; }
-          else if(kind < 0.88){ sz = 40 + Math.round(seededRand(kk+5)*26); srcName = "rock"; }
-          else { sz = 24 + Math.round(seededRand(kk+6)*14); srcName = "rabbit"; }
-          var ex = pt.x + side*(MAP_PATH_HALF + sz/2 + 6) - sz/2;
-          var ey = pt.y - sz/2;
-          if(ex < 0 || ex + sz > pathWidth) continue;
-          var ok;
-          if(srcName === "tree"){ ok = tryPlaceTree(ex, ey, sz); }
-          else {
-            // ağaçlara binmesin
-            var hit = false, ccx = ex + sz/2, ccy = ey + sz/2;
-            for(var q=0; q<placedTrees.length; q++){
-              var o = placedTrees[q], md = (sz + o.size)/2*0.8;
-              if(Math.abs(ccx - o.cx) < md && Math.abs(ccy - o.cy) < md){ hit = true; break; }
-            }
-            ok = !hit && placeDecorImg("../assets/map/greenvalley/" + srcName + ".png", ex, ey, sz);
-          }
-          if(ok) break;
+          var kk = (sg+1)*1000 + slot*37 + sd*7;
+          if(seededRand(kk) > 0.75) continue;
+          var gap = MAP_PATH_HALF + 5 + Math.round(seededRand(kk+8)*22); // yola yakın veya biraz uzak
+          placeKind(seededRand(kk+1), kk, pt.x, pt.y, sd === 0 ? -1 : 1, gap);
         }
       }
     }
   }
-
   playBtnEl.addEventListener("click", function(){
     if(livesData.lives <= 0) return;
     startScreen.classList.add("leaving");
