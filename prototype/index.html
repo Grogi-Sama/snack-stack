@@ -2425,7 +2425,7 @@
       // Sol kenar: orman da bu kenara yayılıyor, kayalık+tavşan kümeleri ve
       // çalılıklarla karışık — yeşillik artık haritanın her iki tarafını kaplıyor.
       var leftRoll = seededRand(lvl*7+2);
-      if(leftRoll < 0.4){
+      if(leftRoll < 0.2){
         var rockSize = 55 + Math.round(seededRand(lvl*29)*35);
         placeDecorImg("../assets/map/greenvalley/rock.png", 8, cy - rockSize/2, rockSize);
         if(seededRand(lvl*31) < 0.65){
@@ -2437,7 +2437,7 @@
             placeDecorImg("../assets/map/greenvalley/rabbit.png", rx, ry, rSize);
           }
         }
-      } else if(leftRoll < 0.75){
+      } else if(leftRoll < 0.6){
         var leftTreeCount = 1 + Math.floor(seededRand(lvl*54)*2); // 1-2 ağaç
         for(var lt=0; lt<leftTreeCount; lt++){
           for(var lAttempt=0; lAttempt<6; lAttempt++){
@@ -2448,7 +2448,7 @@
             if(tryPlaceTree(4 + ltXSpread, cy - ltSize/2 + ltYJitter, ltSize)) break;
           }
         }      } else {
-        var bSize = 26 + Math.round(seededRand(lvl*53)*16);
+        var bSize = 52 + Math.round(seededRand(lvl*53)*32);
         placeDecorImg("../assets/map/greenvalley/bush.png", 8, cy - bSize/2, bSize);
       }
     });
