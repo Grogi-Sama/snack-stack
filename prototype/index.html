@@ -2258,7 +2258,7 @@
   // geçtiğinde büyür — bir geçmiş seviyeyi tekrar oynamak asla geriye almaz.
   function renderMap(){
     mapPath.innerHTML = "";
-    var previewAhead = 6;
+    var previewAhead = 30;
     var topLevel = currentLevel + previewAhead;
     for(var lvl = 1; lvl <= topLevel; lvl++){
       (function(lvl){
@@ -2400,11 +2400,11 @@
         placeDecorImg("../assets/map/greenvalley/rock.png", pathWidth - lakeW - 20, cy - 30, 60);
         placeDecorImg("../assets/map/greenvalley/rock.png", pathWidth - 46, cy + lakeH/2 - 14, 48);
       } else {
-        // Yoğun, örtüşen bir orman: her seviyede 3-5 ağaç, zigzag ana hat üzerinde
+        // Yoğun, örtüşen bir orman: her seviyede 5-8 ağaç, zigzag ana hat üzerinde
         // farklı boy/derinlikte serpiştirilip gerçek bir orman dokusu oluşturuyor.
         var zigzagOffsets = [4, 22, 40, 22];
         var zigOff = zigzagOffsets[lvl % zigzagOffsets.length];
-        var treeCount = 3 + Math.floor(seededRand(lvl*13)*3); // 3-5 ağaç
+        var treeCount = 5 + Math.floor(seededRand(lvl*13)*4); // 5-8 ağaç
         for(var t=0; t<treeCount; t++){
           var tSize = 45 + Math.round(seededRand(lvl*13+t*5)*65); // 45-110px, karışık boy
           var txSpread = Math.round(seededRand(lvl*17+t*5)*(pathWidth*0.32));
@@ -2424,7 +2424,8 @@
         }
       }
 
-      // Sol kenar: kayalık + irili ufaklı tavşan kümesi eğilimi
+      // Sol kenar: orman da bu kenara yayılıyor, kayalık+tavşan kümeleri ve
+      // çalılıklarla karışık — yeşillik artık haritanın her iki tarafını kaplıyor.
       var leftRoll = seededRand(lvl*7+2);
       if(leftRoll < 0.4){
         var rockSize = 55 + Math.round(seededRand(lvl*29)*35);
@@ -2438,7 +2439,15 @@
             placeDecorImg("../assets/map/greenvalley/rabbit.png", rx, ry, rSize);
           }
         }
-      } else if(leftRoll < 0.6){
+      } else if(leftRoll < 0.75){
+        var leftTreeCount = 2 + Math.floor(seededRand(lvl*54)*3); // 2-4 ağaç
+        for(var lt=0; lt<leftTreeCount; lt++){
+          var ltSize = 40 + Math.round(seededRand(lvl*55+lt*5)*55);
+          var ltXSpread = Math.round(seededRand(lvl*56+lt*5)*(pathWidth*0.24));
+          var ltYJitter = Math.round(seededRand(lvl*57+lt*5)*36) - 18;
+          placeDecorImg("../assets/map/greenvalley/tree.png", 4 + ltXSpread, cy - ltSize/2 + ltYJitter, ltSize);
+        }
+      } else {
         var bSize = 26 + Math.round(seededRand(lvl*53)*16);
         placeDecorImg("../assets/map/greenvalley/bush.png", 8, cy - bSize/2, bSize);
       }
