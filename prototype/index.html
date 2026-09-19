@@ -169,7 +169,7 @@
     aspect-ratio: 375 / 812; max-height: calc(100vh - 48px); max-height: calc(100dvh - 48px);
     background:
       radial-gradient(120% 70% at 20% -10%, rgba(255,255,255,0.25), transparent 55%),
-      url(../assets/map/greenvalley/textures/grass.png);
+      url(../assets/map/greenvalley/textures/grass.png?v=3);
     background-size: auto, 220px 220px;
     background-repeat: no-repeat, repeat;
   }
@@ -185,7 +185,7 @@
   .map-decor{ position:absolute; z-index:0; pointer-events:none; filter:drop-shadow(0 3px 3px rgba(20,40,10,.25)); }
   .map-river-band{
     position:absolute; left:0; right:0; height:52px; z-index:0; pointer-events:none;
-    background-image: url(../assets/map/greenvalley/textures/river.png);
+    background-image: url(../assets/map/greenvalley/textures/river.png?v=3);
     background-size: 220px 220px; background-repeat: repeat;
     -webkit-mask-image: linear-gradient(to bottom, transparent, black 25%, black 75%, transparent);
     mask-image: linear-gradient(to bottom, transparent, black 25%, black 75%, transparent);
@@ -2344,10 +2344,14 @@
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   }
+  // Asset guncellendiginde tarayici/CDN onbellegini kirmak icin surum etiketi —
+  // greenvalley altindaki gorselleri her yeniden islediginde bu sayiyi artir.
+  var GREENVALLEY_ASSET_V = "3";
+  function gvAsset(path){ return path + "?v=" + GREENVALLEY_ASSET_V; }
   function placeDecorImg(src, x, y, size){
     var img = document.createElement("img");
     img.className = "map-decor";
-    img.src = src;
+    img.src = gvAsset(src);
     img.alt = "";
     img.style.width = size + "px";
     img.style.height = "auto";
@@ -2384,7 +2388,7 @@
         boss.style.width = bossSize + "px";
         boss.style.left = (onLeftBoss ? 8 : (pathWidth - bossSize - 8)) + "px";
         boss.style.top = (cy - bossSize/2 - 4) + "px";
-        boss.innerHTML = '<img src="../assets/map/greenvalley/signpost.png" alt="" style="width:100%;display:block;">'
+        boss.innerHTML = '<img src="' + gvAsset("../assets/map/greenvalley/signpost.png") + '" alt="" style="width:100%;display:block;">'
           + '<span class="map-boss-skull">💀</span>';
         mapPath.appendChild(boss);
       }
