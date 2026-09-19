@@ -2383,7 +2383,10 @@
         var boss = document.createElement("div");
         boss.className = "map-boss-sign";
         boss.style.width = bossSize + "px";
-        boss.style.left = (onLeftBoss ? 8 : (pathWidth - bossSize - 8)) + "px";
+        // Düğümün hemen yanında: düğümün karşı (boş) tarafına, 6px aralıkla
+        var nodeLeft = r.left - pathRect.left, nodeRight = nodeLeft + r.width;
+        var bossX = onLeftBoss ? (nodeLeft - bossSize - 6) : (nodeRight + 6);
+        boss.style.left = Math.max(2, Math.min(pathWidth - bossSize - 2, bossX)) + "px";
         boss.style.top = (cy - bossSize/2 - 4) + "px";
         boss.innerHTML = '<img src="' + gvAsset("../assets/map/greenvalley/signpost.png") + '" alt="" style="width:100%;display:block;">'
           + '<span class="map-boss-skull">💀</span>';
