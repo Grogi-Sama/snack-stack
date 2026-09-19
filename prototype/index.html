@@ -183,9 +183,18 @@
   }
   .map-lines{ position:absolute; top:0; left:0; z-index:0; pointer-events:none; }
   .map-decor{ position:absolute; z-index:0; pointer-events:none; filter:drop-shadow(0 3px 3px rgba(20,40,10,.25)); }
-  .map-signpost{
-    position:relative; z-index:1; align-self:center; width:64px; height:auto;
-    margin:4px 0 2px; pointer-events:none; filter:drop-shadow(0 3px 3px rgba(20,40,10,.25));
+  .map-river-band{
+    position:absolute; left:0; right:0; height:52px; z-index:0; pointer-events:none;
+    background-image: url(../assets/map/greenvalley/textures/river.png);
+    background-size: 220px 220px; background-repeat: repeat;
+    -webkit-mask-image: linear-gradient(to bottom, transparent, black 25%, black 75%, transparent);
+    mask-image: linear-gradient(to bottom, transparent, black 25%, black 75%, transparent);
+  }
+  .map-boss-sign{ position:absolute; z-index:1; pointer-events:none; }
+  .map-boss-sign img{ display:block; width:100%; filter:drop-shadow(0 3px 3px rgba(20,40,10,.25)); }
+  .map-boss-skull{
+    position:absolute; top:22%; left:50%; transform:translateX(-50%);
+    font-size:1.3rem; line-height:1; filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));
   }
   .map-line-path{
     fill:none; stroke:var(--ink-soft); stroke-width:3; stroke-linecap:round;
@@ -2286,12 +2295,6 @@
         mapPath.appendChild(wrap);
       })(lvl);
     }
-    // Yolun en başında (1. seviyenin altında) bölge girişini işaretleyen tabela
-    var signpost = document.createElement("img");
-    signpost.className = "map-signpost";
-    signpost.src = "../assets/map/greenvalley/signpost.png";
-    signpost.alt = "";
-    mapPath.insertBefore(signpost, mapPath.firstChild);
     drawMapLines();
     drawMapDecor();
     var currentWrap = mapPath.querySelector(".state-current");
@@ -2330,38 +2333,95 @@
     mapPath.appendChild(svg);
   }
 
-  // Yeşil Vadi teması dekorları: düğümlerin karşı kenarına serpiştirilmiş
-  // ağaç/çalı/kaya/tavşan görselleri, tamamen kozmetik ve tıklanamaz.
-  // Not: bush/rock/rabbit henüz eklenmedi (Nano Banana'dan bekleniyor) — gelince buraya eklenecek.
-  var GREENVALLEY_DECOR = [
-    "../assets/map/greenvalley/tree.png",
-    "../assets/map/greenvalley/bush.png",
-    "../assets/map/greenvalley/rock.png",
-    "../assets/map/greenvalley/rabbit.png",
-    "../assets/map/greenvalley/flowers.png"
-  ];
+  // Yeşil Vadi teması dekorları: her seviye numarasına göre SABİT (seed'lenmiş) bir
+  // rastgelelikle üretilir — böylece her renderMap() çağrısında aynı seviye hep aynı
+  // dekoru gösterir (titreşmez), ama seviyeden seviyeye organik/çeşitli görünür.
+  // Sağ kenar orman kümelerine, sol kenar kayalık+tavşan kümelerine eğilimli;
+  // belirli aralıklarla da tam genişlikte bir nehir şeridi geçiyor.
+  function seededRand(seed){
+    var t = (seed + 0x6D2B79F5) | 0;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+  function placeDecorImg(src, x, y, size){
+    var img = document.createElement("img");
+    img.className = "map-decor";
+    img.src = src;
+    img.alt = "";
+    img.style.width = size + "px";
+    img.style.height = "auto";
+    img.style.left = Math.round(x) + "px";
+    img.style.top = Math.round(y) + "px";
+    mapPath.appendChild(img);
+  }
   function drawMapDecor(){
-    mapPath.querySelectorAll(".map-decor").forEach(function(el){ el.remove(); });
+    mapPath.querySelectorAll(".map-decor, .map-river-band, .map-boss-sign").forEach(function(el){ el.remove(); });
     var wraps = mapPath.querySelectorAll(".map-node-wrap");
     var pathRect = mapPath.getBoundingClientRect();
     var scrollTop = mapPath.scrollTop;
     var pathWidth = mapPath.clientWidth;
     wraps.forEach(function(wrap, i){
-      if(i % 2 !== 0) return;
+      var lvl = i + 1;
       var btn = wrap.querySelector(".map-node");
       var r = btn.getBoundingClientRect();
       var cy = r.top - pathRect.top + scrollTop + r.height/2;
-      var size = 30 + (i % 3) * 6;
-      var img = document.createElement("img");
-      img.className = "map-decor";
-      img.src = GREENVALLEY_DECOR[(i/2 | 0) % GREENVALLEY_DECOR.length];
-      img.alt = "";
-      img.style.width = size + "px";
-      img.style.height = "auto";
-      var onLeft = wrap.classList.contains("side-b");
-      img.style.left = (onLeft ? 8 : (pathWidth - size - 8)) + "px";
-      img.style.top = (cy - size/2) + "px";
-      mapPath.appendChild(img);
+
+      // Nehir: her ~9 seviyede bir tam genişlikte akan bir su şeridi
+      if(lvl % 9 === 0){
+        var river = document.createElement("div");
+        river.className = "map-river-band";
+        river.style.top = (cy - 26) + "px";
+        mapPath.appendChild(river);
+      }
+
+      // 10'un katları: boss seviyesi — tabela + kafatası, düğümün karşı kenarında
+      if(lvl % 10 === 0){
+        var bossSize = 50;
+        var onLeftBoss = wrap.classList.contains("side-b");
+        var boss = document.createElement("div");
+        boss.className = "map-boss-sign";
+        boss.style.width = bossSize + "px";
+        boss.style.left = (onLeftBoss ? 8 : (pathWidth - bossSize - 8)) + "px";
+        boss.style.top = (cy - bossSize/2 - 4) + "px";
+        boss.innerHTML = '<img src="../assets/map/greenvalley/signpost.png" alt="" style="width:100%;display:block;">'
+          + '<span class="map-boss-skull">💀</span>';
+        mapPath.appendChild(boss);
+      }
+
+      // Sağ kenar: orman kümesi eğilimi (1-3 ağaç, değişen boyutlarda)
+      var rightRoll = seededRand(lvl*7+1);
+      if(rightRoll < 0.55){
+        var treeCount = 1 + Math.floor(seededRand(lvl*7+11)*3);
+        for(var t=0; t<treeCount; t++){
+          var tSize = 24 + Math.round(seededRand(lvl*13+t)*26);
+          var txOff = 6 + Math.round(seededRand(lvl*17+t)*(pathWidth*0.2));
+          var tyOff = -18 + Math.round(seededRand(lvl*19+t)*36);
+          placeDecorImg("../assets/map/greenvalley/tree.png", pathWidth - tSize - 8 - txOff, cy - tSize/2 + tyOff, tSize);
+        }
+      } else if(rightRoll < 0.75){
+        var flSize = 26 + Math.round(seededRand(lvl*23)*18);
+        placeDecorImg("../assets/map/greenvalley/flowers.png", pathWidth - flSize - 10, cy - flSize/2, flSize);
+      }
+
+      // Sol kenar: kayalık + irili ufaklı tavşan kümesi eğilimi
+      var leftRoll = seededRand(lvl*7+2);
+      if(leftRoll < 0.4){
+        var rockSize = 26 + Math.round(seededRand(lvl*29)*16);
+        placeDecorImg("../assets/map/greenvalley/rock.png", 8, cy - rockSize/2, rockSize);
+        if(seededRand(lvl*31) < 0.65){
+          var rabbitCount = 1 + Math.floor(seededRand(lvl*37)*2);
+          for(var ri=0; ri<rabbitCount; ri++){
+            var rSize = 18 + Math.round(seededRand(lvl*41+ri)*20);
+            var rx = 12 + rockSize + ri*22 + Math.round(seededRand(lvl*43+ri)*14);
+            var ry = cy - rSize/2 + (Math.round(seededRand(lvl*47+ri)*20) - 10);
+            placeDecorImg("../assets/map/greenvalley/rabbit.png", rx, ry, rSize);
+          }
+        }
+      } else if(leftRoll < 0.6){
+        var bSize = 26 + Math.round(seededRand(lvl*53)*16);
+        placeDecorImg("../assets/map/greenvalley/bush.png", 8, cy - bSize/2, bSize);
+      }
     });
   }
 
