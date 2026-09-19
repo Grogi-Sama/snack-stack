@@ -2346,7 +2346,7 @@
   }
   // Asset guncellendiginde tarayici/CDN onbellegini kirmak icin surum etiketi —
   // greenvalley altindaki gorselleri her yeniden islediginde bu sayiyi artir.
-  var GREENVALLEY_ASSET_V = "3";
+  var GREENVALLEY_ASSET_V = "4";
   function gvAsset(path){ return path + "?v=" + GREENVALLEY_ASSET_V; }
   function placeDecorImg(src, x, y, size){
     var img = document.createElement("img");
@@ -2371,14 +2371,6 @@
       var r = btn.getBoundingClientRect();
       var cy = r.top - pathRect.top + scrollTop + r.height/2;
 
-      // Nehir: her ~9 seviyede bir tam genişlikte akan bir su şeridi
-      if(lvl % 9 === 0){
-        var river = document.createElement("div");
-        river.className = "map-river-band";
-        river.style.top = (cy - 26) + "px";
-        mapPath.appendChild(river);
-      }
-
       // 10'un katları: boss seviyesi — tabela + kafatası, düğümün karşı kenarında
       if(lvl % 10 === 0){
         var bossSize = 50;
@@ -2393,17 +2385,27 @@
         mapPath.appendChild(boss);
       }
 
-      // Sağ kenar: orman kümesi eğilimi (1-3 ağaç, değişen boyutlarda)
-      var rightRoll = seededRand(lvl*7+1);
-      if(rightRoll < 0.55){
-        var treeCount = 1 + Math.floor(seededRand(lvl*7+11)*3);
+      // Sağ kenar: "küçük ormanlar" + aralarında nehir — 3 seviyelik bloklar halinde
+      // ard arda: orman bloğu, nehir/açıklık bloğu, orman bloğu... Ağaçlar eskisinin
+      // kabaca 3 katı büyüklükte, art arda gelen seviyelerde sürekli bir orman hissi verir.
+      var FOREST_BLOCK = 3;
+      var blockIdx = Math.floor((lvl-1) / FOREST_BLOCK);
+      var inForestBlock = (blockIdx % 2 === 0);
+      if(inForestBlock){
+        var treeCount = 1 + Math.floor(seededRand(lvl*7+11)*2); // 1-2 iri ağaç
         for(var t=0; t<treeCount; t++){
-          var tSize = 24 + Math.round(seededRand(lvl*13+t)*26);
-          var txOff = 6 + Math.round(seededRand(lvl*17+t)*(pathWidth*0.2));
-          var tyOff = -18 + Math.round(seededRand(lvl*19+t)*36);
-          placeDecorImg("../assets/map/greenvalley/tree.png", pathWidth - tSize - 8 - txOff, cy - tSize/2 + tyOff, tSize);
+          var tSize = 65 + Math.round(seededRand(lvl*13+t)*70); // ~65-135px (öncekinin ~3 katı)
+          var txOff = 4 + Math.round(seededRand(lvl*17+t)*(pathWidth*0.14));
+          var tyOff = -22 + Math.round(seededRand(lvl*19+t)*44);
+          placeDecorImg("../assets/map/greenvalley/tree.png", pathWidth - tSize - 6 - txOff, cy - tSize/2 + tyOff, tSize);
         }
-      } else if(rightRoll < 0.75){
+      } else if(lvl === blockIdx*FOREST_BLOCK + 1){
+        // Bu bloğun ilk seviyesinde ormanlar arasından akan nehir geçişi
+        var river = document.createElement("div");
+        river.className = "map-river-band";
+        river.style.top = (cy - 30) + "px";
+        mapPath.appendChild(river);
+      } else if(seededRand(lvl*23) < 0.35){
         var flSize = 26 + Math.round(seededRand(lvl*23)*18);
         placeDecorImg("../assets/map/greenvalley/flowers.png", pathWidth - flSize - 10, cy - flSize/2, flSize);
       }
