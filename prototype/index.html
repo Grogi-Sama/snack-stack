@@ -189,10 +189,8 @@
     position:absolute; top:22%; left:50%; transform:translateX(-50%);
     font-size:1.3rem; line-height:1; filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));
   }
-  .map-line-path{
-    fill:none; stroke:var(--ink-soft); stroke-width:3; stroke-linecap:round;
-    stroke-dasharray:2 12; opacity:.55;
-  }
+  .map-line-edge{ fill:none; stroke:#b98a4e; stroke-width:36; stroke-linecap:round; stroke-linejoin:round; opacity:.55; }
+  .map-line-path{ fill:none; stroke:#f3d597; stroke-width:30; stroke-linecap:round; stroke-linejoin:round; }
   .map-node-wrap{ position:relative; z-index:1; display:flex; margin:8px 0; }
   .map-node-wrap.side-a{ justify-content:flex-start; padding-left:16%; }
   .map-node-wrap.side-b{ justify-content:flex-end; padding-right:16%; }
@@ -2301,9 +2299,13 @@
   // Düğümleri sırayla birbirine bağlayan kesik çizgili yol — her düğümün gerçek
   // ekran konumundan hesaplanır, böylece zikzak yerleşim ne olursa olsun çizgi
   // her zaman tam düğümden düğüme gider.
+  // Yol örnek noktaları: dekorlar yolun üstüne binmesin diye placeDecorImg bunları kullanır.
+  var mapPathSamples = [];
+  var MAP_PATH_HALF = 18;
   function drawMapLines(){
     var old = mapPath.querySelector(".map-lines");
     if(old) old.remove();
+    mapPathSamples = [];
     var wraps = mapPath.querySelectorAll(".map-node-wrap");
     if(wraps.length < 2) return;
     var svgNS = "http://www.w3.org/2000/svg";
@@ -2317,15 +2319,54 @@
     svg.setAttribute("viewBox", "0 0 " + w + " " + h);
     var pts = Array.prototype.map.call(wraps, function(wrap){
       var r = wrap.querySelector(".map-node").getBoundingClientRect();
-      return (r.left - pathRect.left + scrollLeft + r.width/2) + "," + (r.top - pathRect.top + scrollTop + r.height/2);
+      return { x: r.left - pathRect.left + scrollLeft + r.width/2, y: r.top - pathRect.top + scrollTop + r.height/2 };
     });
+    // Düğümler arası yumuşak S-eğrileri (yürüme yolu)
+    var d = "M " + pts[0].x + "," + pts[0].y;
+    for(var i=1; i<pts.length; i++){
+      var a = pts[i-1], b = pts[i], ym = (a.y + b.y)/2;
+      d += " C " + a.x + "," + ym + " " + b.x + "," + ym + " " + b.x + "," + b.y;
+      for(var s=0; s<=10; s++){
+        var t = s/10, u = 1-t;
+        mapPathSamples.push({
+          x: u*u*u*a.x + 3*u*u*t*a.x + 3*u*t*t*b.x + t*t*t*b.x,
+          y: u*u*u*a.y + 3*u*u*t*ym + 3*u*t*t*ym + t*t*t*b.y
+        });
+      }
+    }
+    var defs = document.createElementNS(svgNS, "defs");
+    var pat = document.createElementNS(svgNS, "pattern");
+    pat.setAttribute("id", "sandPattern");
+    pat.setAttribute("patternUnits", "userSpaceOnUse");
+    pat.setAttribute("width", "200");
+    pat.setAttribute("height", "200");
+    var pimg = document.createElementNS(svgNS, "image");
+    pimg.setAttribute("href", "../assets/map/greenvalley/textures/sand.jpg?v=1");
+    pimg.setAttribute("width", "200");
+    pimg.setAttribute("height", "200");
+    pat.appendChild(pimg);
+    defs.appendChild(pat);
+    svg.appendChild(defs);
+    var edge = document.createElementNS(svgNS, "path");
+    edge.setAttribute("class", "map-line-edge");
+    edge.setAttribute("d", d);
+    svg.appendChild(edge);
     var path = document.createElementNS(svgNS, "path");
     path.setAttribute("class", "map-line-path");
-    path.setAttribute("d", "M " + pts.join(" L "));
+    path.setAttribute("d", d);
+    path.setAttribute("stroke", "url(#sandPattern)");
     svg.appendChild(path);
     mapPath.appendChild(svg);
   }
-
+  // Merkezi (cx,cy), yarıçapı r olan bir dekor yolun üstüne biniyor mu?
+  function clearOfPath(cx, cy, r){
+    var minD = r + MAP_PATH_HALF + 4;
+    for(var i=0; i<mapPathSamples.length; i++){
+      var dx = mapPathSamples[i].x - cx, dy = mapPathSamples[i].y - cy;
+      if(dx*dx + dy*dy < minD*minD) return false;
+    }
+    return true;
+  }
   // Yeşil Vadi teması dekorları: her seviye numarasına göre SABİT (seed'lenmiş) bir
   // rastgelelikle üretilir — böylece her renderMap() çağrısında aynı seviye hep aynı
   // dekoru gösterir (titreşmez), ama seviyeden seviyeye organik/çeşitli görünür.
@@ -2339,9 +2380,10 @@
   }
   // Asset guncellendiginde tarayici/CDN onbellegini kirmak icin surum etiketi —
   // greenvalley altindaki gorselleri her yeniden islediginde bu sayiyi artir.
-  var GREENVALLEY_ASSET_V = "4";
+  var GREENVALLEY_ASSET_V = "5";
   function gvAsset(path){ return path + "?v=" + GREENVALLEY_ASSET_V; }
   function placeDecorImg(src, x, y, size){
+    if(!clearOfPath(x + size/2, y + size/2, size*0.4)) return false;
     var img = document.createElement("img");
     img.className = "map-decor";
     img.src = gvAsset(src);
@@ -2351,6 +2393,7 @@
     img.style.left = Math.round(x) + "px";
     img.style.top = Math.round(y) + "px";
     mapPath.appendChild(img);
+    return true;
   }
   function drawMapDecor(){
     mapPath.querySelectorAll(".map-decor, .map-boss-sign").forEach(function(el){ el.remove(); });
@@ -2366,8 +2409,8 @@
         var minDist = (size + o.size)/2 + 6;
         if(Math.abs(cx - o.cx) < minDist && Math.abs(cyy - o.cy) < minDist) return false;
       }
+      if(!placeDecorImg("../assets/map/greenvalley/tree.png", x, y, size)) return false;
       placedTrees.push({cx:cx, cy:cyy, size:size});
-      placeDecorImg("../assets/map/greenvalley/tree.png", x, y, size);
       return true;
     }
     wraps.forEach(function(wrap, i){
@@ -2452,6 +2495,41 @@
         placeDecorImg("../assets/map/greenvalley/bush.png", 8, cy - bSize/2, bSize);
       }
     });
+
+    // Yol kenarı: her iki düğüm arasındaki yürüme yolunun hemen yanına ağaç/çalı/taş/tavşan
+    var segCount = Math.floor(mapPathSamples.length / 11);
+    for(var sg=0; sg<segCount; sg++){
+      for(var slot=0; slot<2; slot++){
+        var kk = (sg+1)*1000 + slot*37;
+        if(seededRand(kk) > 0.7) continue;
+        var pt = mapPathSamples[sg*11 + (slot ? 8 : 3)];
+        var kind = seededRand(kk+1);
+        var firstSide = seededRand(kk+2) < 0.5 ? -1 : 1;
+        for(var sd=0; sd<2; sd++){
+          var side = sd === 0 ? firstSide : -firstSide;
+          var sz, srcName;
+          if(kind < 0.4){ sz = 58 + Math.round(seededRand(kk+3)*30); srcName = "tree"; }
+          else if(kind < 0.65){ sz = 44 + Math.round(seededRand(kk+4)*24); srcName = "bush"; }
+          else if(kind < 0.88){ sz = 40 + Math.round(seededRand(kk+5)*26); srcName = "rock"; }
+          else { sz = 24 + Math.round(seededRand(kk+6)*14); srcName = "rabbit"; }
+          var ex = pt.x + side*(MAP_PATH_HALF + sz/2 + 6) - sz/2;
+          var ey = pt.y - sz/2;
+          if(ex < 0 || ex + sz > pathWidth) continue;
+          var ok;
+          if(srcName === "tree"){ ok = tryPlaceTree(ex, ey, sz); }
+          else {
+            // ağaçlara binmesin
+            var hit = false, ccx = ex + sz/2, ccy = ey + sz/2;
+            for(var q=0; q<placedTrees.length; q++){
+              var o = placedTrees[q], md = (sz + o.size)/2*0.8;
+              if(Math.abs(ccx - o.cx) < md && Math.abs(ccy - o.cy) < md){ hit = true; break; }
+            }
+            ok = !hit && placeDecorImg("../assets/map/greenvalley/" + srcName + ".png", ex, ey, sz);
+          }
+          if(ok) break;
+        }
+      }
+    }
   }
 
   playBtnEl.addEventListener("click", function(){
