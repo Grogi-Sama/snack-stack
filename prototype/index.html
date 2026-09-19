@@ -189,8 +189,8 @@
     position:absolute; top:22%; left:50%; transform:translateX(-50%);
     font-size:1.3rem; line-height:1; filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));
   }
-  .map-line-edge{ fill:none; stroke:#b98a4e; stroke-width:36; stroke-linecap:round; stroke-linejoin:round; opacity:.55; }
-  .map-line-path{ fill:none; stroke:#f3d597; stroke-width:30; stroke-linecap:round; stroke-linejoin:round; }
+  .map-line-edge{ fill:none; stroke:#b98a4e; stroke-width:24; stroke-linecap:round; stroke-linejoin:round; opacity:.55; }
+  .map-line-path{ fill:none; stroke:#f3d597; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; }
   .map-node-wrap{ position:relative; z-index:1; display:flex; margin:8px 0; }
   .map-node-wrap.side-a{ justify-content:flex-start; padding-left:16%; }
   .map-node-wrap.side-b{ justify-content:flex-end; padding-right:16%; }
@@ -2301,7 +2301,7 @@
   // her zaman tam düğümden düğüme gider.
   // Yol örnek noktaları: dekorlar yolun üstüne binmesin diye placeDecorImg bunları kullanır.
   var mapPathSamples = [];
-  var MAP_PATH_HALF = 18;
+  var MAP_PATH_HALF = 12;
   function drawMapLines(){
     var old = mapPath.querySelector(".map-lines");
     if(old) old.remove();
@@ -2499,10 +2499,10 @@
     // Yol kenarı: her iki düğüm arasındaki yürüme yolunun hemen yanına ağaç/çalı/taş/tavşan
     var segCount = Math.floor(mapPathSamples.length / 11);
     for(var sg=0; sg<segCount; sg++){
-      for(var slot=0; slot<2; slot++){
+      for(var slot=0; slot<3; slot++){
         var kk = (sg+1)*1000 + slot*37;
-        if(seededRand(kk) > 0.7) continue;
-        var pt = mapPathSamples[sg*11 + (slot ? 8 : 3)];
+        if(seededRand(kk) > 0.85) continue;
+        var pt = mapPathSamples[sg*11 + (slot === 0 ? 2 : slot === 1 ? 5 : 8)];
         var kind = seededRand(kk+1);
         var firstSide = seededRand(kk+2) < 0.5 ? -1 : 1;
         for(var sd=0; sd<2; sd++){
