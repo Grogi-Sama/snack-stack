@@ -183,11 +183,6 @@
   }
   .map-lines{ position:absolute; top:0; left:0; z-index:0; pointer-events:none; }
   .map-decor{ position:absolute; z-index:0; pointer-events:none; filter:drop-shadow(0 3px 3px rgba(20,40,10,.25)); }
-  .map-lake{
-    position:absolute; z-index:0; pointer-events:none; border-radius:50%;
-    background: radial-gradient(circle at 32% 28%, #9fe0f5, #2f8fc2 75%);
-    box-shadow: inset 0 0 14px rgba(0,40,60,.35), 0 3px 6px rgba(10,40,20,.25), 0 0 0 4px rgba(255,255,255,.25);
-  }
   .map-boss-sign{ position:absolute; z-index:1; pointer-events:none; }
   .map-boss-sign img{ display:block; width:100%; filter:drop-shadow(0 3px 3px rgba(20,40,10,.25)); }
   .map-boss-skull{
@@ -2358,11 +2353,23 @@
     mapPath.appendChild(img);
   }
   function drawMapDecor(){
-    mapPath.querySelectorAll(".map-decor, .map-lake, .map-boss-sign").forEach(function(el){ el.remove(); });
+    mapPath.querySelectorAll(".map-decor, .map-boss-sign").forEach(function(el){ el.remove(); });
     var wraps = mapPath.querySelectorAll(".map-node-wrap");
     var pathRect = mapPath.getBoundingClientRect();
     var scrollTop = mapPath.scrollTop;
     var pathWidth = mapPath.clientWidth;
+    var placedTrees = [];
+    function tryPlaceTree(x, y, size){
+      var cx = x + size/2, cyy = y + size/2;
+      for(var p=0; p<placedTrees.length; p++){
+        var o = placedTrees[p];
+        var minDist = (size + o.size)/2 + 6;
+        if(Math.abs(cx - o.cx) < minDist && Math.abs(cyy - o.cy) < minDist) return false;
+      }
+      placedTrees.push({cx:cx, cy:cyy, size:size});
+      placeDecorImg("../assets/map/greenvalley/tree.png", x, y, size);
+      return true;
+    }
     wraps.forEach(function(wrap, i){
       var lvl = i + 1;
       var btn = wrap.querySelector(".map-node");
@@ -2383,35 +2390,23 @@
         mapPath.appendChild(boss);
       }
 
-      // Sağ kenar: en alttan en üste kadar SÜREKLİ, zigzag bir orman şeridi —
-      // rastgele görünüp kaybolmuyor, her seviyede en az bir ağaç var; içe-dışa
-      // dört adımlık bir zigzag deseniyle gerçek bir orman hattı gibi kıvrılıyor.
-      // Belirli aralıklarla orman kesintiye uğrar: yanında kayalar olan bir göl belirir.
-      var LAKE_PERIOD = 8;
-      if(lvl % LAKE_PERIOD === 0){
-        var lakeW = 92, lakeH = 62;
-        var lake = document.createElement("div");
-        lake.className = "map-lake";
-        lake.style.width = lakeW + "px";
-        lake.style.height = lakeH + "px";
-        lake.style.left = (pathWidth - lakeW - 10) + "px";
-        lake.style.top = (cy - lakeH/2) + "px";
-        mapPath.appendChild(lake);
-        placeDecorImg("../assets/map/greenvalley/rock.png", pathWidth - lakeW - 20, cy - 30, 60);
-        placeDecorImg("../assets/map/greenvalley/rock.png", pathWidth - 46, cy + lakeH/2 - 14, 48);
-      } else {
-        // Yoğun, örtüşen bir orman: her seviyede 5-8 ağaç, zigzag ana hat üzerinde
-        // farklı boy/derinlikte serpiştirilip gerçek bir orman dokusu oluşturuyor.
-        var zigzagOffsets = [4, 22, 40, 22];
-        var zigOff = zigzagOffsets[lvl % zigzagOffsets.length];
-        var treeCount = 5 + Math.floor(seededRand(lvl*13)*4); // 5-8 ağaç
+      // Sağ kenar: seyrek orman — her seviyede 1-2 ağaç, birbirine binmeden.
+      // Her ağaç yerleştirilmeden önce, daha önce konan ağaçlarla mesafesi kontrol edilir.
+      var zigzagOffsets = [4, 22, 40, 22];
+      var zigOff = zigzagOffsets[lvl % zigzagOffsets.length];
+      {
+        var treeCount = 1 + Math.floor(seededRand(lvl*13)*2); // 1-2 ağaç
         for(var t=0; t<treeCount; t++){
-          var tSize = 45 + Math.round(seededRand(lvl*13+t*5)*65); // 45-110px, karışık boy
-          var txSpread = Math.round(seededRand(lvl*17+t*5)*(pathWidth*0.32));
-          var tyJitter = Math.round(seededRand(lvl*19+t*5)*40) - 20;
-          placeDecorImg("../assets/map/greenvalley/tree.png", pathWidth - tSize - 4 - zigOff - txSpread, cy - tSize/2 + tyJitter, tSize);
-        }
-        // Ormanın arasına serpiştirilmiş taş ve tavşanlar
+          for(var attempt=0; attempt<6; attempt++){
+            var k = lvl*100 + t*10 + attempt;
+            var tSize = 55 + Math.round(seededRand(k*3+1)*40); // 55-95px
+            var txSpread = Math.round(seededRand(k*3+2)*(pathWidth*0.3));
+            var tyJitter = Math.round(seededRand(k*3+3)*50) - 25;
+            var tx = pathWidth - tSize - 4 - zigOff - txSpread;
+            var ty = cy - tSize/2 + tyJitter;
+            if(tryPlaceTree(tx, ty, tSize)) break;
+          }
+        }        // Ormanın arasına serpiştirilmiş taş ve tavşanlar
         if(seededRand(lvl*41) < 0.35){
           var fRockSize = 55 + Math.round(seededRand(lvl*43)*35); // taşlar ~2 kat büyük
           var fRockX = pathWidth - fRockSize - 8 - Math.round(seededRand(lvl*44)*(pathWidth*0.26));
@@ -2440,14 +2435,16 @@
           }
         }
       } else if(leftRoll < 0.75){
-        var leftTreeCount = 2 + Math.floor(seededRand(lvl*54)*3); // 2-4 ağaç
+        var leftTreeCount = 1 + Math.floor(seededRand(lvl*54)*2); // 1-2 ağaç
         for(var lt=0; lt<leftTreeCount; lt++){
-          var ltSize = 40 + Math.round(seededRand(lvl*55+lt*5)*55);
-          var ltXSpread = Math.round(seededRand(lvl*56+lt*5)*(pathWidth*0.24));
-          var ltYJitter = Math.round(seededRand(lvl*57+lt*5)*36) - 18;
-          placeDecorImg("../assets/map/greenvalley/tree.png", 4 + ltXSpread, cy - ltSize/2 + ltYJitter, ltSize);
-        }
-      } else {
+          for(var lAttempt=0; lAttempt<6; lAttempt++){
+            var lk = lvl*100 + lt*10 + lAttempt;
+            var ltSize = 50 + Math.round(seededRand(lk*3+1)*40);
+            var ltXSpread = Math.round(seededRand(lk*3+2)*(pathWidth*0.24));
+            var ltYJitter = Math.round(seededRand(lk*3+3)*40) - 20;
+            if(tryPlaceTree(4 + ltXSpread, cy - ltSize/2 + ltYJitter, ltSize)) break;
+          }
+        }      } else {
         var bSize = 26 + Math.round(seededRand(lvl*53)*16);
         placeDecorImg("../assets/map/greenvalley/bush.png", 8, cy - bSize/2, bSize);
       }
