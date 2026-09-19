@@ -1431,18 +1431,18 @@
     for(var i=0;i<extraLayers;i++){ tiers.push(per + (i<rem ? 1 : 0)); }
     return { cols:cols, rows:rows, layers:tiers.length, tiers:tiers, icons:icons, copies:copies, pool:36 };
   }
-  // Zorluk dalgalanması: merdiven basamağı (rung) yavaş yavaş artar, ama seviye numarasının
-  // onlukta kaçıncı olduğuna göre bir dalga eklenir. 10 ve katları BOSS (belirgin zor),
-  // 9. onun hazırlığı (biraz zor), 1-2 ve 5. seviyeler nefes aldıran kolay/eğlenceli seviyeler.
-  // İlk 3 seviye eğitim: dalga yok, düz artış.
-  var DIFFICULTY_WAVE = { 0:2.5, 1:-1.5, 2:-1, 3:0, 4:0.5, 5:-1.5, 6:0.5, 7:1, 8:0, 9:1.5 };
+  // Zorluk: her 10 seviyelik "dekad" tablodaki bir basamağa karşılık gelir —
+  // seviye 1-10 = eski 1. seviye ayarı, 11-20 = eski 2., 21-30 = eski 3. ... Dekad içinde
+  // dalgalanma: 10 ve katları BOSS (bir üst basamağın ayarı, yani belirgin zor),
+  // her dekadın 1. ve 5. seviyeleri nefes aldıran bir alt basamak (kolay). İlk dekad
+  // tablonun en düşük basamağı olduğu için orada kolay seviye yok.
   function levelRung(level){
-    var base = 1 + (level-1)*0.3;
-    var wave = level <= 3 ? 0 : (DIFFICULTY_WAVE[level % 10] || 0);
-    if(level < 10) wave *= 0.5; // ilk onluk daha yumuşak
-    return Math.max(1, Math.round(base + wave));
-  }
-  function getLevelConfig(level){
+    var decade = Math.floor((level-1)/10) + 1;
+    var pos = level % 10;
+    if(pos === 0) return decade + 1;                       // boss
+    if(decade > 1 && (pos === 1 || pos === 5)) return decade - 1; // rahatlama
+    return decade;
+  }  function getLevelConfig(level){
     level = Math.max(level,1);
     var rung = levelRung(level);
     if(rung <= LEVEL_TABLE.length) return LEVEL_TABLE[rung-1];
