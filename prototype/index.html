@@ -1389,64 +1389,66 @@
   var GRID_MARGIN_X = 15, GRID_MARGIN_Y = 24;
   var CAP_OFFSET = 14; // her ek katman bir öncekinden bu kadar kayar: kısmi görünürlük hep korunur
 
-  // Seviye 1: 9 taş, tek katman (tamamen düz, hemen oynanabilir).
-  // Seviye 2: 2 katman. Seviye 3: 3 katman. ... Seviye 5'ten sonra katman sayısı artmaya devam eder,
-  // 6-7. seviyeden itibaren hem daha çok katman hem daha geniş ikon çeşitliliğiyle zorluk belirgin
-  // biçimde hissedilir. Seviye 10'dan sonra tablo en zor ayarda (10. seviye) sabitlenip tekrar eder.
-  var LEVEL_TABLE = [
-    { cols:3, rows:3, layers:1, tiers:[9],                       icons:3,  copies:3, pool:9 },
-    { cols:4, rows:3, layers:2, tiers:[12,3],                    icons:5,  copies:3, pool:9 },
-    { cols:4, rows:4, layers:3, tiers:[16,6,2],                  icons:8,  copies:3, pool:15 },
-    { cols:5, rows:4, layers:4, tiers:[20,4,2,1],                icons:9,  copies:3, pool:21 },
-    { cols:6, rows:5, layers:5, tiers:[30,14,6,3,1],             icons:9,  copies:6, pool:27 },
-    { cols:6, rows:5, layers:6, tiers:[30,15,7,4,2,2],           icons:10, copies:6, pool:27 },
-    { cols:6, rows:5, layers:7, tiers:[30,16,8,5,3,2,2],         icons:11, copies:6, pool:30 },
-    { cols:6, rows:5, layers:8, tiers:[30,16,9,6,4,3,2,2],       icons:12, copies:6, pool:33 },
-    { cols:6, rows:5, layers:8, tiers:[30,17,10,7,5,4,3,2],      icons:13, copies:6, pool:36 },
-    { cols:6, rows:5, layers:8, tiers:[30,18,11,8,6,5,4,2],      icons:14, copies:6, pool:36 }
-  ];
-  // Elle ayarlanan tablo 10. seviyede biter, ama oyuncuya asla bir "tavan" hissettirmemek için
-  // ondan sonrası prosedürel olarak üretilir ve icons/copies sonsuza dek büyümeye devam eder
-  // (üst sınır yok) — böylece hiçbir yüksek seviye bir öncekiyle birebir aynı görünmez ve
-  // zorluk gerçekten hiç durmadan artar. Oyuncu ne kadar ileri gidebileceğini asla göremez;
-  // bu tavan/tasarım bilgisi yalnızca bizim (geliştirici) tarafımızda, kodun içinde kalır.
-  function generateEndlessConfig(level){ // level = tablo sonrasi merdiven basamagi (yuklu seviye degil)
-    var cols=6, rows=5;
-    var base = cols*rows;
-    var interiorCap = (rows-1)*(cols-1); // bir üst katmanın en fazla kaplayabileceği hücre sayısı
-    var extra = level - LEVEL_TABLE.length; // elle ayarlı tablodan sonraki her seviye için 1,2,3...
-    var layers = 8 + Math.floor(extra/4);
-    var icons = Math.min(ICONS.length, 14 + Math.floor(extra/3));
-    var copies = 6 + Math.floor(extra/6); // üst sınırsız: zorluk hiçbir zaman düzleşmez
-    var total = icons*copies;
-    var remaining = total - base;
-    // Katman başına düşen taş sayısı tahtanın kaldırabileceğinden fazla olursa katman sayısını
-    // artırarak yükü inceltiyoruz — böylece taş sayısı ne kadar büyürse büyüsün yerleşim her
-    // zaman geçerli (üst üste binmeyen) kalır.
-    while(remaining>0 && Math.ceil(remaining/(layers-1)) > interiorCap){ layers++; }
-    var extraLayers = Math.max(layers-1, 1);
-    var per = Math.floor(remaining/extraLayers);
-    var rem = remaining - per*extraLayers;
-    var tiers = [base];
-    for(var i=0;i<extraLayers;i++){ tiers.push(per + (i<rem ? 1 : 0)); }
-    return { cols:cols, rows:rows, layers:tiers.length, tiers:tiers, icons:icons, copies:copies, pool:36 };
+  // Zorluk cetveli: her seviye bir öncekinden bir tık daha zor. İki temel eğri var —
+  // toplam taş sayısı (T) ve ikon çeşidi (n) — seviye numarasına göre parça parça doğrusal
+  // (piecewise-linear) artar; katman sayısı da onlarla birlikte büyür. Kilometre taşları
+  // (seviye, değer): 1-10 civarı 9 taş/3 çeşit, ~25'te 24 taş/8 çeşit, ~50'de 48 taş, 100'de 84 taş/14 çeşit.
+  // Dalga: 10 ve katları BOSS (seviye numarası +6 "zor" sayılır), her onluğun 1. ve 5. seviyesi
+  // nefes aldırır (-3). İlk 3 seviye eğitim: dalga yok. Ardışık iki seviye asla aynı ayarı taşımaz
+  // (T/n/katman en az biri değişir) ve seviye 1'den 100'e genel eğilim hep yukarı.
+  var TILES_ANCHORS = [[1,9],[6,12],[11,15],[16,18],[21,21],[25,24],[35,33],[50,48],[70,63],[100,84]];
+  var ICONS_ANCHORS = [[1,3],[6,4],[11,5],[16,6],[21,7],[25,8],[45,9],[55,10],[65,11],[75,12],[85,13],[95,14]];
+  function interpAnchors(anchors, x, tailSlope){
+    if(x <= anchors[0][0]) return anchors[0][1];
+    for(var i=1;i<anchors.length;i++){
+      if(x <= anchors[i][0]){
+        var a = anchors[i-1], b = anchors[i];
+        return a[1] + (b[1]-a[1]) * (x-a[0]) / (b[0]-a[0]);
+      }
+    }
+    var last = anchors[anchors.length-1];
+    return last[1] + (x - last[0]) * tailSlope;
   }
-  // Zorluk: her 10 seviyelik "dekad" tablodaki bir basamağa karşılık gelir —
-  // seviye 1-10 = eski 1. seviye ayarı, 11-20 = eski 2., 21-30 = eski 3. ... Dekad içinde
-  // dalgalanma: 10 ve katları BOSS (bir üst basamağın ayarı, yani belirgin zor),
-  // her dekadın 1. ve 5. seviyeleri nefes aldıran bir alt basamak (kolay). İlk dekad
-  // tablonun en düşük basamağı olduğu için orada kolay seviye yok.
-  function levelRung(level){
-    var decade = Math.floor((level-1)/10) + 1;
+  function effectiveLevel(level){
     var pos = level % 10;
-    if(pos === 0) return decade + 1;                       // boss
-    if(decade > 1 && (pos === 1 || pos === 5)) return decade - 1; // rahatlama
-    return decade;
-  }  function getLevelConfig(level){
+    var wave = 0;
+    if(level > 3){
+      if(pos === 0) wave = 6;                          // boss
+      else if(level > 10 && (pos === 1 || pos === 5)) wave = -3; // nefes
+    }
+    return Math.max(1, level + wave);
+  }
+  var GRID_STEPS = [ [3,3], [4,3], [4,4], [5,4], [6,5] ]; // taban katman büyüklükleri: 9,12,16,20,30
+  function buildTiers(total, baseCount, cap, level){
+    var extra = total - baseCount;
+    if(extra <= 0) return [baseCount];
+    var e0 = Math.min(7, 1 + Math.floor(level/10)); // level: efektif seviye
+    for(var E = Math.min(e0, extra); E <= Math.max(extra, 1) && E <= 60; E++){
+      var sum = E*(E+1)/2, tiers = [], used = E, rest = extra - E;
+      if(rest < 0) break;
+      for(var i=0;i<E;i++){ var t = 1 + Math.floor(rest*(E-i)/sum); tiers.push(t); used += t - 1; }
+      for(var j=0; used<extra; j=(j+1)%E){ tiers[j]++; used++; }
+      var ok = tiers[0] <= cap;
+      for(var k=0;k<E && ok;k++){ if(tiers[k] < 1) ok = false; if(k>0 && tiers[k] > tiers[k-1]) ok = false; }
+      if(ok) return [baseCount].concat(tiers);
+    }
+    return null;
+  }
+  function getLevelConfig(level){
     level = Math.max(level,1);
-    var rung = levelRung(level);
-    if(rung <= LEVEL_TABLE.length) return LEVEL_TABLE[rung-1];
-    return generateEndlessConfig(rung);
+    var eff = effectiveLevel(level);
+    var n = Math.min(ICONS.length, Math.round(interpAnchors(ICONS_ANCHORS, eff, 0.1)));
+    var total = 3*Math.round(interpAnchors(TILES_ANCHORS, eff, 0.5)/3);
+    total = Math.max(total, 3*n, 9);
+    // Taban katman toplamın en fazla %70'i: her zaman en az bir üst katman var (tam düz tahta yok).
+    var grid = GRID_STEPS[0];
+    for(var g=0; g<GRID_STEPS.length; g++){ if(GRID_STEPS[g][0]*GRID_STEPS[g][1] <= total*0.7) grid = GRID_STEPS[g]; }
+    var base = grid[0]*grid[1];
+    var cap = (grid[1]-1)*(grid[0]-1);
+    var tiers = buildTiers(total, base, cap, eff);
+    while(!tiers){ total += 3; tiers = buildTiers(total, base, cap, eff); }
+    var pool = Math.min(ICONS.length, Math.max(n, Math.round(9 + eff*0.28)));
+    return { cols:grid[0], rows:grid[1], layers:tiers.length, tiers:tiers, icons:n, total:total, pool:pool };
   }
 
   var board = document.getElementById("board");
@@ -1484,7 +1486,11 @@
     var pool = shuffle(ICONS.slice(0, config.pool || ICONS.length));
     var chosen = pool.slice(0, config.icons);
     var bag = [];
-    for(var i=0;i<chosen.length;i++){ for(var k=0;k<config.copies;k++) bag.push(chosen[i]); }
+    // Her çeşit en az 3 adet; kalan üçlüler çeşitlere sırayla dağıtılır (toplam = config.total).
+    var triples = config.total/3, perIcon = [];
+    for(var i=0;i<chosen.length;i++) perIcon.push(1);
+    for(var extraT=triples-chosen.length, q=0; extraT>0; extraT--, q=(q+1)%chosen.length) perIcon[q]++;
+    for(var i2=0;i2<chosen.length;i2++){ for(var k=0;k<perIcon[i2]*3;k++) bag.push(chosen[i2]); }
     shuffle(bag);
 
     var cols=config.cols, rows=config.rows;
@@ -1820,7 +1826,11 @@
       }
       return;
     }
-    if(state.tray.length>=TRAY_MAX && state.status==="playing"){
+    // Sepet dolu sayılması için "eşleşti" işaretli (birazdan kalkacak) taşlar sayılmaz —
+    // aksi halde, üçlü kalkmak üzereyken art arda inen taşlar yüzünden yanlışlıkla
+    // "kaybettin" ve can kaybı olurdu.
+    var occupied = state.tray.filter(function(t){ return !t.matched; }).length;
+    if(occupied>=TRAY_MAX && state.status==="playing"){
       state.status="lost";
       playLoseSound();
       spendLife();
