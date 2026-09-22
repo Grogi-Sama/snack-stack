@@ -205,9 +205,9 @@
   }
   .map-line-edge{ fill:none; stroke:#b98a4e; stroke-width:17; stroke-linecap:round; stroke-linejoin:round; opacity:.55; }
   .map-line-path{ fill:none; stroke:#f3d597; stroke-width:11; stroke-linecap:round; stroke-linejoin:round; }
-  .map-node-wrap{ position:relative; z-index:1; display:flex; margin:8px 0; }
-  .map-node-wrap.side-a{ justify-content:flex-start; padding-left:16%; }
-  .map-node-wrap.side-b{ justify-content:flex-end; padding-right:16%; }
+  .map-node-wrap{ position:relative; z-index:1; display:flex; margin:14px 0; }
+  .map-node-wrap.side-a{ justify-content:flex-start; padding-left:6%; }
+  .map-node-wrap.side-b{ justify-content:flex-end; padding-right:6%; }
   .map-star-badge{
     position:absolute; top:-6px; right:-6px; width:22px; height:22px; border-radius:50%;
     background:linear-gradient(160deg, #FFD873, #F0A93A); box-shadow:0 2px 4px rgba(0,0,0,.25), 0 0 0 2px var(--card);
@@ -2522,7 +2522,11 @@
       texture:"textures/crystal.jpg", tileSize:480, bgOverlay:null,
       banner:"../assets/map/banners/magicpass.png",
       signpost:"signpost.png", signpostTint:null,
-      kinds:{ tree:["tree.png"], bush:["bush.png"], rock:["rock.png"], critter:["rabbit.png","slime.png"] } }
+      // Ağacın kendi görseli diğer dünyalardakine göre küçük kalıyordu, ek bir
+      // ölçekle büyütüldü. bush.png (çiçek) bu evrene tam oturmadı — kullanıcı
+      // yeni bir asset üretene kadar geçici olarak duruyor, gelince sadece
+      // dosyayı değiştirmek yeterli (kodda değişiklik gerekmiyor).
+      kinds:{ tree:[{file:"tree.png", scale:1.35}], bush:["bush.png"], rock:["rock.png"], critter:["rabbit.png","slime.png"] } }
   ];
   function worldForLevel(lvl){
     for(var i=0;i<WORLDS.length;i++){ if(lvl>=WORLDS[i].from && lvl<=WORLDS[i].to) return WORLDS[i]; }
@@ -2620,7 +2624,7 @@
         for(var t=0; t<treeCount; t++){
           for(var attempt=0; attempt<6; attempt++){
             var k = lvl*100 + t*10 + attempt;
-            var tSize = 55 + Math.round(seededRand(k*3+1)*40); // 55-95px
+            var tSize = 70 + Math.round(seededRand(k*3+1)*50); // 70-120px
             var txSpread = Math.round(seededRand(k*3+2)*(pathWidth*0.3));
             var tyJitter = Math.round(seededRand(k*3+3)*50) - 25;
             var tx = pathWidth - tSize - 4 - zigOff - txSpread;
@@ -2660,7 +2664,7 @@
         for(var lt=0; lt<leftTreeCount; lt++){
           for(var lAttempt=0; lAttempt<6; lAttempt++){
             var lk = lvl*100 + lt*10 + lAttempt;
-            var ltSize = 50 + Math.round(seededRand(lk*3+1)*40);
+            var ltSize = 65 + Math.round(seededRand(lk*3+1)*50);
             var ltXSpread = Math.round(seededRand(lk*3+2)*(pathWidth*0.24));
             var ltYJitter = Math.round(seededRand(lk*3+3)*40) - 20;
             if(tryPlaceTree(4 + ltXSpread, cy - ltSize/2 + ltYJitter, ltSize, lvl)) break;
@@ -2675,7 +2679,7 @@
     // Her örnek noktada iki taraf ayrı ayrı şansını dener; yola ve birbirine binmezler.
     function placeKind(kind, kk, cxp, cyp, side, gap, lvl){
       var sz, kindName;
-      if(kind < 0.35){ sz = 55 + Math.round(seededRand(kk+3)*30); kindName = "tree"; }
+      if(kind < 0.35){ sz = 70 + Math.round(seededRand(kk+3)*40); kindName = "tree"; }
       else if(kind < 0.65){ sz = 40 + Math.round(seededRand(kk+4)*24); kindName = "bush"; }
       else if(kind < 0.88){ sz = 36 + Math.round(seededRand(kk+5)*26); kindName = "rock"; }
       else { sz = 22 + Math.round(seededRand(kk+6)*14); kindName = "critter"; }
