@@ -187,7 +187,7 @@
   .map-world-group{ display:flex; flex-direction:column-reverse; align-items:stretch; background-repeat:repeat; }
   /* Evren tabelaları normal akışta kendi satırını kaplıyor (mapPath'in doğrudan
      flex çocuğu) — komşu düğümlerle asla çakışmaz, boşluğu tarayıcı kendi ayarlar. */
-  .map-world-banner-slot{ display:flex; justify-content:center; align-items:center; margin:16px 0; z-index:1; position:relative; }
+  .map-world-banner-slot{ display:flex; justify-content:center; align-items:center; padding:16px 0; z-index:1; position:relative; }
   .map-world-banner-img{ width:62%; max-width:280px; display:block; filter:drop-shadow(0 4px 6px rgba(0,0,0,.35)); }
   .map-lines{ overflow:visible; position:absolute; top:0; left:0; z-index:0; pointer-events:none; }
   .map-decor{ position:absolute; z-index:0; pointer-events:none; filter:drop-shadow(0 3px 3px rgba(20,40,10,.25)); }
@@ -2359,6 +2359,17 @@
       if(gw.banner){
         var bannerSlot = document.createElement("div");
         bannerSlot.className = "map-world-banner-slot";
+        // Tabelanın etrafındaki boşluk da kendi evreninin dokusuyla kaplansın —
+        // aksi halde çıplak/uyuşmayan düz bir şerit kalıyordu.
+        var bTexUrl = gvAsset("../assets/map/" + gw.folder + "/" + gw.texture);
+        if(gw.bgOverlay){
+          bannerSlot.style.backgroundImage = "linear-gradient(" + gw.bgOverlay + "," + gw.bgOverlay + "), url(" + bTexUrl + ")";
+          bannerSlot.style.backgroundSize = "100% 100%, " + gw.tileSize + "px " + gw.tileSize + "px";
+          bannerSlot.style.backgroundRepeat = "no-repeat, repeat";
+        } else {
+          bannerSlot.style.backgroundImage = "url(" + bTexUrl + ")";
+          bannerSlot.style.backgroundSize = gw.tileSize + "px " + gw.tileSize + "px";
+        }
         bannerSlot.innerHTML = '<img class="map-world-banner-img" src="' + gvAsset(gw.banner) + '" alt="' + gw.name + '">';
         mapPath.appendChild(bannerSlot);
       }
@@ -2380,11 +2391,22 @@
   // Yol örnek noktaları: dekorlar yolun üstüne binmesin diye placeDecorImg bunları kullanır.
   var mapPathSamples = [];
   var MAP_PATH_HALF = 8;
+  // Evren tabelalarının kapladığı dikey aralıklar (bkz. renderMap) — dekorlar
+  // buraya asla yerleştirilmiyor, sadece zemin dokusu görünsün diye.
+  var bannerZones = [];
+  function updateBannerZones(pathRect, scrollTop){
+    bannerZones = Array.prototype.map.call(mapPath.querySelectorAll(".map-world-banner-slot"), function(slot){
+      var r = slot.getBoundingClientRect();
+      var top = r.top - pathRect.top + scrollTop;
+      return { top: top - 6, bottom: top + r.height + 6 };
+    });
+  }
   function drawMapLines(){
     var old = mapPath.querySelector(".map-lines");
     if(old) old.remove();
     mapPathSamples = [];
     var wraps = mapPath.querySelectorAll(".map-node-wrap");
+    updateBannerZones(mapPath.getBoundingClientRect(), mapPath.scrollTop);
     if(wraps.length < 2) return;
     var svgNS = "http://www.w3.org/2000/svg";
     var svg = document.createElementNS(svgNS, "svg");
@@ -2445,6 +2467,14 @@
     }
     return true;
   }
+  // [y, y+h] dikey aralığı herhangi bir evren tabelasının kapladığı bölgeye değiyor mu?
+  function clearOfBanners(y, h){
+    for(var i=0; i<bannerZones.length; i++){
+      var z = bannerZones[i];
+      if(y < z.bottom && y + h > z.top) return false;
+    }
+    return true;
+  }
   // Yeşil Vadi teması dekorları: her seviye numarasına göre SABİT (seed'lenmiş) bir
   // rastgelelikle üretilir — böylece her renderMap() çağrısında aynı seviye hep aynı
   // dekoru gösterir (titreşmez), ama seviyeden seviyeye organik/çeşitli görünür.
@@ -2497,6 +2527,7 @@
   }
   function placeDecorImg(src, x, y, size, hell){
     if(!clearOfPath(x + size/2, y + size/2, size*0.4)) return false;
+    if(!clearOfBanners(y, size)) return false;
     var img = document.createElement("img");
     img.className = "map-decor" + (hell ? " hell" : "");
     img.src = gvAsset(src);
@@ -2643,6 +2674,9 @@
     var segCount = Math.floor(mapPathSamples.length / 11);
     var slotIdx = [1, 3, 5, 7, 9];
     for(var sg=0; sg<segCount; sg++){
+      // Bu segment iki farklı evren arasındaki geçiş eğrisiyse (ör. 50→51), hiç
+      // dekor konmuyor — tabela zaten orada, yanlış evrenin asseti sızmasın diye.
+      if(worldForLevel(sg+1).key !== worldForLevel(sg+2).key) continue;
       for(var slot=0; slot<slotIdx.length; slot++){
         var pt = mapPathSamples[sg*11 + slotIdx[slot]];
         for(var sd=0; sd<2; sd++){
