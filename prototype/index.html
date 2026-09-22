@@ -185,12 +185,17 @@
      akışta tutuluyor: çok uzun position:absolute + maskeli/katmanlı öğelerde
      Chrome'un dokuyu görünür alanın ötesinde boyamadığı görüldü (bkz. yukarıdaki not). */
   .map-world-group{ display:flex; flex-direction:column-reverse; align-items:stretch; background-repeat:repeat; }
-  .map-world-banner{
-    position:absolute; left:50%; transform:translateX(-50%); z-index:1; pointer-events:none;
-  }
-  .map-world-banner img{ display:block; width:100%; filter:drop-shadow(0 4px 6px rgba(0,0,0,.35)); }
+  /* Evren tabelaları normal akışta kendi satırını kaplıyor (mapPath'in doğrudan
+     flex çocuğu) — komşu düğümlerle asla çakışmaz, boşluğu tarayıcı kendi ayarlar. */
+  .map-world-banner-slot{ display:flex; justify-content:center; align-items:center; margin:16px 0; z-index:1; position:relative; }
+  .map-world-banner-img{ width:62%; max-width:280px; display:block; filter:drop-shadow(0 4px 6px rgba(0,0,0,.35)); }
   .map-lines{ overflow:visible; position:absolute; top:0; left:0; z-index:0; pointer-events:none; }
   .map-decor{ position:absolute; z-index:0; pointer-events:none; filter:drop-shadow(0 3px 3px rgba(20,40,10,.25)); }
+  /* Cehennem dekorları (lav temalı) zeminle aynı sıcak paleti taşıyor, sadece
+     zemini karartmak yetmiyordu — koyu, çift katmanlı bir rim ile silüeti ayrıştırıyoruz. */
+  .map-decor.hell{
+    filter: drop-shadow(0 3px 4px rgba(0,0,0,.55)) drop-shadow(0 0 3px rgba(0,0,0,.9)) drop-shadow(0 0 5px rgba(0,0,0,.7));
+  }
   .map-boss-sign{ position:absolute; z-index:1; pointer-events:none; }
   .map-boss-sign img{ display:block; width:100%; filter:drop-shadow(0 3px 3px rgba(20,40,10,.25)); }
   .map-boss-sign.hell img{ filter:drop-shadow(0 3px 4px rgba(60,0,0,.5)) sepia(1) saturate(5) hue-rotate(-45deg) brightness(.8) contrast(1.2); }
@@ -2345,8 +2350,19 @@
     // Grup kutuları, evrenlerin tanımlandığı sırayla (1, 2, ...) mapPath'e ekleniyor —
     // mapPath column-reverse olduğu için ilk eklenen (Yeşil Vadi) en altta, sonra
     // eklenen (Cehennem Geçidi) onun üstünde biter; bu da seviye sırasıyla eşleşiyor.
+    // Tabelalar artık piksel hesabıyla ÜST ÜSTE BİNDİRİLMİYOR — her evrenin grubundan
+    // hemen önce, NORMAL AKIŞTA kendi satırını kaplıyor; böylece komşu düğümlerle
+    // asla çakışmıyor, boşluğu tarayıcı kendi hesaplıyor.
     for(var gi=0; gi<WORLDS.length; gi++){
-      if(worldGroups[WORLDS[gi].key]) mapPath.appendChild(worldGroups[WORLDS[gi].key]);
+      var gw = WORLDS[gi];
+      if(!worldGroups[gw.key]) continue;
+      if(gw.banner){
+        var bannerSlot = document.createElement("div");
+        bannerSlot.className = "map-world-banner-slot";
+        bannerSlot.innerHTML = '<img class="map-world-banner-img" src="' + gvAsset(gw.banner) + '" alt="' + gw.name + '">';
+        mapPath.appendChild(bannerSlot);
+      }
+      mapPath.appendChild(worldGroups[gw.key]);
     }
     drawMapLines();
     drawMapDecor();
@@ -2452,15 +2468,19 @@
   var WORLDS = [
     { key:"greenvalley", name:"Yeşil Vadi", from:1, to:50, folder:"greenvalley",
       texture:"textures/grass.png", tileSize:220, bgOverlay:null,
-      banner:"../assets/map/banners/greenvalley.png", bannerAspect:1687/498,
+      banner:"../assets/map/banners/greenvalley.png",
       kinds:{ tree:["tree.png"], bush:["bush.png"], rock:["rock.png"], critter:["rabbit.png"] } },
     // Lav dokusu çok baskın/gürültülü olup dekorların önüne geçtiği için, zeminin
     // üzerine koyu yarı saydam bir örtü (bgOverlay) konuyor — dekorlar bundan
-    // etkilenmiyor (onlar mapPath'e ayrı, bu örtünün üstüne çiziliyor).
+    // etkilenmiyor (onlar mapPath'e ayrı, bu örtünün üstüne çiziliyor). Dekorların
+    // KENDİSİ de lav rengiyle aynı sıcak paleti taşıdığından (kor/lav temalı asset),
+    // sadece zemini karartmak yetmiyor — .map-decor.hell ile ayrıca koyu bir çerçeve/
+    // rim-glow ekleniyor (bkz. tryPlaceDecor + CSS), örtü de sıcak yerine SOĞUK/koyu
+    // mor bir ton (dekorun turuncu parıltısıyla tezat oluşturur).
     // Çiçek (flowers.png), çalıdan çok daha büyük görünüyordu; kendi ölçeğiyle küçültüldü.
     { key:"hellpass", name:"Cehennem Geçidi", from:51, to:Infinity, folder:"hellpass",
-      texture:"textures/lava2.jpg", tileSize:260, bgOverlay:"rgba(26,10,6,.46)",
-      banner:"../assets/map/banners/hellpass.png", bannerAspect:1684/493,
+      texture:"textures/lava2.jpg", tileSize:260, bgOverlay:"rgba(16,8,22,.56)",
+      banner:"../assets/map/banners/hellpass.png",
       kinds:{ tree:["tree.png"], bush:["bush.png", {file:"flowers.png", scale:0.6}], rock:["rock.png"], critter:["bat.png","magma_rabbit.png"] } }
   ];
   function worldForLevel(lvl){
@@ -2475,10 +2495,10 @@
     if(typeof entry === "string") return { path: "../assets/map/" + w.folder + "/" + entry, scale: 1 };
     return { path: "../assets/map/" + w.folder + "/" + entry.file, scale: entry.scale || 1 };
   }
-  function placeDecorImg(src, x, y, size){
+  function placeDecorImg(src, x, y, size, hell){
     if(!clearOfPath(x + size/2, y + size/2, size*0.4)) return false;
     var img = document.createElement("img");
-    img.className = "map-decor";
+    img.className = "map-decor" + (hell ? " hell" : "");
     img.src = gvAsset(src);
     img.alt = "";
     img.style.width = size + "px";
@@ -2496,38 +2516,9 @@
   // görünür olmayan alanı hiç boyamıyordu. Zemin dokusu artık doğrudan her evrenin
   // NORMAL AKIŞTAKİ grup kutusunun (bkz. renderMap → worldGroupFor) kendi CSS arka
   // planı — bu, tarayıcının uzun kaydırılabilir içerikte her zaman güvenilir çalışan
-  // standart yolu. Bedeli: evren geçişi artık yumuşak degrade değil, net bir kesim;
-  // bunu "🔥 Evren Adı" tabelasıyla telafi ediyoruz.
-  function drawMapWorldBanners(nodeYByLevel, topLevel){
-    mapPath.querySelectorAll(".map-world-banner").forEach(function(el){ el.remove(); });
-    var pathWidth = mapPath.clientWidth;
-    function addBanner(world, centerY){
-      var bw = pathWidth * 0.62;
-      var bh = bw / world.bannerAspect;
-      var banner = document.createElement("div");
-      banner.className = "map-world-banner";
-      banner.style.width = bw + "px";
-      banner.style.top = (centerY - bh/2) + "px";
-      if(world.banner){
-        banner.innerHTML = '<img src="' + gvAsset(world.banner) + '" alt="' + world.name + '" style="width:100%;display:block;">';
-      } else {
-        banner.textContent = "🔥 " + world.name;
-      }
-      mapPath.appendChild(banner);
-    }
-    // İlk evrenin girişi: 1. seviyenin (haritanın en altı) hemen altına.
-    if(nodeYByLevel[1] !== undefined){
-      addBanner(WORLDS[0], nodeYByLevel[1] + 52);
-    }
-    for(var wi=1; wi<WORLDS.length; wi++){
-      var world = WORLDS[wi], prevTo = WORLDS[wi-1].to;
-      if(topLevel < world.from || nodeYByLevel[world.from] === undefined) break; // bu evrene daha ulaşılmadı
-      var boundaryY = nodeYByLevel[prevTo] !== undefined
-        ? (nodeYByLevel[prevTo] + nodeYByLevel[world.from]) / 2
-        : nodeYByLevel[world.from];
-      addBanner(world, boundaryY);
-    }
-  }
+  // standart yolu. Tabelalar da aynı sebeple (bkz. renderMap) piksel hesabıyla değil,
+  // normal akışta kendi satırlarını kaplayarak yerleştiriliyor — komşu düğümlerle
+  // asla çakışmaz.
   function drawMapDecor(){
     mapPath.querySelectorAll(".map-decor, .map-boss-sign").forEach(function(el){ el.remove(); });
     var wraps = mapPath.querySelectorAll(".map-node-wrap");
@@ -2548,18 +2539,16 @@
         var minDist = (size + o.size)/2 * 0.85 + 4;
         if(Math.abs(cx - o.cx) < minDist && Math.abs(cyy - o.cy) < minDist) return false;
       }
-      if(!placeDecorImg(asset.path, nx, ny, size)) return false;
+      if(!placeDecorImg(asset.path, nx, ny, size, worldForLevel(lvl).key === "hellpass")) return false;
       placedDecor.push({cx:cx, cy:cyy, size:size});
       return true;
     }
     function tryPlaceTree(x, y, size, lvl){ return tryPlaceDecor("tree", x, y, size, lvl, lvl*997); }
-    var nodeYByLevel = {};
     wraps.forEach(function(wrap, i){
       var lvl = i + 1;
       var btn = wrap.querySelector(".map-node");
       var r = btn.getBoundingClientRect();
       var cy = r.top - pathRect.top + scrollTop + r.height/2;
-      nodeYByLevel[lvl] = cy;
 
       // 10'un katları: boss seviyesi — tabela + kafatası, düğümün karşı kenarında
       if(lvl % 10 === 0){
@@ -2637,8 +2626,6 @@
         tryPlaceDecor("bush", 8, cy - bSize/2, bSize, lvl, lvl*53+1);
       }
     });
-
-    drawMapWorldBanners(nodeYByLevel, wraps.length);
 
     // Yol kenarı: düğümler arasındaki yürüme yolunun iki yanına da sık sık ağaç/çalı/taş/canlı.
     // Her örnek noktada iki taraf ayrı ayrı şansını dener; yola ve birbirine binmezler.
