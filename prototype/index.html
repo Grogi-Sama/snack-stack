@@ -283,11 +283,13 @@
   /* Haritadaki küçük "OYNA" rozeti: güncel seviyenin düğümünün hemen altında,
      ayrıca kendi başına tıklanabilir bir düğme (büyük daire düğmeyle aynı işi yapar). */
   .map-node-badge{
-    position:absolute; bottom:-15px; left:50%; transform:translateX(-50%);
-    font-size:0.6rem; font-weight:800; color:#fff; background:var(--accent);
-    padding:2px 8px; border-radius:999px; white-space:nowrap; box-shadow:0 2px 4px rgba(0,0,0,.2);
-    border:none; font-family:inherit; line-height:1.4; cursor:pointer; touch-action:manipulation; z-index:2;
+    position:absolute; bottom:-19px; left:50%; transform:translateX(-50%);
+    display:flex; align-items:center; gap:4px;
+    font-size:0.78rem; font-weight:800; color:#fff; background:var(--accent);
+    padding:5px 13px; border-radius:999px; white-space:nowrap; box-shadow:0 3px 5px rgba(0,0,0,.25);
+    border:none; font-family:inherit; line-height:1; cursor:pointer; touch-action:manipulation; z-index:2;
   }
+  .map-node-badge svg{ width:10px; height:10px; flex-shrink:0; }
   .map-node-badge:disabled{ opacity:.6; cursor:default; }
 
   .start-topbar{
@@ -2426,7 +2428,7 @@
           var badge = document.createElement("button");
           badge.type = "button";
           badge.className = "map-node-badge";
-          badge.textContent = "OYNA";
+          badge.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg>OYNA';
           badge.setAttribute("aria-label", "Seviye " + lvl + " oyna");
           badge.disabled = livesData.lives <= 0;
           badge.addEventListener("click", function(){ enterLevel(currentLevel, false); });
