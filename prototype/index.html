@@ -167,11 +167,10 @@
   .map-screen{
     padding:14px 14px 18px; transition: opacity .22s ease, transform .22s ease;
     aspect-ratio: 375 / 812; max-height: calc(100vh - 48px); max-height: calc(100dvh - 48px);
-    background:
-      radial-gradient(120% 70% at 20% -10%, rgba(255,255,255,0.25), transparent 55%),
-      url(../assets/map/greenvalley/textures/grass.png?v=3);
-    background-size: auto, 220px 220px;
-    background-repeat: no-repeat, repeat;
+    /* Zemin dokusu artik sabit degil: JS, gorunen seviyelere gore .map-world-bg
+       katmanlari cizip evren gectikce yumusakca gecis yapiyor (bkz. drawMapWorldBg). */
+    background: radial-gradient(120% 70% at 20% -10%, rgba(255,255,255,0.25), transparent 55%), #4E7A3E;
+    background-repeat: no-repeat;
   }
   .map-screen.leaving{ opacity:0; transform:scale(0.96); }
   .map-topbar{ display:flex; align-items:center; gap:10px; }
@@ -181,10 +180,18 @@
     display:flex; flex-direction:column-reverse; align-items:stretch;
     padding:20px 8px; -webkit-overflow-scrolling:touch;
   }
+  .map-world-bg{ position:absolute; left:0; right:0; z-index:-1; pointer-events:none; background-repeat:repeat; }
+  .map-world-banner{
+    position:absolute; left:6%; right:6%; z-index:1; text-align:center; pointer-events:none;
+    font-family:"Baloo 2",sans-serif; font-weight:800; font-size:.8rem; color:#fff; letter-spacing:.02em;
+    background:linear-gradient(160deg,#9E3420,#5A1206); border-radius:14px; padding:7px 10px;
+    box-shadow:0 4px 0 #3A0C02, 0 6px 12px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.15);
+  }
   .map-lines{ overflow:visible; position:absolute; top:0; left:0; z-index:0; pointer-events:none; }
   .map-decor{ position:absolute; z-index:0; pointer-events:none; filter:drop-shadow(0 3px 3px rgba(20,40,10,.25)); }
   .map-boss-sign{ position:absolute; z-index:1; pointer-events:none; }
   .map-boss-sign img{ display:block; width:100%; filter:drop-shadow(0 3px 3px rgba(20,40,10,.25)); }
+  .map-boss-sign.hell img{ filter:drop-shadow(0 3px 4px rgba(60,0,0,.5)) sepia(1) saturate(5) hue-rotate(-45deg) brightness(.8) contrast(1.2); }
   .map-boss-skull{
     position:absolute; top:22%; left:50%; transform:translateX(-50%);
     font-size:1.3rem; line-height:1; filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));
@@ -2401,9 +2408,32 @@
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   }
   // Asset guncellendiginde tarayici/CDN onbellegini kirmak icin surum etiketi —
-  // greenvalley altindaki gorselleri her yeniden islediginde bu sayiyi artir.
-  var GREENVALLEY_ASSET_V = "5";
+  // map/ altindaki gorselleri her yeniden islediginde bu sayiyi artir.
+  var GREENVALLEY_ASSET_V = "6";
   function gvAsset(path){ return path + "?v=" + GREENVALLEY_ASSET_V; }
+
+  // Evrenler: her seviye aralığı kendi klasöründen (dekor + zemin dokusu) besleniyor.
+  // Evren 1: Yeşil Vadi (1-50). Evren 2: Cehennem Geçidi (51+) — kor/lav temalı.
+  // Bir dekor türünün birden fazla varyantı varsa (ör. cehennemde çalı/çiçek karışık),
+  // seedRand ile hangi varyantın seçileceği level bazında sabitlenir.
+  var WORLDS = [
+    { key:"greenvalley", name:"Yeşil Vadi", from:1, to:50, folder:"greenvalley",
+      texture:"textures/grass.png", tileSize:220,
+      kinds:{ tree:["tree.png"], bush:["bush.png"], rock:["rock.png"], critter:["rabbit.png"] } },
+    { key:"hellpass", name:"Cehennem Geçidi", from:51, to:Infinity, folder:"hellpass",
+      texture:"textures/lava.jpg", tileSize:260,
+      kinds:{ tree:["tree.png"], bush:["bush.png","flowers.png"], rock:["rock.png"], critter:["bat.png","magma_rabbit.png"] } }
+  ];
+  function worldForLevel(lvl){
+    for(var i=0;i<WORLDS.length;i++){ if(lvl>=WORLDS[i].from && lvl<=WORLDS[i].to) return WORLDS[i]; }
+    return WORLDS[WORLDS.length-1];
+  }
+  function decorAsset(lvl, kind, seed){
+    var w = worldForLevel(lvl);
+    var arr = w.kinds[kind];
+    var name = arr.length>1 ? arr[Math.floor(seededRand(seed)*arr.length)] : arr[0];
+    return "../assets/map/" + w.folder + "/" + name;
+  }
   function placeDecorImg(src, x, y, size){
     if(!clearOfPath(x + size/2, y + size/2, size*0.4)) return false;
     var img = document.createElement("img");
@@ -2417,6 +2447,46 @@
     mapPath.appendChild(img);
     return true;
   }
+  // Zemin dokusunu ve evren tanıtım tabelasını çizer: alt (küçük seviye) Yeşil Vadi
+  // dokusuyla, üst (büyük seviye) bir sonraki evrenin dokusuyla kaplanır; ikisi
+  // arasında maske ile yumuşak bir geçiş bandı bırakılır. Henüz o evrene ulaşılmadıysa
+  // (o seviyeler haritada hiç çizilmediyse) o katman hiç eklenmez.
+  function drawMapWorldBg(nodeYByLevel, topLevel){
+    mapPath.querySelectorAll(".map-world-bg, .map-world-banner").forEach(function(el){ el.remove(); });
+    var totalH = mapPath.scrollHeight;
+    var base = WORLDS[0];
+    var baseLayer = document.createElement("div");
+    baseLayer.className = "map-world-bg";
+    baseLayer.style.top = "0px"; baseLayer.style.height = totalH + "px";
+    baseLayer.style.backgroundImage = "url(" + gvAsset("../assets/map/" + base.folder + "/" + base.texture) + ")";
+    baseLayer.style.backgroundSize = base.tileSize + "px " + base.tileSize + "px";
+    mapPath.appendChild(baseLayer);
+
+    for(var wi=1; wi<WORLDS.length; wi++){
+      var w = WORLDS[wi], prevTo = WORLDS[wi-1].to;
+      if(topLevel < w.from || nodeYByLevel[w.from] === undefined) break; // bu evrene daha ulaşılmadı
+      var boundaryY = nodeYByLevel[prevTo] !== undefined
+        ? (nodeYByLevel[prevTo] + nodeYByLevel[w.from]) / 2
+        : nodeYByLevel[w.from];
+      var band = 260;
+      var layer = document.createElement("div");
+      layer.className = "map-world-bg";
+      layer.style.top = "0px";
+      layer.style.height = (boundaryY + band) + "px";
+      layer.style.backgroundImage = "url(" + gvAsset("../assets/map/" + w.folder + "/" + w.texture) + ")";
+      layer.style.backgroundSize = w.tileSize + "px " + w.tileSize + "px";
+      var maskGrad = "linear-gradient(to bottom, black 0, black " + Math.max(0,boundaryY) + "px, transparent " + (boundaryY+band) + "px)";
+      layer.style.maskImage = maskGrad;
+      layer.style.webkitMaskImage = maskGrad;
+      mapPath.appendChild(layer);
+
+      var banner = document.createElement("div");
+      banner.className = "map-world-banner";
+      banner.style.top = (boundaryY - 18) + "px";
+      banner.textContent = "🔥 " + w.name;
+      mapPath.appendChild(banner);
+    }
+  }
   function drawMapDecor(){
     mapPath.querySelectorAll(".map-decor, .map-boss-sign").forEach(function(el){ el.remove(); });
     var wraps = mapPath.querySelectorAll(".map-node-wrap");
@@ -2424,14 +2494,15 @@
     var scrollTop = mapPath.scrollTop;
     var pathWidth = mapPath.clientWidth;
     var placedTrees = [];
-    function tryPlaceTree(x, y, size){
+    var nodeYByLevel = {};
+    function tryPlaceTree(x, y, size, lvl){
       var cx = x + size/2, cyy = y + size/2;
       for(var p=0; p<placedTrees.length; p++){
         var o = placedTrees[p];
         var minDist = (size + o.size)/2 + 6;
         if(Math.abs(cx - o.cx) < minDist && Math.abs(cyy - o.cy) < minDist) return false;
       }
-      if(!placeDecorImg("../assets/map/greenvalley/tree.png", x, y, size)) return false;
+      if(!placeDecorImg(decorAsset(lvl, "tree", lvl*997), x, y, size)) return false;
       placedTrees.push({cx:cx, cy:cyy, size:size});
       return true;
     }
@@ -2440,13 +2511,14 @@
       var btn = wrap.querySelector(".map-node");
       var r = btn.getBoundingClientRect();
       var cy = r.top - pathRect.top + scrollTop + r.height/2;
+      nodeYByLevel[lvl] = cy;
 
       // 10'un katları: boss seviyesi — tabela + kafatası, düğümün karşı kenarında
       if(lvl % 10 === 0){
         var bossSize = 50;
         var onLeftBoss = wrap.classList.contains("side-b");
         var boss = document.createElement("div");
-        boss.className = "map-boss-sign";
+        boss.className = "map-boss-sign" + (worldForLevel(lvl).key === "hellpass" ? " hell" : "");
         boss.style.width = bossSize + "px";
         // Düğümün hemen yanında: düğümün karşı (boş) tarafına, 6px aralıkla
         var nodeLeft = r.left - pathRect.left, nodeRight = nodeLeft + r.width;
@@ -2472,34 +2544,34 @@
             var tyJitter = Math.round(seededRand(k*3+3)*50) - 25;
             var tx = pathWidth - tSize - 4 - zigOff - txSpread;
             var ty = cy - tSize/2 + tyJitter;
-            if(tryPlaceTree(tx, ty, tSize)) break;
+            if(tryPlaceTree(tx, ty, tSize, lvl)) break;
           }
-        }        // Ormanın arasına serpiştirilmiş taş ve tavşanlar
+        }        // Ormanın arasına serpiştirilmiş taş ve küçük canlılar
         if(seededRand(lvl*41) < 0.35){
           var fRockSize = 55 + Math.round(seededRand(lvl*43)*35); // taşlar ~2 kat büyük
           var fRockX = pathWidth - fRockSize - 8 - Math.round(seededRand(lvl*44)*(pathWidth*0.26));
-          placeDecorImg("../assets/map/greenvalley/rock.png", fRockX, cy - fRockSize/2 + 16, fRockSize);
+          placeDecorImg(decorAsset(lvl, "rock", lvl*44), fRockX, cy - fRockSize/2 + 16, fRockSize);
         }
         if(seededRand(lvl*47) < 0.35){
           var fRabSize = 22 + Math.round(seededRand(lvl*48)*18);
           var fRabX = pathWidth - fRabSize - 6 - Math.round(seededRand(lvl*49)*(pathWidth*0.3));
-          placeDecorImg("../assets/map/greenvalley/rabbit.png", fRabX, cy - fRabSize/2 - 16, fRabSize);
+          placeDecorImg(decorAsset(lvl, "critter", lvl*48+1), fRabX, cy - fRabSize/2 - 16, fRabSize);
         }
       }
 
-      // Sol kenar: orman da bu kenara yayılıyor, kayalık+tavşan kümeleri ve
-      // çalılıklarla karışık — yeşillik artık haritanın her iki tarafını kaplıyor.
+      // Sol kenar: orman da bu kenara yayılıyor, kayalık+canlı kümeleri ve
+      // çalılıklarla karışık — yeşillik (ya da kor) artık haritanın her iki tarafını kaplıyor.
       var leftRoll = seededRand(lvl*7+2);
       if(leftRoll < 0.2){
         var rockSize = 55 + Math.round(seededRand(lvl*29)*35);
-        placeDecorImg("../assets/map/greenvalley/rock.png", 8, cy - rockSize/2, rockSize);
+        placeDecorImg(decorAsset(lvl, "rock", lvl*29+1), 8, cy - rockSize/2, rockSize);
         if(seededRand(lvl*31) < 0.65){
           var rabbitCount = 1 + Math.floor(seededRand(lvl*37)*2);
           for(var ri=0; ri<rabbitCount; ri++){
             var rSize = 18 + Math.round(seededRand(lvl*41+ri)*20);
             var rx = 12 + rockSize + ri*22 + Math.round(seededRand(lvl*43+ri)*14);
             var ry = cy - rSize/2 + (Math.round(seededRand(lvl*47+ri)*20) - 10);
-            placeDecorImg("../assets/map/greenvalley/rabbit.png", rx, ry, rSize);
+            placeDecorImg(decorAsset(lvl, "critter", lvl*41+ri+1), rx, ry, rSize);
           }
         }
       } else if(leftRoll < 0.6){
@@ -2510,32 +2582,34 @@
             var ltSize = 50 + Math.round(seededRand(lk*3+1)*40);
             var ltXSpread = Math.round(seededRand(lk*3+2)*(pathWidth*0.24));
             var ltYJitter = Math.round(seededRand(lk*3+3)*40) - 20;
-            if(tryPlaceTree(4 + ltXSpread, cy - ltSize/2 + ltYJitter, ltSize)) break;
+            if(tryPlaceTree(4 + ltXSpread, cy - ltSize/2 + ltYJitter, ltSize, lvl)) break;
           }
         }      } else {
         var bSize = 52 + Math.round(seededRand(lvl*53)*32);
-        placeDecorImg("../assets/map/greenvalley/bush.png", 8, cy - bSize/2, bSize);
+        placeDecorImg(decorAsset(lvl, "bush", lvl*53+1), 8, cy - bSize/2, bSize);
       }
     });
 
-    // Yol kenarı: düğümler arasındaki yürüme yolunun iki yanına da sık sık ağaç/çalı/taş/tavşan.
+    drawMapWorldBg(nodeYByLevel, wraps.length);
+
+    // Yol kenarı: düğümler arasındaki yürüme yolunun iki yanına da sık sık ağaç/çalı/taş/canlı.
     // Her örnek noktada iki taraf ayrı ayrı şansını dener; yola ve birbirine binmezler.
-    function placeKind(kind, kk, cxp, cyp, side, gap){
-      var sz, srcName;
-      if(kind < 0.35){ sz = 55 + Math.round(seededRand(kk+3)*30); srcName = "tree"; }
-      else if(kind < 0.65){ sz = 40 + Math.round(seededRand(kk+4)*24); srcName = "bush"; }
-      else if(kind < 0.88){ sz = 36 + Math.round(seededRand(kk+5)*26); srcName = "rock"; }
-      else { sz = 22 + Math.round(seededRand(kk+6)*14); srcName = "rabbit"; }
+    function placeKind(kind, kk, cxp, cyp, side, gap, lvl){
+      var sz, kindName;
+      if(kind < 0.35){ sz = 55 + Math.round(seededRand(kk+3)*30); kindName = "tree"; }
+      else if(kind < 0.65){ sz = 40 + Math.round(seededRand(kk+4)*24); kindName = "bush"; }
+      else if(kind < 0.88){ sz = 36 + Math.round(seededRand(kk+5)*26); kindName = "rock"; }
+      else { sz = 22 + Math.round(seededRand(kk+6)*14); kindName = "critter"; }
       var ex = cxp + side*(gap + sz/2) - sz/2;
       var ey = cyp - sz/2;
       if(ex < 0 || ex + sz > pathWidth) return false;
-      if(srcName === "tree") return tryPlaceTree(ex, ey, sz);
+      if(kindName === "tree") return tryPlaceTree(ex, ey, sz, lvl);
       var ccx = ex + sz/2, ccy = ey + sz/2;
       for(var q=0; q<placedTrees.length; q++){
         var o = placedTrees[q], md = (sz + o.size)/2*0.8;
         if(Math.abs(ccx - o.cx) < md && Math.abs(ccy - o.cy) < md) return false;
       }
-      return placeDecorImg("../assets/map/greenvalley/" + srcName + ".png", ex, ey, sz);
+      return placeDecorImg(decorAsset(lvl, kindName, kk+9), ex, ey, sz);
     }
     var segCount = Math.floor(mapPathSamples.length / 11);
     var slotIdx = [1, 3, 5, 7, 9];
@@ -2546,7 +2620,7 @@
           var kk = (sg+1)*1000 + slot*37 + sd*7;
           if(seededRand(kk) > 0.75) continue;
           var gap = MAP_PATH_HALF + 5 + Math.round(seededRand(kk+8)*22); // yola yakın veya biraz uzak
-          placeKind(seededRand(kk+1), kk, pt.x, pt.y, sd === 0 ? -1 : 1, gap);
+          placeKind(seededRand(kk+1), kk, pt.x, pt.y, sd === 0 ? -1 : 1, gap, sg+1);
         }
       }
     }
