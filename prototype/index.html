@@ -2289,7 +2289,7 @@
   // geçtiğinde büyür — bir geçmiş seviyeyi tekrar oynamak asla geriye almaz.
   function renderMap(){
     mapPath.innerHTML = "";
-    var previewAhead = 30;
+    var previewAhead = 60; // 1. seviyeden bile Cehennem Geçidi'nin bir kısmı kaydırınca görünsün diye
     var topLevel = currentLevel + previewAhead;
     // Düğümler doğrudan mapPath'e değil, kendi evrenlerinin grup kutusuna ekleniyor
     // (bkz. worldGroupFor) — zemin dokusu artık bu normal-akış kutularının KENDİ
@@ -2398,7 +2398,7 @@
     bannerZones = Array.prototype.map.call(mapPath.querySelectorAll(".map-world-banner-slot"), function(slot){
       var r = slot.getBoundingClientRect();
       var top = r.top - pathRect.top + scrollTop;
-      return { top: top - 6, bottom: top + r.height + 6 };
+      return { top: top - 24, bottom: top + r.height + 24 };
     });
   }
   function drawMapLines(){
@@ -2497,7 +2497,7 @@
   // seedRand ile hangi varyantın seçileceği level bazında sabitlenir.
   var WORLDS = [
     { key:"greenvalley", name:"Yeşil Vadi", from:1, to:50, folder:"greenvalley",
-      texture:"textures/grass.png", tileSize:220, bgOverlay:null,
+      texture:"textures/grass.png", tileSize:480, bgOverlay:null,
       banner:"../assets/map/banners/greenvalley.png",
       kinds:{ tree:["tree.png"], bush:["bush.png"], rock:["rock.png"], critter:["rabbit.png"] } },
     // Lav dokusu çok baskın/gürültülü olup dekorların önüne geçtiği için, zeminin
@@ -2509,7 +2509,7 @@
     // mor bir ton (dekorun turuncu parıltısıyla tezat oluşturur).
     // Çiçek (flowers.png), çalıdan çok daha büyük görünüyordu; kendi ölçeğiyle küçültüldü.
     { key:"hellpass", name:"Cehennem Geçidi", from:51, to:Infinity, folder:"hellpass",
-      texture:"textures/lava2.jpg", tileSize:260, bgOverlay:"rgba(16,8,22,.56)",
+      texture:"textures/lava2.jpg", tileSize:480, bgOverlay:"rgba(16,8,22,.56)",
       banner:"../assets/map/banners/hellpass.png",
       kinds:{ tree:["tree.png"], bush:["bush.png", {file:"flowers.png", scale:0.6}], rock:["rock.png"], critter:["bat.png","magma_rabbit.png"] } }
   ];
