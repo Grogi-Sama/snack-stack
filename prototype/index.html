@@ -167,29 +167,47 @@
   .map-screen{
     padding:14px 14px 18px; transition: opacity .22s ease, transform .22s ease;
     aspect-ratio: 375 / 812; max-height: calc(100vh - 48px); max-height: calc(100dvh - 48px);
-    /* Zemin dokusu artik burada sabit degil: her evrenin kendi .map-world-group
-       kutusu kendi CSS arka planini tasiyor (bkz. renderMap -> worldGroupFor). */
     background: radial-gradient(120% 70% at 20% -10%, rgba(255,255,255,0.25), transparent 55%), #4E7A3E;
     background-repeat: no-repeat;
   }
   .map-screen.leaving{ opacity:0; transform:scale(0.96); }
   .map-topbar{ display:flex; align-items:center; gap:10px; }
   .map-title{ margin:0; flex:1; text-align:center; font-size:1.05rem; margin-right:34px; }
+  /* Harita artık HER ZAMAN TEK BİR evreni gösterir (bkz. renderMap → mapViewIndex) —
+     zemin dokusu bu yüzden doğrudan mapPath'in KENDİ arka planı olarak veriliyor
+     (uzun, position:absolute + maskeli katmanlı yaklaşımların Chrome'da görünür
+     alanın ötesinde boyanmadığı görülmüştü; bir scroll container'ın kendi
+     background'ı ise her zaman güvenilir çalışıyor). */
   .map-path{
     position:relative; flex:1; overflow-y:auto; overflow-x:hidden;
     display:flex; flex-direction:column-reverse; align-items:stretch;
     padding:20px 8px; -webkit-overflow-scrolling:touch;
   }
-  /* Her evren için normal-akış (position:absolute OLMAYAN) bir grup kutusu —
-     zemin dokusu JS'te bunun background-image'i olarak veriliyor. Bilerek normal
-     akışta tutuluyor: çok uzun position:absolute + maskeli/katmanlı öğelerde
-     Chrome'un dokuyu görünür alanın ötesinde boyamadığı görüldü (bkz. yukarıdaki not). */
-  .map-world-group{ display:flex; flex-direction:column-reverse; align-items:stretch; background-repeat:repeat; }
-  /* Evren tabelası (ör. "Cehennem Geçidi" pil görseli) artık kendi satırı/dokusu
-     olan ayrı bir öğe DEĞİL — tıpkı bir ağaç ya da kaya gibi, mevcut zeminin
-     üzerine .map-decor ile aynı şekilde konan sıradan bir nesne (bkz. drawMapDecor
-     içindeki "evren tabelası" bloğu). Ayrıca bir texture/kesit gerekmiyor. */
-  .map-world-sign{ position:absolute; z-index:1; pointer-events:none; filter:drop-shadow(0 4px 6px rgba(0,0,0,.4)); }
+  /* Bir sonraki evrene geçiş tabelası: haritanın en üstünde, normal akışta bir
+     satır. Kilitliyken soluk/gri ve üzerinde kilit rozeti var, tıklanamaz;
+     açıldığında tam renkli ve tıklanabilir (bir sonraki evrenin haritasına geçer). */
+  .map-world-teaser{
+    display:flex; flex-direction:column; align-items:center; gap:6px; padding:18px 0 8px;
+    cursor:pointer; touch-action:manipulation; background:none; border:none; width:100%;
+  }
+  .map-world-teaser img{ width:82%; max-width:260px; display:block; filter:drop-shadow(0 4px 6px rgba(0,0,0,.4)); }
+  .map-world-teaser.locked{ cursor:default; }
+  .map-world-teaser.locked img{ filter:grayscale(1) brightness(.55) drop-shadow(0 4px 6px rgba(0,0,0,.4)); }
+  .map-world-teaser-lock{
+    display:flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:50%;
+    background:var(--ink-soft); box-shadow:0 2px 4px rgba(0,0,0,.3); color:#fff;
+  }
+  .map-world-teaser-lock svg{ width:16px; height:16px; }
+  .map-world-teaser-hint{
+    font-family:"Baloo 2",sans-serif; font-weight:700; font-size:.72rem; color:rgba(255,255,255,.85);
+    text-shadow:0 1px 3px rgba(0,0,0,.5);
+  }
+  /* Önceki evrene dönüş oku: haritanın en altında, normal akışta bir satır. */
+  .map-world-back{
+    display:flex; align-items:center; justify-content:center; margin:4px auto 14px; width:44px; height:44px;
+    border-radius:50%; border:none; background:rgba(255,255,255,.85); box-shadow:0 3px 6px rgba(0,0,0,.25);
+    font-size:1.3rem; line-height:1; cursor:pointer; touch-action:manipulation; color:var(--ink);
+  }
   .map-lines{ overflow:visible; position:absolute; top:0; left:0; z-index:0; pointer-events:none; }
   .map-decor{ position:absolute; z-index:0; pointer-events:none; filter:drop-shadow(0 3px 3px rgba(20,40,10,.25)); }
   /* Cehennem dekorları (lav temalı) zeminle aynı sıcak paleti taşıyor, sadece
@@ -2269,6 +2287,7 @@
   var mapScreen = document.getElementById("mapScreen");
   var mapPath = document.getElementById("mapPath");
   var mapBackBtn = document.getElementById("mapBackBtn");
+  var mapTitleEl = document.querySelector(".map-title");
 
   // isReplay=true: zaten tamamlanmış bir seviye tekrar oynanıyor demektir — bu durumda
   // seviye kazanılınca ilerleme bir sonraki seviyeye atlamaz, oyuncu haritaya döner
@@ -2285,10 +2304,23 @@
   function goToMapFromGame(){
     gameScreen.hidden = true;
     mapScreen.hidden = false;
+    // Oyundan dönünce her zaman OYUNCUNUN GÜNCEL evrenini göster (ör. bir
+    // sonraki evrene yeni geçtiyse artık o evren açılır), eskiden bakılan
+    // farklı bir evrende kalmış olması garip olurdu.
+    mapViewIndex = worldIndexForLevel(currentLevel);
     renderMap();
   }
 
-  // Harita: oyuncunun ilerlemesini gösteren kaydırmalı bir seviye yolu.
+  // Harita artık HER ZAMAN TEK bir evreni gösterir (bkz. mapViewIndex) — oyuncu
+  // bir sonraki evrenin gerçek içeriğini (dekor/düzen), o evreni TAMAMEN
+  // AÇMADAN göremez; haritanın en üstünde sadece o evrenin tabelası (kilitliyse
+  // soluk+kilitli, açıksa tıklanabilir) görünür. En altta, önceki bir evrene
+  // bakılıyorsa geri dönüş oku var.
+  var mapViewIndex = 0;
+  function worldIndexForLevel(lvl){
+    for(var i=0;i<WORLDS.length;i++){ if(lvl>=WORLDS[i].from && lvl<=WORLDS[i].to) return i; }
+    return WORLDS.length-1;
+  }
   // Güncel seviye VE tamamlanmış geçmiş seviyeler oynanabilir (tekrar oynama serbest);
   // gelecek (henüz açılmamış) seviyeler kilitli kalır. İlerleme yalnızca güncel seviyeyi
   // geçtiğinde büyür — bir geçmiş seviyeyi tekrar oynamak asla geriye almaz.
@@ -2296,6 +2328,8 @@
   // (seed'lenmiş) bir "rastgele yürüyüş" — bazen 2-3 seviye aynı yöne devam
   // ediyor, bazen ters dönüyor, gerçek bir patika gibi kıvrılarak ilerliyor.
   // Değer, .map-node-wrap'in padding-left yüzdesi (düğümün SOL kenarı burada).
+  // NOT: yürüyüş her zaman 1'den başlar (hangi evren görüntülense de) ki bir
+  // seviyenin konumu hangi evrenden bakıldığına göre değişmesin, hep aynı kalsın.
   var MAP_LANE_MIN = 3, MAP_LANE_MAX = 80;
   function computeLanes(topLevel){
     var lanes = [];
@@ -2313,32 +2347,38 @@
   }
   function renderMap(){
     mapPath.innerHTML = "";
-    var previewAhead = 60; // 1. seviyeden bile Cehennem Geçidi'nin bir kısmı kaydırınca görünsün diye
-    var topLevel = currentLevel + previewAhead;
-    var lanes = computeLanes(topLevel);
-    // Düğümler doğrudan mapPath'e değil, kendi evrenlerinin grup kutusuna ekleniyor
-    // (bkz. worldGroupFor) — zemin dokusu artık bu normal-akış kutularının KENDİ
-    // CSS arka planı olarak veriliyor (drawMapWorldBg'deki notta neden anlatılıyor).
-    var worldGroups = {};
-    function worldGroupFor(lvl){
-      var w = worldForLevel(lvl);
-      if(!worldGroups[w.key]){
-        var g = document.createElement("div");
-        g.className = "map-world-group";
-        var texUrl = gvAsset("../assets/map/" + w.folder + "/" + w.texture);
-        if(w.bgOverlay){
-          g.style.backgroundImage = "linear-gradient(" + w.bgOverlay + "," + w.bgOverlay + "), url(" + texUrl + ")";
-          g.style.backgroundSize = "100% 100%, " + w.tileSize + "px " + w.tileSize + "px";
-          g.style.backgroundRepeat = "no-repeat, repeat";
-        } else {
-          g.style.backgroundImage = "url(" + texUrl + ")";
-          g.style.backgroundSize = w.tileSize + "px " + w.tileSize + "px";
-        }
-        worldGroups[w.key] = g;
-      }
-      return worldGroups[w.key];
+    var viewWorld = WORLDS[mapViewIndex];
+    var fromLvl = viewWorld.from;
+    // Sonsuz (son) evrende hâlâ bir "önizleme derinliği" gerekiyor; sonlu
+    // evrenlerde (Yeşil Vadi, Cehennem Geçidi) her zaman TÜM seviyeleri (ör. 1-50)
+    // gösteriyoruz — artık ayrı bir önizleme sınırına gerek yok, evren zaten sınırlı.
+    var toLvl = viewWorld.to === Infinity ? (Math.max(currentLevel, fromLvl) + 60) : viewWorld.to;
+    var lanes = computeLanes(toLvl);
+
+    // Zemin dokusu doğrudan mapPath'in kendi arka planı (tek evren = tek doku).
+    var texUrl = gvAsset("../assets/map/" + viewWorld.folder + "/" + viewWorld.texture);
+    if(viewWorld.bgOverlay){
+      mapPath.style.backgroundImage = "linear-gradient(" + viewWorld.bgOverlay + "," + viewWorld.bgOverlay + "), url(" + texUrl + ")";
+      mapPath.style.backgroundSize = "100% 100%, " + viewWorld.tileSize + "px " + viewWorld.tileSize + "px";
+      mapPath.style.backgroundRepeat = "no-repeat, repeat";
+    } else {
+      mapPath.style.backgroundImage = "url(" + texUrl + ")";
+      mapPath.style.backgroundSize = viewWorld.tileSize + "px " + viewWorld.tileSize + "px";
+      mapPath.style.backgroundRepeat = "repeat";
     }
-    for(var lvl = 1; lvl <= topLevel; lvl++){
+    mapTitleEl.textContent = viewWorld.name;
+
+    // Önceki evrene dönüş oku — en altta (ilk eklenen, column-reverse'de en alt).
+    if(mapViewIndex > 0){
+      var backArrow = document.createElement("button");
+      backArrow.className = "map-world-back";
+      backArrow.textContent = "↓";
+      backArrow.setAttribute("aria-label", WORLDS[mapViewIndex-1].name + "'e dön");
+      backArrow.addEventListener("click", function(){ mapViewIndex--; renderMap(); });
+      mapPath.appendChild(backArrow);
+    }
+
+    for(var lvl = fromLvl; lvl <= toLvl; lvl++){
       (function(lvl){
         var wrap = document.createElement("div");
         wrap.className = "map-node-wrap";
@@ -2370,19 +2410,30 @@
           badge.textContent = "OYNA";
           wrap.appendChild(badge);
         }
-        worldGroupFor(lvl).appendChild(wrap);
+        mapPath.appendChild(wrap);
       })(lvl);
     }
-    // Grup kutuları, evrenlerin tanımlandığı sırayla (1, 2, ...) mapPath'e ekleniyor —
-    // mapPath column-reverse olduğu için ilk eklenen (Yeşil Vadi) en altta, sonra
-    // eklenen (Cehennem Geçidi) onun üstünde biter; bu da seviye sırasıyla eşleşiyor.
-    // Evren tabelaları artık ayrı bir satır/doku şeridi DEĞİL — drawMapDecor()
-    // içinde her evrenin ilk seviyesinin yanına, tıpkı bir ağaç gibi (çakışma
-    // kontrollü) bir nesne olarak konuyor. Bkz. o fonksiyondaki "evren tabelası" notu.
-    for(var gi=0; gi<WORLDS.length; gi++){
-      var gw = WORLDS[gi];
-      if(worldGroups[gw.key]) mapPath.appendChild(worldGroups[gw.key]);
+
+    // Bir sonraki evrene geçiş tabelası — en üstte (son eklenen, column-reverse'de
+    // en üst), yalnızca BU evrenin TÜM seviyeleri gösterildiyse (sonsuz evrende
+    // önizleme kesildiği için henüz "evren tamamlandı" sayılmaz, tabela gösterilmez).
+    if(mapViewIndex < WORLDS.length-1 && toLvl === viewWorld.to){
+      var nextWorld = WORLDS[mapViewIndex+1];
+      var unlocked = currentLevel > viewWorld.to;
+      var teaser = document.createElement(unlocked ? "button" : "div");
+      teaser.className = "map-world-teaser" + (unlocked ? "" : " locked");
+      teaser.innerHTML = '<img src="' + gvAsset(nextWorld.banner) + '" alt="' + nextWorld.name + '">';
+      if(unlocked){
+        teaser.innerHTML += '<span class="map-world-teaser-hint">Devam et →</span>';
+        teaser.setAttribute("aria-label", nextWorld.name + "'e geç");
+        teaser.addEventListener("click", function(){ mapViewIndex++; renderMap(); });
+      } else {
+        teaser.innerHTML += '<span class="map-world-teaser-lock"><svg viewBox="0 0 24 24"><use href="#ic-lock"></use></svg></span>';
+        teaser.setAttribute("aria-label", nextWorld.name + " kilitli, önce " + viewWorld.name + "'i tamamla");
+      }
+      mapPath.appendChild(teaser);
     }
+
     // Yol çizgisi ve dekorlar, düğümlerin GERÇEK ekran konumunu okuyarak (piksel
     // hesabıyla) çiziliyor. Bunu scrollIntoView'dan ÖNCE yapmak, kaydırma mapPath'in
     // kendi viewport konumunu (ör. transform/animasyon nedeniyle) kaydırdığı
@@ -2523,7 +2574,7 @@
       // ölçekle büyütüldü. bush.png (çiçek) bu evrene tam oturmadı — kullanıcı
       // yeni bir asset üretene kadar geçici olarak duruyor, gelince sadece
       // dosyayı değiştirmek yeterli (kodda değişiklik gerekmiyor).
-      kinds:{ tree:[{file:"tree.png", scale:1.35}], bush:["bush.png"], rock:["rock.png"], critter:["rabbit.png","slime.png"] } }
+      kinds:{ tree:[{file:"tree.png", scale:1.35}], bush:["bush.png"], rock:["rock.png"], critter:["rabbit.png","slime.png","moth.png","wisp.png"] } }
   ];
   function worldForLevel(lvl){
     for(var i=0;i<WORLDS.length;i++){ if(lvl>=WORLDS[i].from && lvl<=WORLDS[i].to) return WORLDS[i]; }
@@ -2608,28 +2659,6 @@
       // konumuna (orta çizgiye göre) bakılarak belirleniyor. Boss tabelası ve
       // evren tabelası ikisi de bunu kullanıyor.
       var onEmptySide = (nodeLeft + r.width/2) > pathWidth/2;
-
-      // Evren tabelası (ör. "Cehennem Geçidi"): bu evrenin İLK seviyesinde,
-      // tıpkı bir ağaç/kaya gibi — mevcut zeminin üzerine konan sıradan bir
-      // nesne, kendi dokusu/kesiti yok, ortak çakışma listesine dahil.
-      if(lvl === lvlWorld.from && lvlWorld.banner){
-        var signW = 132, signH = signW / 3.25;
-        var signX = Math.max(2, Math.min(pathWidth - signW - 2, onEmptySide ? (nodeLeft - signW - 8) : (nodeRight + 8)));
-        var signY = cy - signH/2;
-        var scx = signX + signW/2, scy = signY + signH/2;
-        if(decorFootprintClear(scx, scy, signW)){
-          var signImg = document.createElement("img");
-          signImg.className = "map-world-sign";
-          signImg.src = gvAsset(lvlWorld.banner);
-          signImg.alt = lvlWorld.name;
-          signImg.style.width = signW + "px";
-          signImg.style.height = "auto";
-          signImg.style.left = Math.round(signX) + "px";
-          signImg.style.top = Math.round(signY) + "px";
-          mapPath.appendChild(signImg);
-          registerDecorFootprint(scx, scy, signW);
-        }
-      }
 
       // 10'un katları: boss seviyesi — tabela + kafatası, düğümün karşı kenarında
       if(lvl % 10 === 0){
@@ -2744,6 +2773,7 @@
     setTimeout(function(){
       startScreen.hidden = true;
       mapScreen.hidden = false;
+      mapViewIndex = worldIndexForLevel(currentLevel);
       renderMap();
     }, 200);
   });
