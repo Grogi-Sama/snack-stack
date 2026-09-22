@@ -205,9 +205,11 @@
   }
   .map-line-edge{ fill:none; stroke:#b98a4e; stroke-width:17; stroke-linecap:round; stroke-linejoin:round; opacity:.55; }
   .map-line-path{ fill:none; stroke:#f3d597; stroke-width:11; stroke-linecap:round; stroke-linejoin:round; }
-  .map-node-wrap{ position:relative; z-index:1; display:flex; margin:14px 0; }
-  .map-node-wrap.side-a{ justify-content:flex-start; padding-left:6%; }
-  .map-node-wrap.side-b{ justify-content:flex-end; padding-right:6%; }
+  /* Düğümün yatay konumu artık sabit iki şerit (side-a/side-b) değil, JS'te
+     hesaplanan sürekli bir padding-left yüzdesi (bkz. renderMap → computeLanes) —
+     rastgele bir yürüyüş gibi bazen aynı yöne birkaç adım devam ediyor, bazen
+     ters dönüyor, gerçek bir patika gibi kıvrılıyor. */
+  .map-node-wrap{ position:relative; z-index:1; display:flex; justify-content:flex-start; margin:14px 0; }
   .map-star-badge{
     position:absolute; top:-6px; right:-6px; width:22px; height:22px; border-radius:50%;
     background:linear-gradient(160deg, #FFD873, #F0A93A); box-shadow:0 2px 4px rgba(0,0,0,.25), 0 0 0 2px var(--card);
@@ -2287,10 +2289,30 @@
   // Güncel seviye VE tamamlanmış geçmiş seviyeler oynanabilir (tekrar oynama serbest);
   // gelecek (henüz açılmamış) seviyeler kilitli kalır. İlerleme yalnızca güncel seviyeyi
   // geçtiğinde büyür — bir geçmiş seviyeyi tekrar oynamak asla geriye almaz.
+  // Düğümlerin yatay konumu: tamamen simetrik zigzag yerine, deterministik
+  // (seed'lenmiş) bir "rastgele yürüyüş" — bazen 2-3 seviye aynı yöne devam
+  // ediyor, bazen ters dönüyor, gerçek bir patika gibi kıvrılarak ilerliyor.
+  // Değer, .map-node-wrap'in padding-left yüzdesi (düğümün SOL kenarı burada).
+  var MAP_LANE_MIN = 3, MAP_LANE_MAX = 80;
+  function computeLanes(topLevel){
+    var lanes = [];
+    var pos = MAP_LANE_MIN + (MAP_LANE_MAX - MAP_LANE_MIN) * seededRand(4242);
+    var dir = seededRand(4243) < 0.5 ? -1 : 1;
+    for(var lvl = 1; lvl <= topLevel; lvl++){
+      if(seededRand(lvl*311 + 8) < 0.32) dir = -dir; // ara sıra yön değiştir
+      var step = (16 + seededRand(lvl*311 + 9) * 34) * dir; // 16-50 birim, işaretli
+      pos += step;
+      if(pos < MAP_LANE_MIN){ pos = MAP_LANE_MIN; dir = 1; }
+      if(pos > MAP_LANE_MAX){ pos = MAP_LANE_MAX; dir = -1; }
+      lanes[lvl] = pos;
+    }
+    return lanes;
+  }
   function renderMap(){
     mapPath.innerHTML = "";
     var previewAhead = 60; // 1. seviyeden bile Cehennem Geçidi'nin bir kısmı kaydırınca görünsün diye
     var topLevel = currentLevel + previewAhead;
+    var lanes = computeLanes(topLevel);
     // Düğümler doğrudan mapPath'e değil, kendi evrenlerinin grup kutusuna ekleniyor
     // (bkz. worldGroupFor) — zemin dokusu artık bu normal-akış kutularının KENDİ
     // CSS arka planı olarak veriliyor (drawMapWorldBg'deki notta neden anlatılıyor).
@@ -2316,7 +2338,8 @@
     for(var lvl = 1; lvl <= topLevel; lvl++){
       (function(lvl){
         var wrap = document.createElement("div");
-        wrap.className = "map-node-wrap " + (lvl % 2 === 0 ? "side-a" : "side-b");
+        wrap.className = "map-node-wrap";
+        wrap.style.paddingLeft = lanes[lvl] + "%";
         var btn = document.createElement("button");
         var state = lvl < currentLevel ? "done" : (lvl === currentLevel ? "current" : "locked");
         btn.className = "map-node state-" + state;
@@ -2599,14 +2622,16 @@
       // 10'un katları: boss seviyesi — tabela + kafatası, düğümün karşı kenarında
       if(lvl % 10 === 0){
         var bossSize = 50;
-        var onLeftBoss = wrap.classList.contains("side-b");
         var boss = document.createElement("div");
         var bossWorld = worldForLevel(lvl);
         boss.className = "map-boss-sign" + (bossWorld.signpostTint ? " " + bossWorld.signpostTint : "");
         var signpostWorld = bossWorld.signpost ? bossWorld : WORLDS[0]; // asset yoksa Yeşil Vadi'ninki + tint
         boss.style.width = bossSize + "px";
-        // Düğümün hemen yanında: düğümün karşı (boş) tarafına, 6px aralıkla
+        // Düğümün hemen yanında: düğümün boş kalan (karşı) tarafına, 6px aralıkla —
+        // artık sabit iki şerit yok, hangi tarafın daha boş olduğu düğümün gerçek
+        // konumuna (orta çizgiye göre) bakılarak belirleniyor.
         var nodeLeft = r.left - pathRect.left, nodeRight = nodeLeft + r.width;
+        var onLeftBoss = (nodeLeft + r.width/2) > pathWidth/2;
         var bossX = onLeftBoss ? (nodeLeft - bossSize - 6) : (nodeRight + 6);
         boss.style.left = Math.max(2, Math.min(pathWidth - bossSize - 2, bossX)) + "px";
         boss.style.top = (cy - bossSize/2 - 4) + "px";
