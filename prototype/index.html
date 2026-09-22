@@ -187,8 +187,22 @@
   .map-world-group{ display:flex; flex-direction:column-reverse; align-items:stretch; background-repeat:repeat; }
   /* Evren tabelaları normal akışta kendi satırını kaplıyor (mapPath'in doğrudan
      flex çocuğu) — komşu düğümlerle asla çakışmaz, boşluğu tarayıcı kendi ayarlar. */
-  .map-world-banner-slot{ display:flex; justify-content:center; align-items:center; padding:16px 0; z-index:1; position:relative; }
-  .map-world-banner-img{ width:62%; max-width:280px; display:block; filter:drop-shadow(0 4px 6px rgba(0,0,0,.35)); }
+  /* Tabela artık ayrı, kendi dokusu olan bir "levha" görseli DEĞİL — bu, zeminin
+     gerçek dokusuyla hiç tam örtüşmeyip her zaman bir dikdörtgen kesim/çizgi
+     bırakıyordu. Şimdi bu boşlukta yalnızca evrenin KENDİ zemin dokusu (arkaplanı
+     zaten worldGroupFor ile aynı şekilde ayarlanıyor) var; üstüne sadece evren
+     adı, güçlü bir gölgeyle yazı olarak biniyor. Yol (z-index:0) bu yazının
+     ARKASINDAN geçiyor (yazı z-index:1), tıpkı gerçek bir yol tabelası gibi. */
+  .map-world-banner-slot{ display:flex; justify-content:center; align-items:center; padding:34px 0; }
+  /* Yazı kasıtlı olarak KENDİ z-index'iyle konumlandırılıyor (kapsayan slot değil) —
+     böylece slotun zemin dokusu yolun (z-index:0) ALTINDA, yalnızca yazının
+     kendisi yolun ÜSTÜNDE kalıyor; yol harfin arkasından geçip görünmeye devam ediyor. */
+  .map-world-name{
+    position:relative; z-index:1;
+    font-family:"Baloo 2",sans-serif; font-weight:800; font-size:1.45rem; letter-spacing:.03em;
+    color:#FCEFC7; text-align:center; pointer-events:none;
+    text-shadow: 0 2px 0 rgba(0,0,0,.45), 0 3px 6px rgba(0,0,0,.5), 0 0 14px rgba(0,0,0,.55), 0 0 3px rgba(0,0,0,.8);
+  }
   .map-lines{ overflow:visible; position:absolute; top:0; left:0; z-index:0; pointer-events:none; }
   .map-decor{ position:absolute; z-index:0; pointer-events:none; filter:drop-shadow(0 3px 3px rgba(20,40,10,.25)); }
   /* Cehennem dekorları (lav temalı) zeminle aynı sıcak paleti taşıyor, sadece
@@ -2393,18 +2407,29 @@
           bannerSlot.style.backgroundImage = "url(" + bTexUrl + ")";
           bannerSlot.style.backgroundSize = gw.tileSize + "px " + gw.tileSize + "px";
         }
-        bannerSlot.innerHTML = '<img class="map-world-banner-img" src="' + gvAsset(gw.banner) + '" alt="' + gw.name + '">';
+        var nameSpan = document.createElement("span");
+        nameSpan.className = "map-world-name";
+        nameSpan.textContent = gw.name;
+        bannerSlot.appendChild(nameSpan);
         mapPath.appendChild(bannerSlot);
       }
       mapPath.appendChild(worldGroups[gw.key]);
     }
-    drawMapLines();
-    drawMapDecor();
+    // Yol çizgisi ve dekorlar, düğümlerin GERÇEK ekran konumunu okuyarak (piksel
+    // hesabıyla) çiziliyor. Bunu scrollIntoView'dan ÖNCE yapmak, kaydırma mapPath'in
+    // kendi viewport konumunu (ör. transform/animasyon nedeniyle) kaydırdığı
+    // durumlarda çizgiyi düğümlerin birkaç on piksel altında/üstünde bırakıyordu —
+    // yol artık düğümlerin tam ortasından değil, kenarından geçiyormuş gibi
+    // görünüyordu. Çizim artık kaydırma tamamen yerleşTİKTEN SONRA yapılıyor.
     var currentWrap = mapPath.querySelector(".state-current");
+    function drawMapPathAndDecor(){ drawMapLines(); drawMapDecor(); }
     if(currentWrap){
       requestAnimationFrame(function(){
         currentWrap.closest(".map-node-wrap").scrollIntoView({ block:"center" });
+        drawMapPathAndDecor();
       });
+    } else {
+      drawMapPathAndDecor();
     }
   }
 
@@ -2511,7 +2536,7 @@
   }
   // Asset guncellendiginde tarayici/CDN onbellegini kirmak icin surum etiketi —
   // map/ altindaki gorselleri her yeniden islediginde bu sayiyi artir.
-  var GREENVALLEY_ASSET_V = "8";
+  var GREENVALLEY_ASSET_V = "9";
   function gvAsset(path){ return path + "?v=" + GREENVALLEY_ASSET_V; }
 
   // Evrenler: her seviye aralığı kendi klasöründen (dekor + zemin dokusu) besleniyor.
