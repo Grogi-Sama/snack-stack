@@ -180,7 +180,7 @@
     display:flex; flex-direction:column-reverse; align-items:stretch;
     padding:20px 8px; -webkit-overflow-scrolling:touch;
   }
-  .map-world-bg{ position:absolute; left:0; right:0; z-index:-1; pointer-events:none; background-repeat:repeat; }
+  .map-world-bg{ position:absolute; top:0; left:0; z-index:-1; pointer-events:none; }
   .map-world-banner{
     position:absolute; left:6%; right:6%; z-index:1; text-align:center; pointer-events:none;
     font-family:"Baloo 2",sans-serif; font-weight:800; font-size:.8rem; color:#fff; letter-spacing:.02em;
@@ -2447,45 +2447,100 @@
     mapPath.appendChild(img);
     return true;
   }
-  // Zemin dokusunu ve evren tanıtım tabelasını çizer: alt (küçük seviye) Yeşil Vadi
-  // dokusuyla, üst (büyük seviye) bir sonraki evrenin dokusuyla kaplanır; ikisi
-  // arasında maske ile yumuşak bir geçiş bandı bırakılır. Henüz o evrene ulaşılmadıysa
-  // (o seviyeler haritada hiç çizilmediyse) o katman hiç eklenmez.
+  // Zemin dokusunu ve evren tanıtım tabelasını çizer. Not: burada bilerek CSS
+  // "background-image" ile kaplanmış tek bir dev (binlerce piksel yüksekliğinde)
+  // position:absolute DIV KULLANILMIYOR — Chrome'da öyle bir katman, ilk çizildiği
+  // andaki görünür alanın epey ötesine kaydırılınca dokuyu hiç boyamadan düz renk
+  // bırakıyor (raster/compositing sınırı). Bunun yerine, haritadaki yürüme yolunun
+  // zaten sorunsuz çalışan SVG <pattern> tekniği kullanılıyor: tek bir SVG, tüm
+  // içerik yüksekliğini kaplayan iki desenli <rect>, aralarında yumuşak geçiş için
+  // <mask> + <linearGradient>.
   function drawMapWorldBg(nodeYByLevel, topLevel){
-    mapPath.querySelectorAll(".map-world-bg, .map-world-banner").forEach(function(el){ el.remove(); });
-    var totalH = mapPath.scrollHeight;
+    var oldSvg = mapPath.querySelector(".map-world-bg");
+    if(oldSvg) oldSvg.remove();
+    mapPath.querySelectorAll(".map-world-banner").forEach(function(el){ el.remove(); });
+    var svgNS = "http://www.w3.org/2000/svg";
+    var w = mapPath.scrollWidth, h = mapPath.scrollHeight;
+    var svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("class", "map-world-bg");
+    svg.setAttribute("width", w);
+    svg.setAttribute("height", h);
+    svg.setAttribute("viewBox", "0 0 " + w + " " + h);
+    var defs = document.createElementNS(svgNS, "defs");
+    svg.appendChild(defs);
+
+    function addPattern(id, world){
+      var pat = document.createElementNS(svgNS, "pattern");
+      pat.setAttribute("id", id);
+      pat.setAttribute("patternUnits", "userSpaceOnUse");
+      pat.setAttribute("width", world.tileSize);
+      pat.setAttribute("height", world.tileSize);
+      var img = document.createElementNS(svgNS, "image");
+      img.setAttribute("href", gvAsset("../assets/map/" + world.folder + "/" + world.texture));
+      img.setAttribute("width", world.tileSize);
+      img.setAttribute("height", world.tileSize);
+      pat.appendChild(img);
+      defs.appendChild(pat);
+    }
+
+    // Taban katman: en alttaki (ilk) evren, her zaman tüm içerik boyunca tam kaplar.
     var base = WORLDS[0];
-    var baseLayer = document.createElement("div");
-    baseLayer.className = "map-world-bg";
-    baseLayer.style.top = "0px"; baseLayer.style.height = totalH + "px";
-    baseLayer.style.backgroundImage = "url(" + gvAsset("../assets/map/" + base.folder + "/" + base.texture) + ")";
-    baseLayer.style.backgroundSize = base.tileSize + "px " + base.tileSize + "px";
-    mapPath.appendChild(baseLayer);
+    addPattern("worldPat0", base);
+    var baseRect = document.createElementNS(svgNS, "rect");
+    baseRect.setAttribute("width", w); baseRect.setAttribute("height", h);
+    baseRect.setAttribute("fill", "url(#worldPat0)");
+    svg.appendChild(baseRect);
 
     for(var wi=1; wi<WORLDS.length; wi++){
-      var w = WORLDS[wi], prevTo = WORLDS[wi-1].to;
-      if(topLevel < w.from || nodeYByLevel[w.from] === undefined) break; // bu evrene daha ulaşılmadı
+      var world = WORLDS[wi], prevTo = WORLDS[wi-1].to;
+      if(topLevel < world.from || nodeYByLevel[world.from] === undefined) break; // bu evrene daha ulaşılmadı
       var boundaryY = nodeYByLevel[prevTo] !== undefined
-        ? (nodeYByLevel[prevTo] + nodeYByLevel[w.from]) / 2
-        : nodeYByLevel[w.from];
+        ? (nodeYByLevel[prevTo] + nodeYByLevel[world.from]) / 2
+        : nodeYByLevel[world.from];
       var band = 260;
-      var layer = document.createElement("div");
-      layer.className = "map-world-bg";
-      layer.style.top = "0px";
-      layer.style.height = (boundaryY + band) + "px";
-      layer.style.backgroundImage = "url(" + gvAsset("../assets/map/" + w.folder + "/" + w.texture) + ")";
-      layer.style.backgroundSize = w.tileSize + "px " + w.tileSize + "px";
-      var maskGrad = "linear-gradient(to bottom, black 0, black " + Math.max(0,boundaryY) + "px, transparent " + (boundaryY+band) + "px)";
-      layer.style.maskImage = maskGrad;
-      layer.style.webkitMaskImage = maskGrad;
-      mapPath.appendChild(layer);
+      var regionH = boundaryY + band;
+
+      addPattern("worldPat" + wi, world);
+
+      var grad = document.createElementNS(svgNS, "linearGradient");
+      grad.setAttribute("id", "worldFade" + wi);
+      grad.setAttribute("gradientUnits", "userSpaceOnUse");
+      grad.setAttribute("x1", "0"); grad.setAttribute("y1", "0");
+      grad.setAttribute("x2", "0"); grad.setAttribute("y2", String(regionH));
+      var stopA = document.createElementNS(svgNS, "stop");
+      stopA.setAttribute("offset", "0"); stopA.setAttribute("stop-color", "#fff");
+      var stopB = document.createElementNS(svgNS, "stop");
+      stopB.setAttribute("offset", String(Math.max(0, Math.min(1, boundaryY / regionH))));
+      stopB.setAttribute("stop-color", "#fff");
+      var stopC = document.createElementNS(svgNS, "stop");
+      stopC.setAttribute("offset", "1"); stopC.setAttribute("stop-color", "#000");
+      grad.appendChild(stopA); grad.appendChild(stopB); grad.appendChild(stopC);
+      defs.appendChild(grad);
+
+      var mask = document.createElementNS(svgNS, "mask");
+      mask.setAttribute("id", "worldMask" + wi);
+      mask.setAttribute("maskUnits", "userSpaceOnUse");
+      var maskRect = document.createElementNS(svgNS, "rect");
+      maskRect.setAttribute("x", "0"); maskRect.setAttribute("y", "0");
+      maskRect.setAttribute("width", w); maskRect.setAttribute("height", regionH);
+      maskRect.setAttribute("fill", "url(#worldFade" + wi + ")");
+      mask.appendChild(maskRect);
+      defs.appendChild(mask);
+
+      var rect = document.createElementNS(svgNS, "rect");
+      rect.setAttribute("x", "0"); rect.setAttribute("y", "0");
+      rect.setAttribute("width", w); rect.setAttribute("height", regionH);
+      rect.setAttribute("fill", "url(#worldPat" + wi + ")");
+      rect.setAttribute("mask", "url(#worldMask" + wi + ")");
+      svg.appendChild(rect);
 
       var banner = document.createElement("div");
       banner.className = "map-world-banner";
       banner.style.top = (boundaryY - 18) + "px";
-      banner.textContent = "🔥 " + w.name;
+      banner.textContent = "🔥 " + world.name;
       mapPath.appendChild(banner);
     }
+    mapPath.appendChild(svg);
   }
   function drawMapDecor(){
     mapPath.querySelectorAll(".map-decor, .map-boss-sign").forEach(function(el){ el.remove(); });
