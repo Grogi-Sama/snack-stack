@@ -2488,17 +2488,21 @@
   }
   // Asset guncellendiginde tarayici/CDN onbellegini kirmak icin surum etiketi —
   // map/ altindaki gorselleri her yeniden islediginde bu sayiyi artir.
-  var GREENVALLEY_ASSET_V = "7";
+  var GREENVALLEY_ASSET_V = "8";
   function gvAsset(path){ return path + "?v=" + GREENVALLEY_ASSET_V; }
 
   // Evrenler: her seviye aralığı kendi klasöründen (dekor + zemin dokusu) besleniyor.
-  // Evren 1: Yeşil Vadi (1-50). Evren 2: Cehennem Geçidi (51+) — kor/lav temalı.
+  // Evren 1: Yeşil Vadi (1-50). Evren 2: Cehennem Geçidi (51-100) — kor/lav temalı.
+  // Evren 3: Büyülü Geçit (101+) — kristal/galaksi temalı.
   // Bir dekor türünün birden fazla varyantı varsa (ör. cehennemde çalı/çiçek karışık),
   // seedRand ile hangi varyantın seçileceği level bazında sabitlenir.
+  // signpost: boss tabelası için ayrı bir asset (yoksa signpostFallback'teki
+  // dünyanın tabelası, signpostTint sınıfıyla renklendirilip kullanılır).
   var WORLDS = [
     { key:"greenvalley", name:"Yeşil Vadi", from:1, to:50, folder:"greenvalley",
       texture:"textures/grass.png", tileSize:480, bgOverlay:null,
       banner:"../assets/map/banners/greenvalley.png",
+      signpost:"signpost.png", signpostTint:null,
       kinds:{ tree:["tree.png"], bush:["bush.png"], rock:["rock.png"], critter:["rabbit.png"] } },
     // Lav dokusu çok baskın/gürültülü olup dekorların önüne geçtiği için, zeminin
     // üzerine koyu yarı saydam bir örtü (bgOverlay) konuyor — dekorlar bundan
@@ -2508,10 +2512,17 @@
     // rim-glow ekleniyor (bkz. tryPlaceDecor + CSS), örtü de sıcak yerine SOĞUK/koyu
     // mor bir ton (dekorun turuncu parıltısıyla tezat oluşturur).
     // Çiçek (flowers.png), çalıdan çok daha büyük görünüyordu; kendi ölçeğiyle küçültüldü.
-    { key:"hellpass", name:"Cehennem Geçidi", from:51, to:Infinity, folder:"hellpass",
+    // Kendi tabela asseti yok, Yeşil Vadi'ninki kızıl filtreyle yeniden kullanılıyor.
+    { key:"hellpass", name:"Cehennem Geçidi", from:51, to:100, folder:"hellpass",
       texture:"textures/lava2.jpg", tileSize:480, bgOverlay:"rgba(16,8,22,.56)",
       banner:"../assets/map/banners/hellpass.png",
-      kinds:{ tree:["tree.png"], bush:["bush.png", {file:"flowers.png", scale:0.6}], rock:["rock.png"], critter:["bat.png","magma_rabbit.png"] } }
+      signpost:null, signpostTint:"hell",
+      kinds:{ tree:["tree.png"], bush:["bush.png", {file:"flowers.png", scale:0.6}], rock:["rock.png"], critter:["bat.png","magma_rabbit.png"] } },
+    { key:"magicpass", name:"Büyülü Geçit", from:101, to:Infinity, folder:"magicpass",
+      texture:"textures/crystal.jpg", tileSize:480, bgOverlay:null,
+      banner:"../assets/map/banners/magicpass.png",
+      signpost:"signpost.png", signpostTint:null,
+      kinds:{ tree:["tree.png"], bush:["bush.png"], rock:["rock.png"], critter:["rabbit.png","slime.png"] } }
   ];
   function worldForLevel(lvl){
     for(var i=0;i<WORLDS.length;i++){ if(lvl>=WORLDS[i].from && lvl<=WORLDS[i].to) return WORLDS[i]; }
@@ -2586,14 +2597,16 @@
         var bossSize = 50;
         var onLeftBoss = wrap.classList.contains("side-b");
         var boss = document.createElement("div");
-        boss.className = "map-boss-sign" + (worldForLevel(lvl).key === "hellpass" ? " hell" : "");
+        var bossWorld = worldForLevel(lvl);
+        boss.className = "map-boss-sign" + (bossWorld.signpostTint ? " " + bossWorld.signpostTint : "");
+        var signpostWorld = bossWorld.signpost ? bossWorld : WORLDS[0]; // asset yoksa Yeşil Vadi'ninki + tint
         boss.style.width = bossSize + "px";
         // Düğümün hemen yanında: düğümün karşı (boş) tarafına, 6px aralıkla
         var nodeLeft = r.left - pathRect.left, nodeRight = nodeLeft + r.width;
         var bossX = onLeftBoss ? (nodeLeft - bossSize - 6) : (nodeRight + 6);
         boss.style.left = Math.max(2, Math.min(pathWidth - bossSize - 2, bossX)) + "px";
         boss.style.top = (cy - bossSize/2 - 4) + "px";
-        boss.innerHTML = '<img src="' + gvAsset("../assets/map/greenvalley/signpost.png") + '" alt="" style="width:100%;display:block;">'
+        boss.innerHTML = '<img src="' + gvAsset("../assets/map/" + signpostWorld.folder + "/" + signpostWorld.signpost) + '" alt="" style="width:100%;display:block;">'
           + '<span class="map-boss-skull">💀</span>';
         mapPath.appendChild(boss);
       }
