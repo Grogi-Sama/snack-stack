@@ -199,15 +199,21 @@
   }
   .map-world-teaser-lock svg{ width:16px; height:16px; }
   .map-world-teaser-hint{
+    display:flex; align-items:center; gap:5px;
     font-family:"Baloo 2",sans-serif; font-weight:700; font-size:.72rem; color:rgba(255,255,255,.85);
     text-shadow:0 1px 3px rgba(0,0,0,.5);
   }
+  /* Ahşap ok düğmesi: bir sonraki (üst) evrene geçiş ipucunda yukarı döndürülmüş,
+     önceki (alt) evrene dönüş düğmesinde olduğu gibi (aşağı) kullanılıyor. */
+  .map-world-arrow-icon{ width:20px; height:20px; display:block; filter:drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
+  .map-world-arrow-icon.up{ transform:rotate(180deg); }
   /* Önceki evrene dönüş oku: haritanın en altında, normal akışta bir satır. */
   .map-world-back{
-    display:flex; align-items:center; justify-content:center; margin:4px auto 14px; width:44px; height:44px;
-    border-radius:50%; border:none; background:rgba(255,255,255,.85); box-shadow:0 3px 6px rgba(0,0,0,.25);
-    font-size:1.3rem; line-height:1; cursor:pointer; touch-action:manipulation; color:var(--ink);
+    display:flex; align-items:center; justify-content:center; margin:4px auto 14px; width:48px; height:48px;
+    border-radius:50%; border:none; background:none; padding:0;
+    cursor:pointer; touch-action:manipulation;
   }
+  .map-world-back img{ width:100%; height:100%; display:block; filter:drop-shadow(0 3px 5px rgba(0,0,0,.35)); }
   .map-lines{ overflow:visible; position:absolute; top:0; left:0; z-index:0; pointer-events:none; }
   .map-decor{ position:absolute; z-index:0; pointer-events:none; filter:drop-shadow(0 3px 3px rgba(20,40,10,.25)); }
   /* Cehennem dekorları (lav temalı) zeminle aynı sıcak paleti taşıyor, sadece
@@ -2379,7 +2385,7 @@
     if(mapViewIndex > 0){
       var backArrow = document.createElement("button");
       backArrow.className = "map-world-back";
-      backArrow.textContent = "↓";
+      backArrow.innerHTML = '<img class="map-world-arrow-icon" src="' + gvAsset("../assets/map/ui/arrow.png") + '" alt="">';
       backArrow.setAttribute("aria-label", WORLDS[mapViewIndex-1].name + "'e dön");
       backArrow.addEventListener("click", function(){ mapViewIndex--; renderMap(); });
       mapPath.appendChild(backArrow);
@@ -2432,7 +2438,8 @@
       teaser.className = "map-world-teaser" + (unlocked ? "" : " locked");
       teaser.innerHTML = '<img src="' + gvAsset(nextWorld.banner) + '" alt="' + nextWorld.name + '">';
       if(unlocked){
-        teaser.innerHTML += '<span class="map-world-teaser-hint">Devam et →</span>';
+        teaser.innerHTML += '<span class="map-world-teaser-hint">Devam et <img class="map-world-arrow-icon up" src="'
+          + gvAsset("../assets/map/ui/arrow.png") + '" alt=""></span>';
         teaser.setAttribute("aria-label", nextWorld.name + "'e geç");
         teaser.addEventListener("click", function(){ mapViewIndex++; renderMap(); });
       } else {
@@ -2544,7 +2551,7 @@
   }
   // Asset guncellendiginde tarayici/CDN onbellegini kirmak icin surum etiketi —
   // map/ altindaki gorselleri her yeniden islediginde bu sayiyi artir.
-  var GREENVALLEY_ASSET_V = "10";
+  var GREENVALLEY_ASSET_V = "11";
   function gvAsset(path){ return path + "?v=" + GREENVALLEY_ASSET_V; }
 
   // Evrenler: her seviye aralığı kendi klasöründen (dekor + zemin dokusu) besleniyor.
