@@ -2366,6 +2366,13 @@
       mapPath.style.backgroundSize = viewWorld.tileSize + "px " + viewWorld.tileSize + "px";
       mapPath.style.backgroundRepeat = "repeat";
     }
+    // ÖNEMLİ: background-attachment'in varsayılanı "scroll" — bu, bir scroll
+    // container'da dokunun ELEMENTİN KENDİSİNE sabitlenip İÇERİKLE BİRLİKTE
+    // KAYMAMASI demek (yaygın bir CSS tuzağı). Sonuç: doku sanki durur, düğüm/
+    // dekorlar onun üzerinde kayarmış gibi görünür — tam ters istiyoruz: kamera
+    // sabit dünyanın üzerinde hareket ediyormuş gibi, doku da içerikle BİRLİKTE
+    // kaysın. "local" tam bunu yapıyor.
+    mapPath.style.backgroundAttachment = "local";
     mapTitleEl.textContent = viewWorld.name;
 
     // Önceki evrene dönüş oku — en altta (ilk eklenen, column-reverse'de en alt).
