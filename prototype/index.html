@@ -190,23 +190,23 @@
     display:flex; flex-direction:column; align-items:center; gap:6px; padding:18px 0 8px;
     cursor:pointer; touch-action:manipulation; background:none; border:none; width:100%;
   }
-  .map-world-teaser img{ width:82%; max-width:260px; display:block; filter:drop-shadow(0 4px 6px rgba(0,0,0,.4)); }
+  .map-world-teaser-banner{ width:82%; max-width:260px; display:block; filter:drop-shadow(0 4px 6px rgba(0,0,0,.4)); }
   .map-world-teaser.locked{ cursor:default; }
-  .map-world-teaser.locked img{ filter:grayscale(1) brightness(.55) drop-shadow(0 4px 6px rgba(0,0,0,.4)); }
+  .map-world-teaser.locked .map-world-teaser-banner{ filter:grayscale(1) brightness(.55) drop-shadow(0 4px 6px rgba(0,0,0,.4)); }
   .map-world-teaser-lock{
     display:flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:50%;
     background:var(--ink-soft); box-shadow:0 2px 4px rgba(0,0,0,.3); color:#fff;
   }
   .map-world-teaser-lock svg{ width:16px; height:16px; }
   .map-world-teaser-hint{
-    display:flex; align-items:center; gap:5px;
     font-family:"Baloo 2",sans-serif; font-weight:700; font-size:.72rem; color:rgba(255,255,255,.85);
     text-shadow:0 1px 3px rgba(0,0,0,.5);
   }
-  /* Ahşap ok düğmesi: bir sonraki (üst) evrene geçiş ipucunda yukarı döndürülmüş,
-     önceki (alt) evrene dönüş düğmesinde olduğu gibi (aşağı) kullanılıyor. */
+  /* Sonraki evren tabelasının hemen ÜSTÜNDE, ayrı bir "yukarı git" oku — kullanıcının
+     verdiği kendi (döndürülmemiş, doğrudan yukarı çizilmiş) asset ile. */
+  .map-world-teaser-arrow{ width:36px; height:36px; display:block; filter:drop-shadow(0 2px 4px rgba(0,0,0,.4)); }
+  /* Önceki evrene dönüş oku (haritanın en altı) için ahşap düğme görseli. */
   .map-world-arrow-icon{ width:20px; height:20px; display:block; filter:drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
-  .map-world-arrow-icon.up{ transform:rotate(180deg); }
   /* Önceki evrene dönüş oku: haritanın en altında, normal akışta bir satır. */
   .map-world-back{
     display:flex; align-items:center; justify-content:center; margin:4px auto 14px; width:48px; height:48px;
@@ -2436,10 +2436,11 @@
       var unlocked = currentLevel > viewWorld.to;
       var teaser = document.createElement(unlocked ? "button" : "div");
       teaser.className = "map-world-teaser" + (unlocked ? "" : " locked");
-      teaser.innerHTML = '<img src="' + gvAsset(nextWorld.banner) + '" alt="' + nextWorld.name + '">';
+      // Açıldığında, tabelanın hemen ÜSTÜNDE ayrı bir "yukarı git" oku duruyor.
+      teaser.innerHTML = (unlocked ? '<img class="map-world-teaser-arrow" src="' + gvAsset("../assets/map/ui/arrow-up.png") + '" alt="">' : "")
+        + '<img class="map-world-teaser-banner" src="' + gvAsset(nextWorld.banner) + '" alt="' + nextWorld.name + '">';
       if(unlocked){
-        teaser.innerHTML += '<span class="map-world-teaser-hint">Devam et <img class="map-world-arrow-icon up" src="'
-          + gvAsset("../assets/map/ui/arrow.png") + '" alt=""></span>';
+        teaser.innerHTML += '<span class="map-world-teaser-hint">Devam et</span>';
         teaser.setAttribute("aria-label", nextWorld.name + "'e geç");
         teaser.addEventListener("click", function(){ mapViewIndex++; renderMap(); });
       } else {
@@ -2551,7 +2552,7 @@
   }
   // Asset guncellendiginde tarayici/CDN onbellegini kirmak icin surum etiketi —
   // map/ altindaki gorselleri her yeniden islediginde bu sayiyi artir.
-  var GREENVALLEY_ASSET_V = "11";
+  var GREENVALLEY_ASSET_V = "12";
   function gvAsset(path){ return path + "?v=" + GREENVALLEY_ASSET_V; }
 
   // Evrenler: her seviye aralığı kendi klasöründen (dekor + zemin dokusu) besleniyor.
