@@ -186,11 +186,9 @@
      Chrome'un dokuyu görünür alanın ötesinde boyamadığı görüldü (bkz. yukarıdaki not). */
   .map-world-group{ display:flex; flex-direction:column-reverse; align-items:stretch; background-repeat:repeat; }
   .map-world-banner{
-    position:absolute; left:6%; right:6%; z-index:1; text-align:center; pointer-events:none;
-    font-family:"Baloo 2",sans-serif; font-weight:800; font-size:.8rem; color:#fff; letter-spacing:.02em;
-    background:linear-gradient(160deg,#9E3420,#5A1206); border-radius:14px; padding:7px 10px;
-    box-shadow:0 4px 0 #3A0C02, 0 6px 12px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.15);
+    position:absolute; left:50%; transform:translateX(-50%); z-index:1; pointer-events:none;
   }
+  .map-world-banner img{ display:block; width:100%; filter:drop-shadow(0 4px 6px rgba(0,0,0,.35)); }
   .map-lines{ overflow:visible; position:absolute; top:0; left:0; z-index:0; pointer-events:none; }
   .map-decor{ position:absolute; z-index:0; pointer-events:none; filter:drop-shadow(0 3px 3px rgba(20,40,10,.25)); }
   .map-boss-sign{ position:absolute; z-index:1; pointer-events:none; }
@@ -2444,7 +2442,7 @@
   }
   // Asset guncellendiginde tarayici/CDN onbellegini kirmak icin surum etiketi —
   // map/ altindaki gorselleri her yeniden islediginde bu sayiyi artir.
-  var GREENVALLEY_ASSET_V = "6";
+  var GREENVALLEY_ASSET_V = "7";
   function gvAsset(path){ return path + "?v=" + GREENVALLEY_ASSET_V; }
 
   // Evrenler: her seviye aralığı kendi klasöründen (dekor + zemin dokusu) besleniyor.
@@ -2454,13 +2452,15 @@
   var WORLDS = [
     { key:"greenvalley", name:"Yeşil Vadi", from:1, to:50, folder:"greenvalley",
       texture:"textures/grass.png", tileSize:220, bgOverlay:null,
+      banner:"../assets/map/banners/greenvalley.png", bannerAspect:1687/498,
       kinds:{ tree:["tree.png"], bush:["bush.png"], rock:["rock.png"], critter:["rabbit.png"] } },
     // Lav dokusu çok baskın/gürültülü olup dekorların önüne geçtiği için, zeminin
     // üzerine koyu yarı saydam bir örtü (bgOverlay) konuyor — dekorlar bundan
     // etkilenmiyor (onlar mapPath'e ayrı, bu örtünün üstüne çiziliyor).
     // Çiçek (flowers.png), çalıdan çok daha büyük görünüyordu; kendi ölçeğiyle küçültüldü.
     { key:"hellpass", name:"Cehennem Geçidi", from:51, to:Infinity, folder:"hellpass",
-      texture:"textures/lava.jpg", tileSize:260, bgOverlay:"rgba(26,10,6,.5)",
+      texture:"textures/lava2.jpg", tileSize:260, bgOverlay:"rgba(26,10,6,.46)",
+      banner:"../assets/map/banners/hellpass.png", bannerAspect:1684/493,
       kinds:{ tree:["tree.png"], bush:["bush.png", {file:"flowers.png", scale:0.6}], rock:["rock.png"], critter:["bat.png","magma_rabbit.png"] } }
   ];
   function worldForLevel(lvl){
@@ -2500,17 +2500,32 @@
   // bunu "🔥 Evren Adı" tabelasıyla telafi ediyoruz.
   function drawMapWorldBanners(nodeYByLevel, topLevel){
     mapPath.querySelectorAll(".map-world-banner").forEach(function(el){ el.remove(); });
+    var pathWidth = mapPath.clientWidth;
+    function addBanner(world, centerY){
+      var bw = pathWidth * 0.62;
+      var bh = bw / world.bannerAspect;
+      var banner = document.createElement("div");
+      banner.className = "map-world-banner";
+      banner.style.width = bw + "px";
+      banner.style.top = (centerY - bh/2) + "px";
+      if(world.banner){
+        banner.innerHTML = '<img src="' + gvAsset(world.banner) + '" alt="' + world.name + '" style="width:100%;display:block;">';
+      } else {
+        banner.textContent = "🔥 " + world.name;
+      }
+      mapPath.appendChild(banner);
+    }
+    // İlk evrenin girişi: 1. seviyenin (haritanın en altı) hemen altına.
+    if(nodeYByLevel[1] !== undefined){
+      addBanner(WORLDS[0], nodeYByLevel[1] + 52);
+    }
     for(var wi=1; wi<WORLDS.length; wi++){
       var world = WORLDS[wi], prevTo = WORLDS[wi-1].to;
       if(topLevel < world.from || nodeYByLevel[world.from] === undefined) break; // bu evrene daha ulaşılmadı
       var boundaryY = nodeYByLevel[prevTo] !== undefined
         ? (nodeYByLevel[prevTo] + nodeYByLevel[world.from]) / 2
         : nodeYByLevel[world.from];
-      var banner = document.createElement("div");
-      banner.className = "map-world-banner";
-      banner.style.top = (boundaryY - 18) + "px";
-      banner.textContent = "🔥 " + world.name;
-      mapPath.appendChild(banner);
+      addBanner(world, boundaryY);
     }
   }
   function drawMapDecor(){
