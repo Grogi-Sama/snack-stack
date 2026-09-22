@@ -167,8 +167,8 @@
   .map-screen{
     padding:14px 14px 18px; transition: opacity .22s ease, transform .22s ease;
     aspect-ratio: 375 / 812; max-height: calc(100vh - 48px); max-height: calc(100dvh - 48px);
-    /* Zemin dokusu artik sabit degil: JS, gorunen seviyelere gore .map-world-bg
-       katmanlari cizip evren gectikce yumusakca gecis yapiyor (bkz. drawMapWorldBg). */
+    /* Zemin dokusu artik burada sabit degil: her evrenin kendi .map-world-group
+       kutusu kendi CSS arka planini tasiyor (bkz. renderMap -> worldGroupFor). */
     background: radial-gradient(120% 70% at 20% -10%, rgba(255,255,255,0.25), transparent 55%), #4E7A3E;
     background-repeat: no-repeat;
   }
@@ -180,7 +180,11 @@
     display:flex; flex-direction:column-reverse; align-items:stretch;
     padding:20px 8px; -webkit-overflow-scrolling:touch;
   }
-  .map-world-bg{ position:absolute; top:0; left:0; z-index:-1; pointer-events:none; }
+  /* Her evren için normal-akış (position:absolute OLMAYAN) bir grup kutusu —
+     zemin dokusu JS'te bunun background-image'i olarak veriliyor. Bilerek normal
+     akışta tutuluyor: çok uzun position:absolute + maskeli/katmanlı öğelerde
+     Chrome'un dokuyu görünür alanın ötesinde boyamadığı görüldü (bkz. yukarıdaki not). */
+  .map-world-group{ display:flex; flex-direction:column-reverse; align-items:stretch; background-repeat:repeat; }
   .map-world-banner{
     position:absolute; left:6%; right:6%; z-index:1; text-align:center; pointer-events:none;
     font-family:"Baloo 2",sans-serif; font-weight:800; font-size:.8rem; color:#fff; letter-spacing:.02em;
@@ -2282,6 +2286,21 @@
     mapPath.innerHTML = "";
     var previewAhead = 30;
     var topLevel = currentLevel + previewAhead;
+    // Düğümler doğrudan mapPath'e değil, kendi evrenlerinin grup kutusuna ekleniyor
+    // (bkz. worldGroupFor) — zemin dokusu artık bu normal-akış kutularının KENDİ
+    // CSS arka planı olarak veriliyor (drawMapWorldBg'deki notta neden anlatılıyor).
+    var worldGroups = {};
+    function worldGroupFor(lvl){
+      var w = worldForLevel(lvl);
+      if(!worldGroups[w.key]){
+        var g = document.createElement("div");
+        g.className = "map-world-group";
+        g.style.backgroundImage = "url(" + gvAsset("../assets/map/" + w.folder + "/" + w.texture) + ")";
+        g.style.backgroundSize = w.tileSize + "px " + w.tileSize + "px";
+        worldGroups[w.key] = g;
+      }
+      return worldGroups[w.key];
+    }
     for(var lvl = 1; lvl <= topLevel; lvl++){
       (function(lvl){
         var wrap = document.createElement("div");
@@ -2312,8 +2331,14 @@
           badge.textContent = "OYNA";
           wrap.appendChild(badge);
         }
-        mapPath.appendChild(wrap);
+        worldGroupFor(lvl).appendChild(wrap);
       })(lvl);
+    }
+    // Grup kutuları, evrenlerin tanımlandığı sırayla (1, 2, ...) mapPath'e ekleniyor —
+    // mapPath column-reverse olduğu için ilk eklenen (Yeşil Vadi) en altta, sonra
+    // eklenen (Cehennem Geçidi) onun üstünde biter; bu da seviye sırasıyla eşleşiyor.
+    for(var gi=0; gi<WORLDS.length; gi++){
+      if(worldGroups[WORLDS[gi].key]) mapPath.appendChild(worldGroups[WORLDS[gi].key]);
     }
     drawMapLines();
     drawMapDecor();
@@ -2449,98 +2474,28 @@
   }
   // Zemin dokusunu ve evren tanıtım tabelasını çizer. Not: burada bilerek CSS
   // "background-image" ile kaplanmış tek bir dev (binlerce piksel yüksekliğinde)
-  // position:absolute DIV KULLANILMIYOR — Chrome'da öyle bir katman, ilk çizildiği
-  // andaki görünür alanın epey ötesine kaydırılınca dokuyu hiç boyamadan düz renk
-  // bırakıyor (raster/compositing sınırı). Bunun yerine, haritadaki yürüme yolunun
-  // zaten sorunsuz çalışan SVG <pattern> tekniği kullanılıyor: tek bir SVG, tüm
-  // içerik yüksekliğini kaplayan iki desenli <rect>, aralarında yumuşak geçiş için
-  // <mask> + <linearGradient>.
-  function drawMapWorldBg(nodeYByLevel, topLevel){
-    var oldSvg = mapPath.querySelector(".map-world-bg");
-    if(oldSvg) oldSvg.remove();
+  // position:absolute/maskeli KATMAN KULLANILMIYOR — hem düz bir DIV hem de maskeli
+  // bir SVG ile denendi, ikisi de Chrome'da (kendi katmanına yükseltilen çok uzun,
+  // tekrarlanan dokulu öğelerde bilinen bir raster/tile sınırı yüzünden) başlangıçta
+  // görünür olmayan alanı hiç boyamıyordu. Zemin dokusu artık doğrudan her evrenin
+  // NORMAL AKIŞTAKİ grup kutusunun (bkz. renderMap → worldGroupFor) kendi CSS arka
+  // planı — bu, tarayıcının uzun kaydırılabilir içerikte her zaman güvenilir çalışan
+  // standart yolu. Bedeli: evren geçişi artık yumuşak degrade değil, net bir kesim;
+  // bunu "🔥 Evren Adı" tabelasıyla telafi ediyoruz.
+  function drawMapWorldBanners(nodeYByLevel, topLevel){
     mapPath.querySelectorAll(".map-world-banner").forEach(function(el){ el.remove(); });
-    var svgNS = "http://www.w3.org/2000/svg";
-    var w = mapPath.scrollWidth, h = mapPath.scrollHeight;
-    var svg = document.createElementNS(svgNS, "svg");
-    svg.setAttribute("class", "map-world-bg");
-    svg.setAttribute("width", w);
-    svg.setAttribute("height", h);
-    svg.setAttribute("viewBox", "0 0 " + w + " " + h);
-    var defs = document.createElementNS(svgNS, "defs");
-    svg.appendChild(defs);
-
-    function addPattern(id, world){
-      var pat = document.createElementNS(svgNS, "pattern");
-      pat.setAttribute("id", id);
-      pat.setAttribute("patternUnits", "userSpaceOnUse");
-      pat.setAttribute("width", world.tileSize);
-      pat.setAttribute("height", world.tileSize);
-      var img = document.createElementNS(svgNS, "image");
-      img.setAttribute("href", gvAsset("../assets/map/" + world.folder + "/" + world.texture));
-      img.setAttribute("width", world.tileSize);
-      img.setAttribute("height", world.tileSize);
-      pat.appendChild(img);
-      defs.appendChild(pat);
-    }
-
-    // Taban katman: en alttaki (ilk) evren, her zaman tüm içerik boyunca tam kaplar.
-    var base = WORLDS[0];
-    addPattern("worldPat0", base);
-    var baseRect = document.createElementNS(svgNS, "rect");
-    baseRect.setAttribute("width", w); baseRect.setAttribute("height", h);
-    baseRect.setAttribute("fill", "url(#worldPat0)");
-    svg.appendChild(baseRect);
-
     for(var wi=1; wi<WORLDS.length; wi++){
       var world = WORLDS[wi], prevTo = WORLDS[wi-1].to;
       if(topLevel < world.from || nodeYByLevel[world.from] === undefined) break; // bu evrene daha ulaşılmadı
       var boundaryY = nodeYByLevel[prevTo] !== undefined
         ? (nodeYByLevel[prevTo] + nodeYByLevel[world.from]) / 2
         : nodeYByLevel[world.from];
-      var band = 260;
-      var regionH = boundaryY + band;
-
-      addPattern("worldPat" + wi, world);
-
-      var grad = document.createElementNS(svgNS, "linearGradient");
-      grad.setAttribute("id", "worldFade" + wi);
-      grad.setAttribute("gradientUnits", "userSpaceOnUse");
-      grad.setAttribute("x1", "0"); grad.setAttribute("y1", "0");
-      grad.setAttribute("x2", "0"); grad.setAttribute("y2", String(regionH));
-      var stopA = document.createElementNS(svgNS, "stop");
-      stopA.setAttribute("offset", "0"); stopA.setAttribute("stop-color", "#fff");
-      var stopB = document.createElementNS(svgNS, "stop");
-      stopB.setAttribute("offset", String(Math.max(0, Math.min(1, boundaryY / regionH))));
-      stopB.setAttribute("stop-color", "#fff");
-      var stopC = document.createElementNS(svgNS, "stop");
-      stopC.setAttribute("offset", "1"); stopC.setAttribute("stop-color", "#000");
-      grad.appendChild(stopA); grad.appendChild(stopB); grad.appendChild(stopC);
-      defs.appendChild(grad);
-
-      var mask = document.createElementNS(svgNS, "mask");
-      mask.setAttribute("id", "worldMask" + wi);
-      mask.setAttribute("maskUnits", "userSpaceOnUse");
-      var maskRect = document.createElementNS(svgNS, "rect");
-      maskRect.setAttribute("x", "0"); maskRect.setAttribute("y", "0");
-      maskRect.setAttribute("width", w); maskRect.setAttribute("height", regionH);
-      maskRect.setAttribute("fill", "url(#worldFade" + wi + ")");
-      mask.appendChild(maskRect);
-      defs.appendChild(mask);
-
-      var rect = document.createElementNS(svgNS, "rect");
-      rect.setAttribute("x", "0"); rect.setAttribute("y", "0");
-      rect.setAttribute("width", w); rect.setAttribute("height", regionH);
-      rect.setAttribute("fill", "url(#worldPat" + wi + ")");
-      rect.setAttribute("mask", "url(#worldMask" + wi + ")");
-      svg.appendChild(rect);
-
       var banner = document.createElement("div");
       banner.className = "map-world-banner";
       banner.style.top = (boundaryY - 18) + "px";
       banner.textContent = "🔥 " + world.name;
       mapPath.appendChild(banner);
     }
-    mapPath.appendChild(svg);
   }
   function drawMapDecor(){
     mapPath.querySelectorAll(".map-decor, .map-boss-sign").forEach(function(el){ el.remove(); });
@@ -2645,7 +2600,7 @@
       }
     });
 
-    drawMapWorldBg(nodeYByLevel, wraps.length);
+    drawMapWorldBanners(nodeYByLevel, wraps.length);
 
     // Yol kenarı: düğümler arasındaki yürüme yolunun iki yanına da sık sık ağaç/çalı/taş/canlı.
     // Her örnek noktada iki taraf ayrı ayrı şansını dener; yola ve birbirine binmezler.
