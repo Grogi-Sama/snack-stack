@@ -185,24 +185,11 @@
      akışta tutuluyor: çok uzun position:absolute + maskeli/katmanlı öğelerde
      Chrome'un dokuyu görünür alanın ötesinde boyamadığı görüldü (bkz. yukarıdaki not). */
   .map-world-group{ display:flex; flex-direction:column-reverse; align-items:stretch; background-repeat:repeat; }
-  /* Evren tabelaları normal akışta kendi satırını kaplıyor (mapPath'in doğrudan
-     flex çocuğu) — komşu düğümlerle asla çakışmaz, boşluğu tarayıcı kendi ayarlar. */
-  /* Tabela artık ayrı, kendi dokusu olan bir "levha" görseli DEĞİL — bu, zeminin
-     gerçek dokusuyla hiç tam örtüşmeyip her zaman bir dikdörtgen kesim/çizgi
-     bırakıyordu. Şimdi bu boşlukta yalnızca evrenin KENDİ zemin dokusu (arkaplanı
-     zaten worldGroupFor ile aynı şekilde ayarlanıyor) var; üstüne sadece evren
-     adı, güçlü bir gölgeyle yazı olarak biniyor. Yol (z-index:0) bu yazının
-     ARKASINDAN geçiyor (yazı z-index:1), tıpkı gerçek bir yol tabelası gibi. */
-  .map-world-banner-slot{ display:flex; justify-content:center; align-items:center; padding:34px 0; }
-  /* Yazı kasıtlı olarak KENDİ z-index'iyle konumlandırılıyor (kapsayan slot değil) —
-     böylece slotun zemin dokusu yolun (z-index:0) ALTINDA, yalnızca yazının
-     kendisi yolun ÜSTÜNDE kalıyor; yol harfin arkasından geçip görünmeye devam ediyor. */
-  .map-world-name{
-    position:relative; z-index:1;
-    font-family:"Baloo 2",sans-serif; font-weight:800; font-size:1.45rem; letter-spacing:.03em;
-    color:#FCEFC7; text-align:center; pointer-events:none;
-    text-shadow: 0 2px 0 rgba(0,0,0,.45), 0 3px 6px rgba(0,0,0,.5), 0 0 14px rgba(0,0,0,.55), 0 0 3px rgba(0,0,0,.8);
-  }
+  /* Evren tabelası (ör. "Cehennem Geçidi" pil görseli) artık kendi satırı/dokusu
+     olan ayrı bir öğe DEĞİL — tıpkı bir ağaç ya da kaya gibi, mevcut zeminin
+     üzerine .map-decor ile aynı şekilde konan sıradan bir nesne (bkz. drawMapDecor
+     içindeki "evren tabelası" bloğu). Ayrıca bir texture/kesit gerekmiyor. */
+  .map-world-sign{ position:absolute; z-index:1; pointer-events:none; filter:drop-shadow(0 4px 6px rgba(0,0,0,.4)); }
   .map-lines{ overflow:visible; position:absolute; top:0; left:0; z-index:0; pointer-events:none; }
   .map-decor{ position:absolute; z-index:0; pointer-events:none; filter:drop-shadow(0 3px 3px rgba(20,40,10,.25)); }
   /* Cehennem dekorları (lav temalı) zeminle aynı sıcak paleti taşıyor, sadece
@@ -1097,7 +1084,7 @@
       <div class="token-badge-wrap">
         <div class="token-badge">
           <svg viewBox="0 0 100 100" width="20" height="20"><use href="#ic-coin"></use></svg>
-          <span id="tokenBalance">30</span>
+          <span id="tokenBalance">50</span>
         </div>
         <button class="lives-add-btn token-add-btn" id="buyCoinsBtn" title="Snack Coin satın al" aria-label="Snack Coin satın al">+</button>
       </div>
@@ -2131,13 +2118,15 @@
 
   // ---- Snack Coins (Atıştırmalık Tokenleri) ------------------------------------
   // Not: Gerçek bir hesap/ödeme sistemi olmadığından bakiye bu cihazda localStorage
-  // ile saklanır. Yeni her hesap 30 coin ile başlar.
+  // ile saklanır. Yeni her hesap 50 coin ile başlar (kullanıcının bilinçli kararı —
+  // tek seferlik karşılama hediyesi; bunun ötesindeki tüm coin'ler hâlâ yalnızca
+  // gerçek parayla satın alınabilir, bu istisna sadece başlangıç bakiyesi içindir).
   var TOKENS_KEY = "snackstack_tokens_v1";
   function loadTokens(){
     var raw = null;
     try{ raw = localStorage.getItem(TOKENS_KEY); }catch(e){}
     if(raw === null){
-      raw = "30";
+      raw = "50";
       try{ localStorage.setItem(TOKENS_KEY, raw); }catch(e){}
     }
     return parseInt(raw, 10) || 0;
@@ -2387,33 +2376,12 @@
     // Grup kutuları, evrenlerin tanımlandığı sırayla (1, 2, ...) mapPath'e ekleniyor —
     // mapPath column-reverse olduğu için ilk eklenen (Yeşil Vadi) en altta, sonra
     // eklenen (Cehennem Geçidi) onun üstünde biter; bu da seviye sırasıyla eşleşiyor.
-    // Tabelalar artık piksel hesabıyla ÜST ÜSTE BİNDİRİLMİYOR — her evrenin grubundan
-    // hemen önce, NORMAL AKIŞTA kendi satırını kaplıyor; böylece komşu düğümlerle
-    // asla çakışmıyor, boşluğu tarayıcı kendi hesaplıyor.
+    // Evren tabelaları artık ayrı bir satır/doku şeridi DEĞİL — drawMapDecor()
+    // içinde her evrenin ilk seviyesinin yanına, tıpkı bir ağaç gibi (çakışma
+    // kontrollü) bir nesne olarak konuyor. Bkz. o fonksiyondaki "evren tabelası" notu.
     for(var gi=0; gi<WORLDS.length; gi++){
       var gw = WORLDS[gi];
-      if(!worldGroups[gw.key]) continue;
-      if(gw.banner){
-        var bannerSlot = document.createElement("div");
-        bannerSlot.className = "map-world-banner-slot";
-        // Tabelanın etrafındaki boşluk da kendi evreninin dokusuyla kaplansın —
-        // aksi halde çıplak/uyuşmayan düz bir şerit kalıyordu.
-        var bTexUrl = gvAsset("../assets/map/" + gw.folder + "/" + gw.texture);
-        if(gw.bgOverlay){
-          bannerSlot.style.backgroundImage = "linear-gradient(" + gw.bgOverlay + "," + gw.bgOverlay + "), url(" + bTexUrl + ")";
-          bannerSlot.style.backgroundSize = "100% 100%, " + gw.tileSize + "px " + gw.tileSize + "px";
-          bannerSlot.style.backgroundRepeat = "no-repeat, repeat";
-        } else {
-          bannerSlot.style.backgroundImage = "url(" + bTexUrl + ")";
-          bannerSlot.style.backgroundSize = gw.tileSize + "px " + gw.tileSize + "px";
-        }
-        var nameSpan = document.createElement("span");
-        nameSpan.className = "map-world-name";
-        nameSpan.textContent = gw.name;
-        bannerSlot.appendChild(nameSpan);
-        mapPath.appendChild(bannerSlot);
-      }
-      mapPath.appendChild(worldGroups[gw.key]);
+      if(worldGroups[gw.key]) mapPath.appendChild(worldGroups[gw.key]);
     }
     // Yol çizgisi ve dekorlar, düğümlerin GERÇEK ekran konumunu okuyarak (piksel
     // hesabıyla) çiziliyor. Bunu scrollIntoView'dan ÖNCE yapmak, kaydırma mapPath'in
@@ -2439,22 +2407,11 @@
   // Yol örnek noktaları: dekorlar yolun üstüne binmesin diye placeDecorImg bunları kullanır.
   var mapPathSamples = [];
   var MAP_PATH_HALF = 8;
-  // Evren tabelalarının kapladığı dikey aralıklar (bkz. renderMap) — dekorlar
-  // buraya asla yerleştirilmiyor, sadece zemin dokusu görünsün diye.
-  var bannerZones = [];
-  function updateBannerZones(pathRect, scrollTop){
-    bannerZones = Array.prototype.map.call(mapPath.querySelectorAll(".map-world-banner-slot"), function(slot){
-      var r = slot.getBoundingClientRect();
-      var top = r.top - pathRect.top + scrollTop;
-      return { top: top - 24, bottom: top + r.height + 24 };
-    });
-  }
   function drawMapLines(){
     var old = mapPath.querySelector(".map-lines");
     if(old) old.remove();
     mapPathSamples = [];
     var wraps = mapPath.querySelectorAll(".map-node-wrap");
-    updateBannerZones(mapPath.getBoundingClientRect(), mapPath.scrollTop);
     if(wraps.length < 2) return;
     var svgNS = "http://www.w3.org/2000/svg";
     var svg = document.createElementNS(svgNS, "svg");
@@ -2512,14 +2469,6 @@
     for(var i=0; i<mapPathSamples.length; i++){
       var dx = mapPathSamples[i].x - cx, dy = mapPathSamples[i].y - cy;
       if(dx*dx + dy*dy < minD*minD) return false;
-    }
-    return true;
-  }
-  // [y, y+h] dikey aralığı herhangi bir evren tabelasının kapladığı bölgeye değiyor mu?
-  function clearOfBanners(y, h){
-    for(var i=0; i<bannerZones.length; i++){
-      var z = bannerZones[i];
-      if(y < z.bottom && y + h > z.top) return false;
     }
     return true;
   }
@@ -2590,7 +2539,6 @@
   }
   function placeDecorImg(src, x, y, size, hell){
     if(!clearOfPath(x + size/2, y + size/2, size*0.4)) return false;
-    if(!clearOfBanners(y, size)) return false;
     var img = document.createElement("img");
     img.className = "map-decor" + (hell ? " hell" : "");
     img.src = gvAsset(src);
@@ -2638,31 +2586,66 @@
       return true;
     }
     function tryPlaceTree(x, y, size, lvl){ return tryPlaceDecor("tree", x, y, size, lvl, lvl*997); }
+    // Bir dekorun (banner/tabela gibi dikdörtgen, kare olmayan) ayrılmış alanını
+    // placedDecor'a kaydeder ki sonraki ağaç/kaya/tabela onun üstüne binmesin.
+    function registerDecorFootprint(cx, cy, size){ placedDecor.push({cx:cx, cy:cy, size:size}); }
+    function decorFootprintClear(cx, cy, size){
+      for(var p=0; p<placedDecor.length; p++){
+        var o = placedDecor[p];
+        var minDist = (size + o.size)/2 * 0.75 + 4;
+        if(Math.abs(cx - o.cx) < minDist && Math.abs(cy - o.cy) < minDist) return false;
+      }
+      return true;
+    }
     wraps.forEach(function(wrap, i){
       var lvl = i + 1;
+      var lvlWorld = worldForLevel(lvl);
       var btn = wrap.querySelector(".map-node");
       var r = btn.getBoundingClientRect();
       var cy = r.top - pathRect.top + scrollTop + r.height/2;
+      var nodeLeft = r.left - pathRect.left, nodeRight = nodeLeft + r.width;
+      // Düğümün boş (karşı) tarafı — artık sabit iki şerit yok, düğümün gerçek
+      // konumuna (orta çizgiye göre) bakılarak belirleniyor. Boss tabelası ve
+      // evren tabelası ikisi de bunu kullanıyor.
+      var onEmptySide = (nodeLeft + r.width/2) > pathWidth/2;
+
+      // Evren tabelası (ör. "Cehennem Geçidi"): bu evrenin İLK seviyesinde,
+      // tıpkı bir ağaç/kaya gibi — mevcut zeminin üzerine konan sıradan bir
+      // nesne, kendi dokusu/kesiti yok, ortak çakışma listesine dahil.
+      if(lvl === lvlWorld.from && lvlWorld.banner){
+        var signW = 132, signH = signW / 3.25;
+        var signX = Math.max(2, Math.min(pathWidth - signW - 2, onEmptySide ? (nodeLeft - signW - 8) : (nodeRight + 8)));
+        var signY = cy - signH/2;
+        var scx = signX + signW/2, scy = signY + signH/2;
+        if(decorFootprintClear(scx, scy, signW)){
+          var signImg = document.createElement("img");
+          signImg.className = "map-world-sign";
+          signImg.src = gvAsset(lvlWorld.banner);
+          signImg.alt = lvlWorld.name;
+          signImg.style.width = signW + "px";
+          signImg.style.height = "auto";
+          signImg.style.left = Math.round(signX) + "px";
+          signImg.style.top = Math.round(signY) + "px";
+          mapPath.appendChild(signImg);
+          registerDecorFootprint(scx, scy, signW);
+        }
+      }
 
       // 10'un katları: boss seviyesi — tabela + kafatası, düğümün karşı kenarında
       if(lvl % 10 === 0){
         var bossSize = 50;
         var boss = document.createElement("div");
-        var bossWorld = worldForLevel(lvl);
-        boss.className = "map-boss-sign" + (bossWorld.signpostTint ? " " + bossWorld.signpostTint : "");
-        var signpostWorld = bossWorld.signpost ? bossWorld : WORLDS[0]; // asset yoksa Yeşil Vadi'ninki + tint
+        boss.className = "map-boss-sign" + (lvlWorld.signpostTint ? " " + lvlWorld.signpostTint : "");
+        var signpostWorld = lvlWorld.signpost ? lvlWorld : WORLDS[0]; // asset yoksa Yeşil Vadi'ninki + tint
         boss.style.width = bossSize + "px";
-        // Düğümün hemen yanında: düğümün boş kalan (karşı) tarafına, 6px aralıkla —
-        // artık sabit iki şerit yok, hangi tarafın daha boş olduğu düğümün gerçek
-        // konumuna (orta çizgiye göre) bakılarak belirleniyor.
-        var nodeLeft = r.left - pathRect.left, nodeRight = nodeLeft + r.width;
-        var onLeftBoss = (nodeLeft + r.width/2) > pathWidth/2;
-        var bossX = onLeftBoss ? (nodeLeft - bossSize - 6) : (nodeRight + 6);
+        var bossX = onEmptySide ? (nodeLeft - bossSize - 6) : (nodeRight + 6);
         boss.style.left = Math.max(2, Math.min(pathWidth - bossSize - 2, bossX)) + "px";
         boss.style.top = (cy - bossSize/2 - 4) + "px";
         boss.innerHTML = '<img src="' + gvAsset("../assets/map/" + signpostWorld.folder + "/" + signpostWorld.signpost) + '" alt="" style="width:100%;display:block;">'
           + '<span class="map-boss-skull">💀</span>';
         mapPath.appendChild(boss);
+        // Ağaç gibi davransın diye: kapladığı alan ortak çakışma listesine kaydediliyor.
+        registerDecorFootprint(bossX + bossSize/2, cy, bossSize);
       }
 
       // Sağ kenar: seyrek orman — her seviyede 1-2 ağaç, birbirine binmeden.
