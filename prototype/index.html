@@ -2382,6 +2382,7 @@
       (function(lvl){
         var wrap = document.createElement("div");
         wrap.className = "map-node-wrap";
+        wrap.dataset.level = lvl; // drawMapDecor artık gerçek seviyeyi buradan okuyor (sayfa 1'den başlamıyor)
         wrap.style.paddingLeft = lanes[lvl] + "%";
         var btn = document.createElement("button");
         var state = lvl < currentLevel ? "done" : (lvl === currentLevel ? "current" : "locked");
@@ -2536,7 +2537,7 @@
   }
   // Asset guncellendiginde tarayici/CDN onbellegini kirmak icin surum etiketi —
   // map/ altindaki gorselleri her yeniden islediginde bu sayiyi artir.
-  var GREENVALLEY_ASSET_V = "9";
+  var GREENVALLEY_ASSET_V = "10";
   function gvAsset(path){ return path + "?v=" + GREENVALLEY_ASSET_V; }
 
   // Evrenler: her seviye aralığı kendi klasöründen (dekor + zemin dokusu) besleniyor.
@@ -2649,7 +2650,7 @@
       return true;
     }
     wraps.forEach(function(wrap, i){
-      var lvl = i + 1;
+      var lvl = parseInt(wrap.dataset.level, 10);
       var lvlWorld = worldForLevel(lvl);
       var btn = wrap.querySelector(".map-node");
       var r = btn.getBoundingClientRect();
@@ -2753,16 +2754,15 @@
     var segCount = Math.floor(mapPathSamples.length / 11);
     var slotIdx = [1, 3, 5, 7, 9];
     for(var sg=0; sg<segCount; sg++){
-      // Bu segment iki farklı evren arasındaki geçiş eğrisiyse (ör. 50→51), hiç
-      // dekor konmuyor — tabela zaten orada, yanlış evrenin asseti sızmasın diye.
-      if(worldForLevel(sg+1).key !== worldForLevel(sg+2).key) continue;
+      // Segmentin gerçek seviyesi (artık harita 1'den başlamayabilir — dataset'ten okunuyor).
+      var segLvl = parseInt(wraps[sg].dataset.level, 10);
       for(var slot=0; slot<slotIdx.length; slot++){
         var pt = mapPathSamples[sg*11 + slotIdx[slot]];
         for(var sd=0; sd<2; sd++){
-          var kk = (sg+1)*1000 + slot*37 + sd*7;
+          var kk = segLvl*1000 + slot*37 + sd*7;
           if(seededRand(kk) > 0.75) continue;
           var gap = MAP_PATH_HALF + 5 + Math.round(seededRand(kk+8)*22); // yola yakın veya biraz uzak
-          placeKind(seededRand(kk+1), kk, pt.x, pt.y, sd === 0 ? -1 : 1, gap, sg+1);
+          placeKind(seededRand(kk+1), kk, pt.x, pt.y, sd === 0 ? -1 : 1, gap, segLvl);
         }
       }
     }
