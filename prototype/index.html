@@ -697,6 +697,7 @@
   .jokers{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; margin-top:2px; }
   .joker-wrap{ position:relative; }
   .joker{
+    position:relative;
     width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
     padding:6px 4px; border:none; border-radius:12px; color:#fff;
     touch-action:manipulation;
@@ -709,7 +710,12 @@
   #jokerShuffle .joker-icon{ height:101px; max-width:138px; }
   #jokerRemove .joker-icon{ height:111px; max-width:151px; }
   .joker-label{ font-size:0.7rem; font-weight:800; line-height:1.15; text-align:center; letter-spacing:0.1px; text-shadow:0 1px 1px rgba(0,0,0,.3); }
-  .joker-count{ font-size:0.62rem; font-weight:700; opacity:.92; }
+  .joker-count{
+    position:absolute; bottom:-5px; right:-5px; min-width:17px; height:17px; padding:0 4px; box-sizing:border-box;
+    border-radius:999px; background:var(--ink); color:var(--card); border:2px solid var(--card);
+    font-size:0.62rem; font-weight:800; line-height:1; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 1px 2px rgba(0,0,0,.25);
+  }
   .joker:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--joker-edge), 0 2px 4px rgba(20,20,10,.2); }
   .joker:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
   .joker.used{ filter:grayscale(0.75) opacity(0.6); cursor:default; }
@@ -1342,7 +1348,7 @@
         <button class="joker" id="jokerShuffle" data-type="shuffle" title="Kalan taşları karıştır">
           <span class="joker-icon-slot"><img class="joker-icon" src="../assets/Joker Shuffle Asset.webp" alt=""></span>
           <span class="joker-label">Karıştır</span>
-          <span class="joker-count" id="cntShuffle">1 hak</span>
+          <span class="joker-count" id="cntShuffle">1</span>
         </button>
         <button class="joker-plus" data-buy="shuffle" title="Joker satın al" aria-label="Karıştır jokeri satın al">+</button>
       </div>
@@ -1350,7 +1356,7 @@
         <button class="joker" id="jokerExpand" data-type="expandTray" title="Sepete 1 slot ekle">
           <span class="joker-icon-slot"><img class="joker-icon" src="../assets/Joker Expand Asset.webp" alt=""></span>
           <span class="joker-label">Genişlet</span>
-          <span class="joker-count" id="cntExpand">1 hak</span>
+          <span class="joker-count" id="cntExpand">1</span>
         </button>
         <button class="joker-plus" data-buy="expandTray" title="Joker satın al" aria-label="Sepet genişletme jokeri satın al">+</button>
       </div>
@@ -1358,7 +1364,7 @@
         <button class="joker" id="jokerRemove" data-type="removeTile" title="Açık bir taşı doğrudan kaldır">
           <span class="joker-icon-slot"><img class="joker-icon" src="../assets/Joker Remove Asset.webp" alt=""></span>
           <span class="joker-label">Taşı Kaldır</span>
-          <span class="joker-count" id="cntRemove">1 hak</span>
+          <span class="joker-count" id="cntRemove">1</span>
         </button>
         <button class="joker-plus" data-buy="removeTile" title="Joker satın al" aria-label="Taşı kaldır jokeri satın al">+</button>
       </div>
@@ -1366,7 +1372,7 @@
         <button class="joker" id="jokerUndo" data-type="undo" title="Son taşı geri al">
           <span class="joker-icon-slot"><img class="joker-icon" src="../assets/Joker Undo Asset.webp" alt=""></span>
           <span class="joker-label">Geri Al</span>
-          <span class="joker-count" id="cntUndo">1 hak</span>
+          <span class="joker-count" id="cntUndo">1</span>
         </button>
         <button class="joker-plus" data-buy="undo" title="Joker satın al" aria-label="Geri al jokeri satın al">+</button>
       </div>
@@ -1702,7 +1708,7 @@
       var btn = document.getElementById(id);
       var cnt = document.getElementById(cid);
       var left = state.jokers[type];
-      cnt.textContent = left>0 ? (left+" hak") : "bitti";
+      cnt.textContent = left;
       btn.classList.toggle("used", left<=0);
       btn.classList.toggle("armed", armedJoker===type);
     });
