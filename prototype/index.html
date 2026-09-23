@@ -755,11 +755,12 @@
   .joker.used{ filter:grayscale(0.75) opacity(0.6); cursor:default; }
   .joker.armed{ box-shadow: 0 0 0 3px var(--accent-2), 0 3px 0 var(--joker-edge), 0 6px 10px rgba(20,20,10,0.22); }
   .joker-plus{
-    position:absolute; top:-7px; right:-7px; width:22px; height:22px; border-radius:50%;
+    position:absolute; top:-7px; right:-7px; width:22px; height:22px; padding:0; border-radius:50%;
     background:var(--accent-2); color:#08281f; border:2px solid var(--card);
-    font-size:0.94rem; font-weight:800; display:flex; align-items:center; justify-content:center;
-    cursor:pointer; line-height:1; touch-action:manipulation;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; touch-action:manipulation;
   }
+  .joker-plus svg{ width:12px; height:12px; display:block; }
   .joker-plus:hover{ filter:brightness(1.08); }
   .joker-plus:focus-visible{ outline:2px solid var(--ink); outline-offset:1px; }
 
@@ -1117,6 +1118,11 @@
       <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
     </symbol>
 
+    <symbol id="ic-plus" viewBox="0 0 24 24">
+      <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+      <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+    </symbol>
+
     <symbol id="ic-moon" viewBox="0 0 24 24">
       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     </symbol>
@@ -1406,7 +1412,7 @@
           <span class="joker-label">Karıştır</span>
           <span class="joker-count" id="cntShuffle">1</span>
         </button>
-        <button class="joker-plus" data-buy="shuffle" title="Joker satın al" aria-label="Karıştır jokeri satın al">+</button>
+        <button class="joker-plus" data-buy="shuffle" title="Joker satın al" aria-label="Karıştır jokeri satın al"><svg viewBox="0 0 24 24"><use href="#ic-plus"></use></svg></button>
       </div>
       <div class="joker-wrap">
         <button class="joker" id="jokerExpand" data-type="expandTray" title="Sepete 1 slot ekle">
@@ -1414,7 +1420,7 @@
           <span class="joker-label">Genişlet</span>
           <span class="joker-count" id="cntExpand">1</span>
         </button>
-        <button class="joker-plus" data-buy="expandTray" title="Joker satın al" aria-label="Sepet genişletme jokeri satın al">+</button>
+        <button class="joker-plus" data-buy="expandTray" title="Joker satın al" aria-label="Sepet genişletme jokeri satın al"><svg viewBox="0 0 24 24"><use href="#ic-plus"></use></svg></button>
       </div>
       <div class="joker-wrap">
         <button class="joker" id="jokerRemove" data-type="removeTile" title="Açık bir taşı doğrudan kaldır">
@@ -1422,7 +1428,7 @@
           <span class="joker-label">Taşı Kaldır</span>
           <span class="joker-count" id="cntRemove">1</span>
         </button>
-        <button class="joker-plus" data-buy="removeTile" title="Joker satın al" aria-label="Taşı kaldır jokeri satın al">+</button>
+        <button class="joker-plus" data-buy="removeTile" title="Joker satın al" aria-label="Taşı kaldır jokeri satın al"><svg viewBox="0 0 24 24"><use href="#ic-plus"></use></svg></button>
       </div>
       <div class="joker-wrap">
         <button class="joker" id="jokerUndo" data-type="undo" title="Son taşı geri al">
@@ -1430,7 +1436,7 @@
           <span class="joker-label">Geri Al</span>
           <span class="joker-count" id="cntUndo">1</span>
         </button>
-        <button class="joker-plus" data-buy="undo" title="Joker satın al" aria-label="Geri al jokeri satın al">+</button>
+        <button class="joker-plus" data-buy="undo" title="Joker satın al" aria-label="Geri al jokeri satın al"><svg viewBox="0 0 24 24"><use href="#ic-plus"></use></svg></button>
       </div>
     </div>
 
