@@ -704,7 +704,7 @@
     box-shadow: 0 3px 0 var(--joker-edge), 0 6px 10px rgba(20,20,10,0.22), inset 0 1px 0 rgba(255,255,255,.35);
     cursor:pointer; transition: filter .15s ease, transform .1s ease, box-shadow .12s ease;
   }
-  .joker svg{ width:21px; height:21px; filter:drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
+  .joker-icon{ height:28px; width:auto; max-width:38px; object-fit:contain; filter:drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
   .joker-label{ font-size:0.7rem; font-weight:800; line-height:1.15; text-align:center; letter-spacing:0.1px; text-shadow:0 1px 1px rgba(0,0,0,.3); }
   .joker-count{ font-size:0.62rem; font-weight:700; opacity:.92; }
   .joker:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--joker-edge), 0 2px 4px rgba(20,20,10,.2); }
@@ -1101,30 +1101,6 @@
       <path d="M12 9H8.2a2.4 2.4 0 1 1 0-4.8C10.8 4.2 12 9 12 9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       <path d="M12 9h3.8a2.4 2.4 0 1 0 0-4.8C13.2 4.2 12 9 12 9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     </symbol>
-
-    <!-- Joker ikonları -->
-    <symbol id="ic-joker-shuffle" viewBox="0 0 24 24">
-      <path d="M2 18h3.5c1.6 0 3-1 3.7-2.5L12 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M2 6h3.5c1.6 0 3 1 3.7 2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="m18 3 3 3-3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M13.5 8.5 15 6.5c.9-1.2 2.3-2 3.8-2H22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="m18 21 3-3-3-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M9 15.5 8 17c-.9 1.2-2.3 2-3.8 2H2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </symbol>
-    <symbol id="ic-joker-expand" viewBox="0 0 24 24">
-      <path d="M15 3h6v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M9 21H3v-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M21 3l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M3 21l7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </symbol>
-    <symbol id="ic-joker-remove" viewBox="0 0 24 24">
-      <rect x="5" y="5" width="14" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="2"/>
-      <line x1="5" y1="19" x2="19" y2="5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-    </symbol>
-    <symbol id="ic-joker-undo" viewBox="0 0 24 24">
-      <path d="M9 14 4 9l5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M4 9h10.5A5.5 5.5 0 0 1 20 14.5v0A5.5 5.5 0 0 1 14.5 20H11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </symbol>
   </defs>
 </svg>
 
@@ -1361,7 +1337,7 @@
     <div class="jokers">
       <div class="joker-wrap">
         <button class="joker" id="jokerShuffle" data-type="shuffle" title="Kalan taşları karıştır">
-          <svg viewBox="0 0 24 24"><use href="#ic-joker-shuffle"></use></svg>
+          <img class="joker-icon" src="../assets/Joker Shuffle Asset.webp" alt="">
           <span class="joker-label">Karıştır</span>
           <span class="joker-count" id="cntShuffle">1 hak</span>
         </button>
@@ -1369,7 +1345,7 @@
       </div>
       <div class="joker-wrap">
         <button class="joker" id="jokerExpand" data-type="expandTray" title="Sepete 1 slot ekle">
-          <svg viewBox="0 0 24 24"><use href="#ic-joker-expand"></use></svg>
+          <img class="joker-icon" src="../assets/Joker Expand Asset.webp" alt="">
           <span class="joker-label">Sepeti Genişlet</span>
           <span class="joker-count" id="cntExpand">1 hak</span>
         </button>
@@ -1377,7 +1353,7 @@
       </div>
       <div class="joker-wrap">
         <button class="joker" id="jokerRemove" data-type="removeTile" title="Açık bir taşı doğrudan kaldır">
-          <svg viewBox="0 0 24 24"><use href="#ic-joker-remove"></use></svg>
+          <img class="joker-icon" src="../assets/Joker Remove Asset.webp" alt="">
           <span class="joker-label">Taşı Kaldır</span>
           <span class="joker-count" id="cntRemove">1 hak</span>
         </button>
@@ -1385,7 +1361,7 @@
       </div>
       <div class="joker-wrap">
         <button class="joker" id="jokerUndo" data-type="undo" title="Son taşı geri al">
-          <svg viewBox="0 0 24 24"><use href="#ic-joker-undo"></use></svg>
+          <img class="joker-icon" src="../assets/Joker Undo Asset.webp" alt="">
           <span class="joker-label">Geri Al</span>
           <span class="joker-count" id="cntUndo">1 hak</span>
         </button>
