@@ -1187,20 +1187,6 @@
       </div>
     </div>
 
-    <div class="overlay ad-overlay" id="adPlayerOverlay">
-      <div class="ad-player">
-        <div class="ad-player-topbar">
-          <span class="ad-player-progress" id="adProgress" hidden>Reklam <b id="adProgressNum">1</b>/2</span>
-          <span class="ad-player-timer" id="adTimer">0:30</span>
-        </div>
-        <div class="ad-player-content">
-          <svg class="ad-player-logo" viewBox="0 0 100 100"><use href="#ic-coin"></use></svg>
-          <p class="ad-player-label">Reklam oynatılıyor…</p>
-        </div>
-        <button class="ad-skip-btn" id="adSkipBtn" hidden>Reklamı Atla ▸</button>
-      </div>
-    </div>
-
     <div class="overlay settings-overlay" id="dailyOverlay">
       <div class="card settings-card daily-card">
         <button class="settings-close" id="dailyCloseBtn" aria-label="Kapat">
@@ -1286,6 +1272,37 @@
           <span class="coin-pack-amount"><s>5.000</s> 3.500 <svg viewBox="0 0 100 100"><use href="#ic-coin"></use></svg></span>
         </span>
         <span class="coin-pack-price"></span>
+      </button>
+    </div>
+  </div>
+
+  <div class="overlay ad-overlay" id="adPlayerOverlay">
+    <div class="ad-player">
+      <div class="ad-player-topbar">
+        <span class="ad-player-progress" id="adProgress" hidden>Reklam <b id="adProgressNum">1</b>/2</span>
+        <span class="ad-player-timer" id="adTimer">0:30</span>
+      </div>
+      <div class="ad-player-content">
+        <svg class="ad-player-logo" viewBox="0 0 100 100"><use href="#ic-coin"></use></svg>
+        <p class="ad-player-label">Reklam oynatılıyor…</p>
+      </div>
+      <button class="ad-skip-btn" id="adSkipBtn" hidden>Reklamı Atla ▸</button>
+    </div>
+  </div>
+
+  <div class="overlay settings-overlay" id="getJokerOverlay">
+    <div class="card settings-card get-lives-card">
+      <button class="settings-close" id="getJokerCloseBtn" aria-label="Kapat">
+        <svg viewBox="0 0 24 24" width="16" height="16"><use href="#ic-close"></use></svg>
+      </button>
+      <h2 id="getJokerTitle">Joker Kazan</h2>
+      <button class="get-lives-option" id="buyJokerBtn">
+        <span class="get-lives-icon"><svg viewBox="0 0 100 100" width="22" height="22"><use href="#ic-coin"></use></svg></span>
+        <span class="get-lives-text"><b>Satın al!</b><small id="buyJokerCost">Snack Coin karşılığında 1 hak</small></span>
+      </button>
+      <button class="get-lives-option" id="watchAdJokerBtn">
+        <span class="get-lives-icon"><svg viewBox="0 0 24 24" width="20" height="20"><use href="#ic-video"></use></svg></span>
+        <span class="get-lives-text"><b>Reklam izleyerek 1 hak kazan!</b><small>30 saniyelik tek reklam</small></span>
       </button>
     </div>
   </div>
@@ -1611,7 +1628,7 @@
     return { tiles: tiles, boardW: bw, boardH: bh };
   }
 
-  function newLevel(level, jokersOverride, isReplay){
+  function newLevel(level, isReplay){
     maybeUpdateBestLevel(level);
     saveCurrentLevel(level);
     var config = getLevelConfig(level);
@@ -1624,7 +1641,8 @@
       banked: [], // taş kaldırma jokeriyle silinen, eşleri bekleyen taşlar (bkz. tile-bank)
       status: "playing",
       matches: 0,
-      jokers: jokersOverride || { shuffle:1, expandTray:1, removeTile:1, undo:1 },
+      // Jokerler artık bölüm bazlı değil -- bkz. aşağıdaki "Joker sistemi" bölümü
+      // (kalıcı, hesaba bağlı jokers nesnesi). Burada sıfırlanmıyor.
       trayMax: TRAY_MAX, // "Sepeti Genişlet" jokeriyle bu bölüme özel artar
       flightsInProgress: 0,
       isReplay: !!isReplay
@@ -1718,7 +1736,7 @@
       var cid = type==="shuffle"?"cntShuffle":type==="expandTray"?"cntExpand":type==="removeTile"?"cntRemove":"cntUndo";
       var btn = document.getElementById(id);
       var cnt = document.getElementById(cid);
-      var left = state.jokers[type];
+      var left = jokers[type];
       cnt.textContent = left;
       btn.classList.toggle("used", left<=0);
       btn.classList.toggle("armed", armedJoker===type);
@@ -1805,7 +1823,8 @@
       var removed = state.tiles[idx];
       state.tiles.splice(idx,1);
       state.banked.push({ id: removed.id, icon: removed.icon });
-      state.jokers.removeTile--;
+      jokers.removeTile--;
+      saveJokers();
       armedJoker = null;
       playTone(420,0.1,"sawtooth",0.05);
       render();
@@ -1947,7 +1966,7 @@
       spendLife();
       if(livesData.lives > 0){
         showOverlay("Sepet doldu", "Sepet " + trayMax + " malzemeyle doldu. Tekrar deneyebilir ya da ana menüye dönebilirsin.", "Baştan Başla", function(){
-          newLevel(state.level, null, state.isReplay);
+          newLevel(state.level, state.isReplay);
         }, "Ana Menüye Dön", function(){
           goToStartScreen();
         });
@@ -1985,7 +2004,7 @@
   }
 
   function useJoker(type){
-    if(!state || state.status!=="playing" || state.jokers[type]<=0) return;
+    if(!state || state.status!=="playing" || jokers[type]<=0) return;
     if(type==="removeTile"){
       armedJoker = (armedJoker==="removeTile") ? null : "removeTile";
       renderJokers();
@@ -1993,7 +2012,8 @@
     }
     if(type==="undo"){
       if(state.tray.length===0) return;
-      state.jokers.undo--;
+      jokers.undo--;
+      saveJokers();
       var last = state.tray.pop();
       state.tiles.push({ id:last.id, icon:last.icon, layer:last.layer, x:last.x, y:last.y });
       render();
@@ -2001,7 +2021,8 @@
       renderJokers();
       return;
     }
-    state.jokers[type]--;
+    jokers[type]--;
+    saveJokers();
     if(type==="shuffle"){
       shuffleBoard();
       playTone(700,0.08,"triangle",0.05);
@@ -2019,23 +2040,24 @@
   }
 
   var JOKER_COST = { removeTile:2, undo:2, shuffle:5, expandTray:5 };
+  var JOKER_NAMES = { shuffle:"Karıştır", expandTray:"Sepeti Genişlet", removeTile:"Taşı Kaldır", undo:"Geri Al" };
+  function grantJoker(type, n){
+    jokers[type] = (jokers[type] || 0) + n;
+    saveJokers();
+    renderJokers();
+  }
+
+  // "+" jokeri satın alma yerine artık, can kazanma ekranıyla aynı mantıkta bir
+  // seçim penceresi açıyor: Snack Coin ile satın al YA DA reklam izleyerek kazan
+  // (bkz. aşağıdaki getJokerOverlay kablolaması, playSimulatedAd can sisteminde
+  // tanımlı, jokerler için de aynen tekrar kullanılıyor).
+  var pendingJokerType = null;
   function buyJoker(type){
-    var names = { shuffle:"Karıştır", expandTray:"Sepeti Genişlet", removeTile:"Taşı Kaldır", undo:"Geri Al" };
+    pendingJokerType = type;
     var cost = JOKER_COST[type];
-    if(tokenBalance < cost){
-      openBuyCoins("Yeterli Snack Coin'iniz bulunmamakta.", true);
-      return;
-    }
-    showOverlay(
-      names[type] + " jokerini yenile",
-      cost + " Snack Coin karşılığında bu jokeri yenilemek istiyor musun?",
-      "Onayla, Satın Al",
-      function(){
-        if(state && spendTokens(cost)){ state.jokers[type] = 1; renderJokers(); }
-      },
-      "Vazgeç",
-      function(){}
-    );
+    getJokerTitle.textContent = JOKER_NAMES[type] + " Jokeri Kazan";
+    buyJokerCostEl.textContent = cost + " Snack Coin karşılığında 1 hak";
+    getJokerOverlay.classList.add("show");
   }
 
   function scaleBoard(){
@@ -2210,6 +2232,43 @@
     btn.addEventListener("click", function(e){ e.stopPropagation(); buyJoker(this.dataset.buy); });
   });
 
+  var getJokerOverlay = document.getElementById("getJokerOverlay");
+  var getJokerTitle = document.getElementById("getJokerTitle");
+  var buyJokerBtn = document.getElementById("buyJokerBtn");
+  var buyJokerCostEl = document.getElementById("buyJokerCost");
+  var watchAdJokerBtn = document.getElementById("watchAdJokerBtn");
+  document.getElementById("getJokerCloseBtn").addEventListener("click", function(){
+    getJokerOverlay.classList.remove("show");
+  });
+  getJokerOverlay.addEventListener("click", function(e){
+    if(e.target === getJokerOverlay) getJokerOverlay.classList.remove("show");
+  });
+  buyJokerBtn.addEventListener("click", function(){
+    var type = pendingJokerType;
+    var cost = JOKER_COST[type];
+    var label = buyJokerCostEl;
+    var prevText = label.textContent;
+    if(spendTokens(cost)){
+      grantJoker(type, 1);
+      getJokerOverlay.classList.remove("show");
+    } else {
+      label.textContent = "Yeterli Snack Coin yok! (" + cost + " gerekli)";
+      label.style.color = "var(--danger)";
+      setTimeout(function(){
+        label.textContent = prevText;
+        label.style.color = "";
+      }, 1600);
+    }
+  });
+  watchAdJokerBtn.addEventListener("click", function(){
+    var type = pendingJokerType;
+    getJokerOverlay.classList.remove("show");
+    adProgressEl.hidden = true;
+    playSimulatedAd(30, 5).then(function(){
+      grantJoker(type, 1);
+    });
+  });
+
   window.addEventListener("resize", scaleBoard);
   if(window.ResizeObserver){ new ResizeObserver(scaleBoard).observe(board); }
 
@@ -2241,6 +2300,26 @@
     return true;
   }
   renderTokensUI();
+
+  // ---- Joker sistemi -----------------------------------------------------------
+  // Not: Jokerler artık bölüm bazlı değil, hesaba (bu cihaza) bağlı KALICI bir
+  // kaynak -- tokenBalance/livesData gibi localStorage'da saklanır, kullanılınca
+  // kalıcı olarak azalır; yeni bölüme geçmek, seviyeyi kaybedip "Baştan Başla"
+  // ile yeniden başlamak jokerleri SIFIRLAMAZ. Yeni her hesap her jokerden 3
+  // hakla başlar (Snack Coin'deki tek seferlik 50 coin karşılama hediyesiyle
+  // aynı mantık, bkz. yukarıdaki not).
+  var JOKERS_KEY = "snackstack_jokers_v1";
+  function loadJokers(){
+    var data = null;
+    try{ data = JSON.parse(localStorage.getItem(JOKERS_KEY)); }catch(e){}
+    if(!data || typeof data !== "object"){
+      data = { shuffle:3, expandTray:3, removeTile:3, undo:3 };
+      try{ localStorage.setItem(JOKERS_KEY, JSON.stringify(data)); }catch(e){}
+    }
+    return data;
+  }
+  function saveJokers(){ try{ localStorage.setItem(JOKERS_KEY, JSON.stringify(jokers)); }catch(e){} }
+  var jokers = loadJokers();
 
   // ---- Can (life) sistemi -----------------------------------------------------
   // Not: Gerçek App Store / Google Play girişine bağlı hesap senkronizasyonu için
@@ -2377,7 +2456,7 @@
       mapScreen.hidden = true;
       mapScreen.classList.remove("leaving");
       gameScreen.hidden = false;
-      newLevel(level, null, isReplay);
+      newLevel(level, isReplay);
     }, 200);
   }
   function goToMapFromGame(){
