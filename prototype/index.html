@@ -174,14 +174,22 @@
   .map-topbar{ display:flex; align-items:center; gap:10px; }
   .map-title{ margin:0; flex:1; text-align:center; font-size:1.05rem; margin-right:34px; }
   /* Harita artık HER ZAMAN TEK BİR evreni gösterir (bkz. renderMap → mapViewIndex) —
-     zemin dokusu bu yüzden doğrudan mapPath'in KENDİ arka planı olarak veriliyor
-     (uzun, position:absolute + maskeli katmanlı yaklaşımların Chrome'da görünür
-     alanın ötesinde boyanmadığı görülmüştü; bir scroll container'ın kendi
-     background'ı ise her zaman güvenilir çalışıyor). */
+     zemin dokusu doğrudan mapPath'in KENDİ arka planı olarak veriliyor. Kaydırma
+     (overflow-y:auto) BİLEREK mapPath'in kendisinde DEĞİL, onu saran .map-scroll'da:
+     mapPath böylece kırpılmayan, içeriği kadar uzun DÜZ bir kutu -- arka planı da
+     normal bir sayfa arka planı gibi güvenle tüm yüksekliği kaplıyor. Daha önce
+     background-attachment:local ile mapPath'in KENDİSİ kaydırılıyordu; masaüstü
+     Chrome'da sorunsuzdu ama mobil Safari'de çok uzun (elli seviyelik) haritalarda
+     dokunun bir kısmı hiç boyanmıyor, yukarı kaydırınca tamamen kayboluyordu --
+     mobil WebKit'in "local" ile kaydırılan çok uzun arka planlarda bilinen bir
+     doku/katman sınırı. Kaydırmayı dış sarmalayıcıya taşımak bu sınırı devreden
+     çıkarıyor. */
+  .map-scroll{
+    flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch;
+  }
   .map-path{
-    position:relative; flex:1; overflow-y:auto; overflow-x:hidden;
-    display:flex; flex-direction:column-reverse; align-items:stretch;
-    padding:20px 8px; -webkit-overflow-scrolling:touch;
+    position:relative; display:flex; flex-direction:column-reverse; align-items:stretch;
+    padding:20px 8px;
   }
   /* Bir sonraki evrene geçiş tabelası: haritanın en üstünde, normal akışta bir
      satır. Kilitliyken soluk/gri ve üzerinde kilit rozeti var, tıklanamaz;
@@ -1288,7 +1296,9 @@
       </button>
       <h2 class="map-title">Seviye Haritası</h2>
     </div>
-    <div class="map-path" id="mapPath"></div>
+    <div class="map-scroll" id="mapScroll">
+      <div class="map-path" id="mapPath"></div>
+    </div>
   </div>
 
   <div class="phone" id="gameScreen" hidden>
@@ -2434,13 +2444,10 @@
       mapPath.style.backgroundSize = viewWorld.tileSize + "px " + viewWorld.tileSize + "px";
       mapPath.style.backgroundRepeat = "repeat";
     }
-    // ÖNEMLİ: background-attachment'in varsayılanı "scroll" — bu, bir scroll
-    // container'da dokunun ELEMENTİN KENDİSİNE sabitlenip İÇERİKLE BİRLİKTE
-    // KAYMAMASI demek (yaygın bir CSS tuzağı). Sonuç: doku sanki durur, düğüm/
-    // dekorlar onun üzerinde kayarmış gibi görünür — tam ters istiyoruz: kamera
-    // sabit dünyanın üzerinde hareket ediyormuş gibi, doku da içerikle BİRLİKTE
-    // kaysın. "local" tam bunu yapıyor.
-    mapPath.style.backgroundAttachment = "local";
+    // Kaydırma artık mapPath'in kendisinde değil, onu saran .map-scroll'da (bkz.
+    // yukarıdaki .map-scroll/.map-path CSS yorumu) -- mapPath hiç kırpılmadığı için
+    // background-attachment ile uğraşmaya gerek kalmadı, doku normal bir sayfa
+    // arka planı gibi içerikle birlikte kayıyor.
     mapTitleEl.textContent = viewWorld.name;
 
     // Önceki evrene dönüş oku — en altta (ilk eklenen, column-reverse'de en alt).
@@ -2549,15 +2556,17 @@
     var svgNS = "http://www.w3.org/2000/svg";
     var svg = document.createElementNS(svgNS, "svg");
     svg.setAttribute("class", "map-lines");
+    // mapPath artık kendisi kaydırılmıyor (bkz. .map-scroll), yani kendi kutusu
+    // hep tüm içeriği kadar uzun -- rect farkı zaten scroll'dan bağımsız, ayrıca
+    // scrollLeft/scrollTop eklemeye gerek yok.
     var pathRect = mapPath.getBoundingClientRect();
-    var scrollLeft = mapPath.scrollLeft, scrollTop = mapPath.scrollTop;
     var w = mapPath.scrollWidth, h = mapPath.scrollHeight;
     svg.setAttribute("width", w);
     svg.setAttribute("height", h);
     svg.setAttribute("viewBox", "0 0 " + w + " " + h);
     var pts = Array.prototype.map.call(wraps, function(wrap){
       var r = wrap.querySelector(".map-node").getBoundingClientRect();
-      return { x: r.left - pathRect.left + scrollLeft + r.width/2, y: r.top - pathRect.top + scrollTop + r.height/2 };
+      return { x: r.left - pathRect.left + r.width/2, y: r.top - pathRect.top + r.height/2 };
     });
     // Düğümler arası yumuşak S-eğrileri (yürüme yolu)
     var d = "M " + pts[0].x + "," + pts[0].y;
@@ -2683,22 +2692,14 @@
     mapPath.appendChild(img);
     return true;
   }
-  // Zemin dokusunu ve evren tanıtım tabelasını çizer. Not: burada bilerek CSS
-  // "background-image" ile kaplanmış tek bir dev (binlerce piksel yüksekliğinde)
-  // position:absolute/maskeli KATMAN KULLANILMIYOR — hem düz bir DIV hem de maskeli
-  // bir SVG ile denendi, ikisi de Chrome'da (kendi katmanına yükseltilen çok uzun,
-  // tekrarlanan dokulu öğelerde bilinen bir raster/tile sınırı yüzünden) başlangıçta
-  // görünür olmayan alanı hiç boyamıyordu. Zemin dokusu artık doğrudan her evrenin
-  // NORMAL AKIŞTAKİ grup kutusunun (bkz. renderMap → worldGroupFor) kendi CSS arka
-  // planı — bu, tarayıcının uzun kaydırılabilir içerikte her zaman güvenilir çalışan
-  // standart yolu. Tabelalar da aynı sebeple (bkz. renderMap) piksel hesabıyla değil,
-  // normal akışta kendi satırlarını kaplayarak yerleştiriliyor — komşu düğümlerle
-  // asla çakışmaz.
+  // Ağaç/çalı/taş/canlı dekorlarını ve boss tabelalarını çizer (zemin dokusunun
+  // kendisi mapPath'in CSS arka planı, bkz. renderMap — burada sadece üstüne
+  // binen dekorlar var). Dekorlar mapPath'in KENDİ (artık kaydırılmayan, bkz.
+  // .map-scroll) kutusuna göre piksel hesabıyla konumlanıyor.
   function drawMapDecor(){
     mapPath.querySelectorAll(".map-decor, .map-boss-sign").forEach(function(el){ el.remove(); });
     var wraps = mapPath.querySelectorAll(".map-node-wrap");
     var pathRect = mapPath.getBoundingClientRect();
-    var scrollTop = mapPath.scrollTop;
     var pathWidth = mapPath.clientWidth;
     // Tüm dekor türleri (ağaç/çalı/taş/canlı) TEK ortak listeye karşı kontrol
     // ediliyor — önceden sadece ağaçlar birbirini kontrol ediyordu, taş/çalı/canlı
@@ -2735,7 +2736,7 @@
       var lvlWorld = worldForLevel(lvl);
       var btn = wrap.querySelector(".map-node");
       var r = btn.getBoundingClientRect();
-      var cy = r.top - pathRect.top + scrollTop + r.height/2;
+      var cy = r.top - pathRect.top + r.height/2;
       var nodeLeft = r.left - pathRect.left, nodeRight = nodeLeft + r.width;
       // Düğümün boş (karşı) tarafı — artık sabit iki şerit yok, düğümün gerçek
       // konumuna (orta çizgiye göre) bakılarak belirleniyor. Boss tabelası ve
