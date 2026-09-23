@@ -739,13 +739,17 @@
   #jokerShuffle .joker-icon{ height:101px; max-width:138px; }
   #jokerRemove .joker-icon{ height:111px; max-width:151px; }
   .joker-label{ font-size:0.7rem; font-weight:800; line-height:1.15; text-align:center; letter-spacing:0.1px; text-shadow:0 1px 1px rgba(0,0,0,.3); }
-  .joker-count{
-    position:absolute; bottom:-8px; right:-8px; width:26px; height:26px; box-sizing:border-box;
-    border-radius:50%; background-image:url("../assets/Joker Badge Token Asset.webp");
-    background-size:150%; background-position:center; background-repeat:no-repeat;
-    color:#4A3620; font-size:0.8rem; font-weight:800; line-height:1; display:flex; align-items:center; justify-content:center;
-    filter:drop-shadow(0 1px 2px rgba(0,0,0,.3));
+  /* Hak sayacı artık metin değil, rakam başına bir "jeton" görseli --
+     digit_0..9 yan yana dizilerek herhangi bir sayıyı oluşturur (kodda
+     birleştiriliyor, bkz. renderJokerCount). 100'e ulaşınca tek, sabit
+     bir "100+" amblemine geçiliyor ve sayı görünmez şekilde artmaya
+     devam etse de amblem hep aynı kalır. */
+  .joker-count{ position:absolute; bottom:-8px; right:-8px; display:flex; align-items:center; }
+  .joker-count-digit{
+    width:22px; height:22px; margin-left:-5px; filter:drop-shadow(0 1px 2px rgba(0,0,0,.3));
   }
+  .joker-count-digit:first-child{ margin-left:0; }
+  .joker-count-cap{ width:30px; height:30px; filter:drop-shadow(0 1px 2px rgba(0,0,0,.3)); }
   .joker:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--joker-edge), 0 2px 4px rgba(20,20,10,.2); }
   .joker:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
   .joker.used{ filter:grayscale(0.75) opacity(0.6); cursor:default; }
@@ -1113,11 +1117,6 @@
       <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
     </symbol>
 
-    <symbol id="ic-lens" viewBox="0 0 24 24">
-      <circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/>
-      <line x1="15.3" y1="15.3" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-    </symbol>
-
     <symbol id="ic-moon" viewBox="0 0 24 24">
       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     </symbol>
@@ -1363,7 +1362,7 @@
           <button class="lives-add-btn token-add-btn" id="gameBuyCoinsBtn" title="Snack Coin satın al" aria-label="Snack Coin satın al">+</button>
         </div>
         <button class="icon-btn" id="btnLens" title="Mercek modu" aria-label="Mercek modu">
-          <svg viewBox="0 0 24 24" width="18" height="18"><use href="#ic-lens"></use></svg>
+          <img src="../assets/Lens Icon Asset.webp" width="22" height="22" alt="">
         </button>
         <button class="icon-btn" id="btnSettings" title="Ayarlar" aria-label="Ayarlar">
           <svg viewBox="0 0 24 24" width="18" height="18"><use href="#ic-gear"></use></svg>
@@ -1779,6 +1778,27 @@
   }
 
 
+  // left>=100 iken de sayı arka planda gerçek değeriyle takip ediliyor
+  // (jokers[type] hiç sınırlanmıyor) -- yalnızca GÖSTERİLEN amblem 100+'da
+  // sabitleniyor, tekrar 100 ya da altına düşünce rakam jetonlarına dönüyor.
+  function renderJokerCount(cnt, left){
+    cnt.innerHTML = "";
+    if(left >= 100){
+      var cap = document.createElement("img");
+      cap.className = "joker-count-cap";
+      cap.src = "../assets/Joker Count 100 Plus Badge.webp";
+      cap.alt = "";
+      cnt.appendChild(cap);
+      return;
+    }
+    String(left).split("").forEach(function(ch){
+      var d = document.createElement("img");
+      d.className = "joker-count-digit";
+      d.src = "../assets/digits/digit_" + ch + ".png";
+      d.alt = "";
+      cnt.appendChild(d);
+    });
+  }
   function renderJokers(){
     ["shuffle","expandTray","removeTile","undo"].forEach(function(type){
       var id = type==="shuffle"?"jokerShuffle":type==="expandTray"?"jokerExpand":type==="removeTile"?"jokerRemove":"jokerUndo";
@@ -1786,7 +1806,7 @@
       var btn = document.getElementById(id);
       var cnt = document.getElementById(cid);
       var left = jokers[type];
-      cnt.textContent = left;
+      renderJokerCount(cnt, left);
       btn.classList.toggle("used", left<=0);
       btn.classList.toggle("armed", armedJoker===type);
     });
