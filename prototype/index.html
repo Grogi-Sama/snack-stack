@@ -597,6 +597,22 @@
   .lens-peek-bubble svg{ width:100%; height:100%; display:block; }
   @keyframes lensPeekPop{ 0%{ transform:scale(0.6); opacity:0; } 100%{ transform:scale(1); opacity:1; } }
 
+  /* Mercek modu şeridi: modun ne işe yaradığını kısaca anlatıyor VE aynı
+     zamanda tamamı tıklanabilir büyük bir "kapat" hedefi -- yaşlı/küçük
+     yaştaki oyuncular için ikon-tıklamayı hatırlamaya gerek bırakmıyor. */
+  .lens-banner{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    background:var(--accent-2); color:#08281f; border-radius:12px; padding:8px 12px;
+    font-size:0.7rem; font-weight:700; line-height:1.25; cursor:pointer; touch-action:manipulation;
+    animation: lensBannerIn .18s ease;
+  }
+  .lens-banner[hidden]{ display:none; }
+  .lens-banner-text{ flex:1; }
+  .lens-banner-close{ font-weight:800; white-space:nowrap; flex-shrink:0; }
+  @keyframes lensBannerIn{ 0%{ transform:translateY(-6px); opacity:0; } 100%{ transform:translateY(0); opacity:1; } }
+
+  .tray.lens-dim{ filter:grayscale(.5) brightness(.8); transition:filter .2s ease; }
+
   .stats{ display:flex; gap:14px; font-size:0.78rem; color:var(--ink-soft); padding:0 2px; font-variant-numeric: tabular-nums; }
   .stats b{ color:var(--ink); }
 
@@ -1376,6 +1392,11 @@
       </div>
     </div>
 
+    <div class="lens-banner" id="lensBanner" hidden>
+      <span class="lens-banner-text">🔍 Mercek modu: taşa dokun, ne olduğunu gör. Sepete eklenmez.</span>
+      <span class="lens-banner-close">Kapat ✕</span>
+    </div>
+
     <div class="stats">
       <span>Seviye <b id="statLevel">1</b></span>
       <span>Kalan: <b id="statRemaining">0</b></span>
@@ -2082,11 +2103,7 @@
     if(!state || state.status!=="playing" || jokers[type]<=0) return;
     if(type==="removeTile"){
       armedJoker = (armedJoker==="removeTile") ? null : "removeTile";
-      if(armedJoker==="removeTile" && lensMode){
-        lensMode = false;
-        btnLens.classList.remove("active");
-        hideLensPeek();
-      }
+      if(armedJoker==="removeTile" && lensMode) setLensMode(false);
       renderJokers();
       return;
     }
@@ -2269,6 +2286,7 @@
   var btnLens = document.getElementById("btnLens");
   var lensPeek = document.getElementById("lensPeek");
   var lensPeekIcon = document.getElementById("lensPeekIcon");
+  var lensBanner = document.getElementById("lensBanner");
   function hideLensPeek(){ lensPeek.hidden = true; }
   function peekTile(id){
     if(!state) return;
@@ -2277,9 +2295,14 @@
     lensPeekIcon.setAttribute("href", "#ic-" + tile.icon);
     lensPeek.hidden = false;
   }
-  btnLens.addEventListener("click", function(){
-    lensMode = !lensMode;
+  // Modu hem ikondan hem de şeritten (bkz. lensBanner) açıp kapatabilmek
+  // için tek, paylaşılan bir fonksiyon -- ikisi de state'i aynı şekilde
+  // günceller, aralarında senkronizasyon kayması olmaz.
+  function setLensMode(on){
+    lensMode = on;
     btnLens.classList.toggle("active", lensMode);
+    lensBanner.hidden = !lensMode;
+    trayEl.classList.toggle("lens-dim", lensMode);
     if(lensMode){
       // Mercek ile taş kaldırma jokerinin "hedef seç" modu aynı anda açık
       // kalırsa dokunuşun hangi moda ait olduğu belirsizleşir -- mercek
@@ -2289,7 +2312,9 @@
     } else {
       hideLensPeek();
     }
-  });
+  }
+  btnLens.addEventListener("click", function(){ setLensMode(!lensMode); });
+  lensBanner.addEventListener("click", function(){ setLensMode(false); });
   document.getElementById("settingsCloseBtn").addEventListener("click", function(){
     settingsOverlay.classList.remove("show");
   });
