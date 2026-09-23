@@ -694,7 +694,7 @@
     .tile, .icon-btn, .slot, .flying-tile, .particle, .grass, .joker, .basket{ transition:none !important; animation:none !important; }
   }
 
-  .jokers{ display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:2px; }
+  .jokers{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; margin-top:2px; }
   .joker-wrap{ position:relative; }
   .joker{
     width:100%; aspect-ratio:1/1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
@@ -704,7 +704,7 @@
     box-shadow: 0 3px 0 var(--joker-edge), 0 6px 10px rgba(20,20,10,0.22), inset 0 1px 0 rgba(255,255,255,.35);
     cursor:pointer; transition: filter .15s ease, transform .1s ease, box-shadow .12s ease;
   }
-  .joker-icon{ height:56px; width:auto; max-width:76px; object-fit:contain; filter:drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
+  .joker-icon{ height:84px; width:auto; max-width:114px; object-fit:contain; filter:drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
   .joker-label{ font-size:0.7rem; font-weight:800; line-height:1.15; text-align:center; letter-spacing:0.1px; text-shadow:0 1px 1px rgba(0,0,0,.3); }
   .joker-count{ font-size:0.62rem; font-weight:700; opacity:.92; }
   .joker:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--joker-edge), 0 2px 4px rgba(20,20,10,.2); }
@@ -1346,7 +1346,7 @@
       <div class="joker-wrap">
         <button class="joker" id="jokerExpand" data-type="expandTray" title="Sepete 1 slot ekle">
           <img class="joker-icon" src="../assets/Joker Expand Asset.webp" alt="">
-          <span class="joker-label">Sepeti Genişlet</span>
+          <span class="joker-label">Genişlet</span>
           <span class="joker-count" id="cntExpand">1 hak</span>
         </button>
         <button class="joker-plus" data-buy="expandTray" title="Joker satın al" aria-label="Sepet genişletme jokeri satın al">+</button>
