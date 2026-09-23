@@ -637,6 +637,24 @@
   .basket.cooking{ animation: basketPulse .5s ease; }
   @keyframes basketPulse{ 0%,100%{ transform:scale(1);} 40%{ transform:scale(1.025);} }
 
+  /* Taş kaldırma jokeriyle kaldırılan bir taşın diğer 2 eşi hâlâ tahtadaysa
+     (yani üçlü tamamlanamaz hale gelmişse), taş silinmek yerine burada kilitli
+     bekliyor. Diğer 2 eşi sepete düşünce otomatik olarak katılıp üçlüyü
+     tamamlıyor — böylece oyuncu asla "üçüncüsü hiç yok" durumunda kalmıyor. */
+  .tile-bank{ position:absolute; top:-15px; left:12px; display:flex; gap:5px; z-index:2; }
+  .bank-slot{
+    position:relative; width:28px; height:28px; border-radius:7px;
+    background: linear-gradient(160deg, var(--tile-top), var(--tile-base));
+    box-shadow: 0 2px 0 #7A5A2E, 0 3px 5px rgba(15,15,5,.35), inset 0 1px 1px rgba(255,255,255,.4);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .bank-slot svg{ width:72%; height:72%; opacity:.85; }
+  .bank-slot-lock{
+    position:absolute; top:-5px; right:-5px; width:14px; height:14px; border-radius:50%;
+    background:var(--ink-soft); box-shadow:0 1px 2px rgba(0,0,0,.35), 0 0 0 2px var(--card);
+    display:flex; align-items:center; justify-content:center; color:#fff;
+  }
+  .bank-slot-lock svg{ width:8px; height:8px; }
   .tray{ position:relative; display:grid; grid-template-columns:repeat(7, 1fr); gap:6px; }
   .slot{
     position:relative; aspect-ratio:1; border-radius:9px; overflow:hidden;
@@ -1327,6 +1345,7 @@
 
     <div class="kitchen">
       <div class="basket" id="basketEl">
+        <div class="tile-bank" id="tileBank"></div>
         <div class="tray" id="tray"></div>
       </div>
     </div>
@@ -1503,6 +1522,7 @@
   var board = document.getElementById("board");
   var boardInner = document.getElementById("boardInner");
   var trayEl = document.getElementById("tray");
+  var tileBankEl = document.getElementById("tileBank");
   var statLevel = document.getElementById("statLevel");
   var statRemaining = document.getElementById("statRemaining");
   var statMatches = document.getElementById("statMatches");
@@ -1597,6 +1617,7 @@
       level: level,
       tiles: built.tiles,
       tray: [],
+      banked: [], // taş kaldırma jokeriyle silinen, eşleri bekleyen taşlar (bkz. tile-bank)
       status: "playing",
       matches: 0,
       jokers: jokersOverride || { shuffle:1, restartLevel:1, removeTile:1, undo:1 },
@@ -1609,6 +1630,7 @@
     boardInner.style.height = BOARD_H + "px";
     render();
     renderTray();
+    renderBank();
     statMatches.textContent = "0";
     renderJokers();
     scaleBoard();
@@ -1667,6 +1689,19 @@
       }
       trayEl.appendChild(slot);
     }
+  }
+
+  // Bkz. handleTileClick(removeTile) ve land() — taş kaldırma jokeriyle kaldırılan
+  // ama eşleri hâlâ tahtada olan taşlar burada, kilitli küçük bir simge olarak bekler.
+  function renderBank(){
+    tileBankEl.innerHTML = "";
+    (state.banked || []).forEach(function(b){
+      var slot = document.createElement("div");
+      slot.className = "bank-slot";
+      slot.innerHTML = '<svg viewBox="0 0 100 100"><use href="#ic-'+b.icon+'"></use></svg>'
+        + '<span class="bank-slot-lock"><svg viewBox="0 0 24 24"><use href="#ic-lock"></use></svg></span>';
+      tileBankEl.appendChild(slot);
+    });
   }
 
 
@@ -1756,12 +1791,19 @@
       for(var i=0;i<state.tiles.length;i++){ if(state.tiles[i].id===id){ idx=i; break; } }
       if(idx===-1) return;
       if(coveringCount(state.tiles[idx])>0) return;
+      // Taş tahtadan siliniyor ama YOK OLMUYOR — kalan 2 eşi hiçbir zaman
+      // 3'e tamamlanamadığı için oyunu tıkayan eski hataya karşı, taş "bankaya"
+      // (bkz. renderBank) kilitli olarak konuyor; eşleri sepete düşünce
+      // otomatik katılıp üçlüyü tamamlıyor (bkz. land() içindeki kontrol).
+      var removed = state.tiles[idx];
       state.tiles.splice(idx,1);
+      state.banked.push({ id: removed.id, icon: removed.icon });
       state.jokers.removeTile--;
       armedJoker = null;
       playTone(420,0.1,"sawtooth",0.05);
       render();
       renderJokers();
+      renderBank();
       checkEnd();
       return;
     }
@@ -1802,6 +1844,18 @@
       state.flightsInProgress--;
       // orijinal konum/katman saklanıyor ki "geri al" taşı tam olduğu yere koyabilsin
       state.tray.push({ id: tile.id, icon: tile.icon, x: tile.x, y: tile.y, layer: tile.layer });
+      // Bu taşla birlikte sepette TAM 2 tane oldu ve bankada aynı türden kilitli
+      // bekleyen bir taş varsa, üçlüyü tamamlamak için otomatik olarak katılır.
+      var sameInTray = state.tray.filter(function(t){ return !t.matched && t.icon===tile.icon; }).length;
+      if(sameInTray === 2){
+        var bi = -1;
+        for(var bk=0; bk<state.banked.length; bk++){ if(state.banked[bk].icon===tile.icon){ bi=bk; break; } }
+        if(bi !== -1){
+          var b = state.banked.splice(bi,1)[0];
+          state.tray.push({ id:b.id, icon:b.icon, x:null, y:null, layer:null });
+          renderBank();
+        }
+      }
       renderTray();
       playTone(520, 0.08, "triangle", 0.045);
       var el = trayEl.children[targetIndex];
