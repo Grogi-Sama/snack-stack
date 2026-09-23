@@ -641,7 +641,13 @@
      (yani üçlü tamamlanamaz hale gelmişse), taş silinmek yerine burada kilitli
      bekliyor. Diğer 2 eşi sepete düşünce otomatik olarak katılıp üçlüyü
      tamamlıyor — böylece oyuncu asla "üçüncüsü hiç yok" durumunda kalmıyor. */
-  .tile-bank{ position:absolute; top:-15px; left:12px; display:flex; gap:5px; z-index:2; }
+  /* Not: .basket'in içinde DEĞİL — basket'in overflow:hidden'ı onun üstüne taşan
+     her şeyi kırpıyordu, bu yüzden banka görünmüyordu. Artık basket'in dışında,
+     sepetin hemen üstünde, normal akışta ortalanmış kendi satırı. */
+  .tile-bank{
+    display:flex; justify-content:center; gap:6px; min-height:34px;
+    align-items:flex-end; margin-bottom:4px;
+  }
   .bank-slot{
     position:relative; width:28px; height:28px; border-radius:7px;
     background: linear-gradient(160deg, var(--tile-top), var(--tile-base));
@@ -1343,9 +1349,9 @@
       </div>
     </div>
 
+    <div class="tile-bank" id="tileBank"></div>
     <div class="kitchen">
       <div class="basket" id="basketEl">
-        <div class="tile-bank" id="tileBank"></div>
         <div class="tray" id="tray"></div>
       </div>
     </div>
