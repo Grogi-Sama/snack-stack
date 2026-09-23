@@ -614,7 +614,9 @@
   .lens-banner{
     position:relative; z-index:21;
     display:flex; align-items:center; justify-content:center; text-align:center;
-    background:var(--accent-2); color:#08281f; border-radius:12px; padding:8px 12px;
+    background:linear-gradient(160deg, var(--tile-top), var(--tile-base));
+    color:var(--accent-ink); border-radius:12px; padding:8px 12px;
+    box-shadow: var(--shadow-sm), 0 0 0 1px var(--line), inset 0 1px 0 rgba(255,255,255,.5);
     font-size:0.7rem; font-weight:700; line-height:1.25;
     animation: lensBannerIn .18s ease;
   }
@@ -624,9 +626,10 @@
   .lens-close-btn{
     position:relative; z-index:21; align-self:center; margin:2px auto 0;
     padding:7px 18px; border:none; border-radius:999px;
-    background:var(--accent-2); color:#08281f; font-family:inherit; font-size:0.76rem; font-weight:800;
+    background:linear-gradient(160deg, var(--joker-top), var(--joker-base));
+    color:#fff; font-family:inherit; font-size:0.76rem; font-weight:800;
     cursor:pointer; touch-action:manipulation;
-    box-shadow: 0 3px 0 rgba(0,0,0,.15), 0 4px 8px rgba(0,0,0,.2);
+    box-shadow: 0 3px 0 var(--joker-edge), 0 4px 8px rgba(20,20,10,.25), inset 0 1px 0 rgba(255,255,255,.35);
     transition: transform .1s ease;
   }
   .lens-close-btn[hidden]{ display:none; }
@@ -1417,7 +1420,7 @@
     <div class="lens-banner" id="lensBanner" hidden>
       <span class="lens-banner-text">🔍 Mercek modu: taşa dokun, ne olduğunu gör. Sepete eklenmez.</span>
     </div>
-    <button class="lens-close-btn" id="lensCloseBtn" hidden>Mercek Modunu Kapat</button>
+    <button class="lens-close-btn" id="lensCloseBtn" hidden>Mercek Modunu Kapat ✕</button>
 
     <div class="stats">
       <span>Seviye <b id="statLevel">1</b></span>
