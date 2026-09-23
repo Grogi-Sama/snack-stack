@@ -578,13 +578,24 @@
   .icon-btn.active{ background:var(--accent-2); color:#08281f; border-color:var(--accent-2); }
   .icon-btn.active:hover{ background:var(--accent-2); }
 
-  /* Mercek modu: taşın gerçek ikonunu büyütüp gösteren, tıklamaları
-     ENGELLEMEYEN (pointer-events:none) bir baloncuk -- tahtanın üzerinde
-     durur ama altındaki taşlara dokunmayı hiç kesmez, böylece oyuncu
-     mercek AÇIKKEN art arda birden fazla taşa bakabilir. */
+  /* Mercek modu: ekranın tamamı karartılıyor (bkz. .lens-screen-dim), yalnızca
+     taş tahtası (.board-frame), bilgilendirme şeridi ve "Mercek Modunu Kapat"
+     butonu bu karartmanın z-index'inin ÜSTÜNDE kalarak normal parlaklıkta
+     görünüyor -- pointer-events:none olduğu için hiçbir tıklamayı engellemiyor,
+     sadece görsel bir ipucu.  */
+  .lens-screen-dim{
+    position:absolute; inset:0; z-index:20; background:rgba(8,10,20,0.55); pointer-events:none;
+  }
+  .lens-screen-dim[hidden]{ display:none; }
+
+  /* Taşın gerçek ikonunu büyütüp gösteren, tıklamaları ENGELLEMEYEN
+     (pointer-events:none) bir baloncuk -- tahtanın üzerinde durur ama
+     altındaki taşlara dokunmayı hiç kesmez, böylece oyuncu mercek AÇIKKEN
+     art arda birden fazla taşa bakabilir. Kendi arka plan karartması yok
+     artık -- .lens-screen-dim zaten sürekli açık. */
   .lens-peek{
     position:absolute; inset:0; z-index:60; display:flex; align-items:center; justify-content:center;
-    background:rgba(8,10,20,0.4); pointer-events:none;
+    pointer-events:none;
   }
   .lens-peek[hidden]{ display:none; }
   .lens-peek-bubble{
@@ -597,21 +608,30 @@
   .lens-peek-bubble svg{ width:100%; height:100%; display:block; }
   @keyframes lensPeekPop{ 0%{ transform:scale(0.6); opacity:0; } 100%{ transform:scale(1); opacity:1; } }
 
-  /* Mercek modu şeridi: modun ne işe yaradığını kısaca anlatıyor VE aynı
-     zamanda tamamı tıklanabilir büyük bir "kapat" hedefi -- yaşlı/küçük
-     yaştaki oyuncular için ikon-tıklamayı hatırlamaya gerek bırakmıyor. */
+  /* Mercek modu şeridi: artık yalnızca bilgilendirme -- kapatma işlevi ayrı,
+     kendi butonunde (.lens-close-btn). İkisi de karartmanın üstünde kalsın
+     diye position:relative + z-index taşıyor. */
   .lens-banner{
-    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    position:relative; z-index:21;
+    display:flex; align-items:center; justify-content:center; text-align:center;
     background:var(--accent-2); color:#08281f; border-radius:12px; padding:8px 12px;
-    font-size:0.7rem; font-weight:700; line-height:1.25; cursor:pointer; touch-action:manipulation;
+    font-size:0.7rem; font-weight:700; line-height:1.25;
     animation: lensBannerIn .18s ease;
   }
   .lens-banner[hidden]{ display:none; }
-  .lens-banner-text{ flex:1; }
-  .lens-banner-close{ font-weight:800; white-space:nowrap; flex-shrink:0; }
   @keyframes lensBannerIn{ 0%{ transform:translateY(-6px); opacity:0; } 100%{ transform:translateY(0); opacity:1; } }
 
-  .tray.lens-dim{ filter:grayscale(.5) brightness(.8); transition:filter .2s ease; }
+  .lens-close-btn{
+    position:relative; z-index:21; align-self:center; margin:2px auto 0;
+    padding:7px 18px; border:none; border-radius:999px;
+    background:var(--accent-2); color:#08281f; font-family:inherit; font-size:0.76rem; font-weight:800;
+    cursor:pointer; touch-action:manipulation;
+    box-shadow: 0 3px 0 rgba(0,0,0,.15), 0 4px 8px rgba(0,0,0,.2);
+    transition: transform .1s ease;
+  }
+  .lens-close-btn[hidden]{ display:none; }
+  .lens-close-btn:active{ transform:translateY(2px); }
+  .lens-close-btn:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
 
   .stats{ display:flex; gap:14px; font-size:0.78rem; color:var(--ink-soft); padding:0 2px; font-variant-numeric: tabular-nums; }
   .stats b{ color:var(--ink); }
@@ -844,7 +864,7 @@
   }
   .overlay .settings-card button.settings-quit-btn:hover{ background:rgba(232,80,58,0.08); }
 
-  .board-frame{ position:relative; }
+  .board-frame{ position:relative; z-index:21; }
   .note{ text-align:center; font-size:0.74rem; color:var(--ink-soft); margin:0; position:relative; z-index:1; }
 </style>
 
@@ -1392,10 +1412,12 @@
       </div>
     </div>
 
+    <div class="lens-screen-dim" id="lensScreenDim" hidden></div>
+
     <div class="lens-banner" id="lensBanner" hidden>
       <span class="lens-banner-text">🔍 Mercek modu: taşa dokun, ne olduğunu gör. Sepete eklenmez.</span>
-      <span class="lens-banner-close">Kapat ✕</span>
     </div>
+    <button class="lens-close-btn" id="lensCloseBtn" hidden>Mercek Modunu Kapat</button>
 
     <div class="stats">
       <span>Seviye <b id="statLevel">1</b></span>
@@ -2287,6 +2309,8 @@
   var lensPeek = document.getElementById("lensPeek");
   var lensPeekIcon = document.getElementById("lensPeekIcon");
   var lensBanner = document.getElementById("lensBanner");
+  var lensCloseBtn = document.getElementById("lensCloseBtn");
+  var lensScreenDim = document.getElementById("lensScreenDim");
   function hideLensPeek(){ lensPeek.hidden = true; }
   function peekTile(id){
     if(!state) return;
@@ -2295,14 +2319,15 @@
     lensPeekIcon.setAttribute("href", "#ic-" + tile.icon);
     lensPeek.hidden = false;
   }
-  // Modu hem ikondan hem de şeritten (bkz. lensBanner) açıp kapatabilmek
-  // için tek, paylaşılan bir fonksiyon -- ikisi de state'i aynı şekilde
-  // günceller, aralarında senkronizasyon kayması olmaz.
+  // Modu hem ikondan hem de "Mercek Modunu Kapat" butonundan açıp
+  // kapatabilmek için tek, paylaşılan bir fonksiyon -- ikisi de state'i
+  // aynı şekilde günceller, aralarında senkronizasyon kayması olmaz.
   function setLensMode(on){
     lensMode = on;
     btnLens.classList.toggle("active", lensMode);
     lensBanner.hidden = !lensMode;
-    trayEl.classList.toggle("lens-dim", lensMode);
+    lensCloseBtn.hidden = !lensMode;
+    lensScreenDim.hidden = !lensMode;
     if(lensMode){
       // Mercek ile taş kaldırma jokerinin "hedef seç" modu aynı anda açık
       // kalırsa dokunuşun hangi moda ait olduğu belirsizleşir -- mercek
@@ -2314,7 +2339,7 @@
     }
   }
   btnLens.addEventListener("click", function(){ setLensMode(!lensMode); });
-  lensBanner.addEventListener("click", function(){ setLensMode(false); });
+  lensCloseBtn.addEventListener("click", function(){ setLensMode(false); });
   document.getElementById("settingsCloseBtn").addEventListener("click", function(){
     settingsOverlay.classList.remove("show");
   });
