@@ -608,6 +608,10 @@
   .lens-peek-bubble svg{ width:100%; height:100%; display:block; }
   @keyframes lensPeekPop{ 0%{ transform:scale(0.6); opacity:0; } 100%{ transform:scale(1); opacity:1; } }
 
+  /* Baloncuk açıkken tahtadaki diğer taşlar "öne çıkan" taşın arkasında
+     kalmış gibi hafifçe kararıyor. */
+  .board-inner.lens-peeking .tile{ filter:brightness(.45) saturate(.75); transition:filter .15s ease; }
+
   /* Mercek modu şeridi: artık yalnızca bilgilendirme -- kapatma işlevi ayrı,
      kendi butonunde (.lens-close-btn). İkisi de karartmanın üstünde kalsın
      diye position:relative + z-index taşıyor. */
@@ -2314,13 +2318,28 @@
   var lensBanner = document.getElementById("lensBanner");
   var lensCloseBtn = document.getElementById("lensCloseBtn");
   var lensScreenDim = document.getElementById("lensScreenDim");
-  function hideLensPeek(){ lensPeek.hidden = true; }
+  var lensPeekedId = null;
+  function hideLensPeek(){
+    lensPeek.hidden = true;
+    lensPeekedId = null;
+    boardInner.classList.remove("lens-peeking");
+  }
+  // Aynı taşa ikinci kez dokununca baloncuğu kapatıp tahtayı eski haline
+  // döndürüyor (aç/kapa) -- farklı bir taşa dokunmak ise doğrudan yeni
+  // taşı gösteriyor. Baloncuk açıkken tahtadaki DİĞER taşlar (seçilen
+  // "öne çıkmış" hissi versin diye) hafifçe kararıyor.
   function peekTile(id){
     if(!state) return;
+    if(!lensPeek.hidden && lensPeekedId === id){
+      hideLensPeek();
+      return;
+    }
     var tile = state.tiles.filter(function(t){ return String(t.id)===String(id); })[0];
     if(!tile) return;
     lensPeekIcon.setAttribute("href", "#ic-" + tile.icon);
     lensPeek.hidden = false;
+    lensPeekedId = id;
+    boardInner.classList.add("lens-peeking");
   }
   // Modu hem ikondan hem de "Mercek Modunu Kapat" butonundan açıp
   // kapatabilmek için tek, paylaşılan bir fonksiyon -- ikisi de state'i
