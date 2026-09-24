@@ -233,8 +233,8 @@
   .map-boss-sign img{ display:block; width:100%; filter:drop-shadow(0 3px 3px rgba(20,40,10,.25)); }
   .map-boss-sign.hell img{ filter:drop-shadow(0 3px 4px rgba(60,0,0,.5)) sepia(1) saturate(5) hue-rotate(-45deg) brightness(.8) contrast(1.2); }
   .map-boss-skull{
-    position:absolute; top:22%; left:50%; transform:translateX(-50%);
-    font-size:1.3rem; line-height:1; filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));
+    position:absolute; top:-8%; left:50%; transform:translateX(-50%);
+    font-size:1.6rem; line-height:1; filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));
   }
   .map-line-edge{ fill:none; stroke:#b98a4e; stroke-width:17; stroke-linecap:round; stroke-linejoin:round; opacity:.55; }
   .map-line-path{ fill:none; stroke:#f3d597; stroke-width:11; stroke-linecap:round; stroke-linejoin:round; }
@@ -2833,12 +2833,24 @@
     var currentWrap = mapPath.querySelector(".state-current");
     function drawMapPathAndDecor(){ drawMapLines(); drawMapDecor(); }
     if(currentWrap){
+      // Oyuncunun GERÇEK kaldığı seviye bu evrende -- yalnızca ana menüden
+      // "Oyna"yla girildiğinde (mapViewIndex = worldIndexForLevel(currentLevel))
+      // buraya düşülüyor, o yüzden doğrudan o seviyeye kaydırmak doğru.
       requestAnimationFrame(function(){
         currentWrap.closest(".map-node-wrap").scrollIntoView({ block:"center" });
         drawMapPathAndDecor();
       });
     } else {
-      drawMapPathAndDecor();
+      // Kullanıcı geri/ileri oklarıyla BAŞKA bir evrene bakıyor (mevcut
+      // seviyesi burada değil) -- varsayılan tarayıcı kaydırma konumu
+      // evrenin EN ÜSTÜNE (en yüksek seviyeye) düşüyordu, sanki oyuncu
+      // "sona atılmış" gibi hissettiriyordu. Bunun yerine evrenin EN
+      // ALTINDAN (ilk seviyesinden) başlasın, yukarı kaydırarak keşfetsin.
+      var firstWrap = mapPath.querySelector('.map-node-wrap[data-level="' + fromLvl + '"]');
+      requestAnimationFrame(function(){
+        if(firstWrap) firstWrap.scrollIntoView({ block:"end" });
+        drawMapPathAndDecor();
+      });
     }
   }
 
@@ -3051,21 +3063,39 @@
       // evren tabelası ikisi de bunu kullanıyor.
       var onEmptySide = (nodeLeft + r.width/2) > pathWidth/2;
 
-      // 10'un katları: boss seviyesi — tabela + kafatası, düğümün karşı kenarında
+      // 10'un katları: boss seviyesi — tabela + kafatası, düğümün karşı kenarında.
+      // Tabela artık düğümün HEMEN yanında, büyük ve göze çarpar boyutta --
+      // eskiden asset dosyalarının etrafında çok fazla şeffaf boşluk vardı
+      // (ör. 2048px'lik tuval içinde ~900px'lik gerçek içerik), bu yüzden
+      // "50px" gibi görünüşte makul bir boyut bile gerçekte minik bir tabela
+      // olarak render oluyor, kafatasıyla üst üste biniyordu. Kaynak PNG/WEBP
+      // dosyaları artık gerçek içeriğe sıkıca kırpılmış durumda (bkz. assets/
+      // map/*/signpost.*), bu yüzden bossW burada GERÇEKTEN görünen boyutu
+      // belirliyor.
       if(lvl % 10 === 0){
-        var bossSize = 50;
+        // Komşu düğümler arası dikey mesafe ~82px (bkz. computeLanes/margin) --
+        // tabela bundan çok daha uzun olursa üstteki/alttaki düğümün üzerine
+        // biner. 64px genişlik (~1.6x en/boy oranıyla ~102px yükseklik) hem
+        // eskisinden (50px, üstelik çoğu şeffaf boşluktu) belirgin şekilde
+        // büyük hem de komşu düğümlere ancak hafifçe değiyor.
+        var bossW = 56;
+        var bossH = bossW * 1.6;
         var boss = document.createElement("div");
         boss.className = "map-boss-sign" + (lvlWorld.signpostTint ? " " + lvlWorld.signpostTint : "");
         var signpostWorld = lvlWorld.signpost ? lvlWorld : WORLDS[0]; // asset yoksa Yeşil Vadi'ninki + tint
-        boss.style.width = bossSize + "px";
-        var bossX = onEmptySide ? (nodeLeft - bossSize - 6) : (nodeRight + 6);
-        boss.style.left = Math.max(2, Math.min(pathWidth - bossSize - 2, bossX)) + "px";
-        boss.style.top = (cy - bossSize/2 - 4) + "px";
+        boss.style.width = bossW + "px";
+        var bossX = onEmptySide ? (nodeLeft - bossW - 10) : (nodeRight + 10);
+        boss.style.left = Math.max(2, Math.min(pathWidth - bossW - 2, bossX)) + "px";
+        // Tabelanın üst kısmı (tahta+kafatası) düğümle aynı hizada dursun,
+        // gövde/direk aşağıya doğru uzasın -- tüm görseli düğümün TAM
+        // ortasına hizalamak tahtayı düğümün üstüne itip çakışmaya yol
+        // açıyordu.
+        boss.style.top = (cy - bossH*0.3) + "px";
         boss.innerHTML = '<img src="' + gvAsset("../assets/map/" + signpostWorld.folder + "/" + signpostWorld.signpost) + '" alt="" style="width:100%;display:block;">'
           + '<span class="map-boss-skull">💀</span>';
         mapPath.appendChild(boss);
         // Ağaç gibi davransın diye: kapladığı alan ortak çakışma listesine kaydediliyor.
-        registerDecorFootprint(bossX + bossSize/2, cy, bossSize);
+        registerDecorFootprint(bossX + bossW/2, cy, bossW);
       }
 
       // Sağ kenar: seyrek orman — her seviyede 1-2 ağaç, birbirine binmeden.
