@@ -605,6 +605,15 @@
     margin:0; font-family:"Baloo 2","Nunito",sans-serif; font-size:0.86rem; font-weight:800;
     color:var(--accent-ink); letter-spacing:0.2px; text-shadow:0 1px 0 rgba(255,255,255,.45);
   }
+  /* --accent-ink (koyu kahverengi) acik/turuncu zeminler icin tasarlandi --
+     karanlik modda oyun ekranindaki bu ipucu metni koyu arka plan uzerinde
+     neredeyse okunmuyordu (bkz. kullanici geri bildirimi). Diger --accent-ink
+     kullanimlari (rozetler, turuncu butonlar) hala acik zeminde durdugu icin
+     dokunulmadi -- sadece bu metne özel, karanlik moda gore acik bir renk. */
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]) .title-block .sub{ color:#FFC98A; text-shadow:none; }
+  }
+  :root[data-theme="dark"] .title-block .sub{ color:#FFC98A; text-shadow:none; }
   .icon-btns{ display:flex; gap:8px; flex-shrink:0; }
   .icon-btn{
     width:36px; height:36px; border-radius:12px; border:1px solid var(--line);
