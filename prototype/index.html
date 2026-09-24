@@ -1571,6 +1571,17 @@
         </div>
 
         <div class="settings-section">
+          <h3>Müzik Ayarları</h3>
+          <div class="settings-sound-row">
+            <button class="icon-btn" id="settingsMusicMuteBtn" title="Müziği kapat" aria-label="Müziği kapat">
+              <svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+              <svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/><line x1="3" y1="3" x2="21" y2="21"/></svg>
+            </button>
+            <input type="range" id="musicVolumeSlider" class="volume-slider" min="0" max="100" value="80" aria-label="Müzik düzeyi">
+          </div>
+        </div>
+
+        <div class="settings-section">
           <div class="settings-switch-row">
             <span class="settings-switch-label">
               <svg viewBox="0 0 24 24" width="16" height="16"><use href="#ic-moon"></use></svg>
@@ -2327,6 +2338,7 @@
     try{ d = JSON.parse(localStorage.getItem(SETTINGS_KEY)); }catch(e){}
     if(!d) d = {};
     if(typeof d.volume !== "number") d.volume = 0.8;
+    if(typeof d.musicVolume !== "number") d.musicVolume = 0.8;
     if(typeof d.darkMode !== "boolean"){
       d.darkMode = !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
     }
@@ -2337,14 +2349,17 @@
   var soundVolume = appSettings.volume;
   var lastVolumeBeforeMute = soundVolume > 0 ? soundVolume : 0.6;
 
-  // Arka plan müziği: SFX ile aynı tek "SES AYARLARI" kısıcısını paylaşıyor
-  // ama sürekli çaldığı için efektlerden daha kısık kalması amacıyla bir
-  // tavan çarpanıyla ölçekleniyor. Tarayıcı autoplay kısıtı yüzünden ilk
-  // kullanıcı tıklamasına kadar bekliyor.
+  // Arka plan müziği: efektlerden (soundVolume) TAMAMEN AYRI, kendi
+  // "Müzik Ayarları" kısıcısıyla kontrol ediliyor -- biri diğerini
+  // etkilemiyor. Sürekli çaldığı için 100%'de bile efektlerden daha kısık
+  // kalması amacıyla bir tavan çarpanıyla ölçekleniyor. Tarayıcı autoplay
+  // kısıtı yüzünden ilk kullanıcı tıklamasına kadar başlamayı bekliyor.
   var bgmEl = document.getElementById("bgm");
-  var BGM_MAX_VOLUME = 0.35;
+  var MUSIC_MAX_VOLUME = 0.5;
+  var musicVolume = appSettings.musicVolume;
+  var lastMusicVolumeBeforeMute = musicVolume > 0 ? musicVolume : 0.6;
   function updateBgmVolume(){
-    if(bgmEl) bgmEl.volume = soundVolume * BGM_MAX_VOLUME;
+    if(bgmEl) bgmEl.volume = musicVolume * MUSIC_MAX_VOLUME;
   }
   updateBgmVolume();
   document.addEventListener("click", function startBgmOnce(){
@@ -2361,6 +2376,8 @@
   var settingsOverlay = document.getElementById("settingsOverlay");
   var settingsMuteBtn = document.getElementById("settingsMuteBtn");
   var volumeSlider = document.getElementById("volumeSlider");
+  var settingsMusicMuteBtn = document.getElementById("settingsMusicMuteBtn");
+  var musicVolumeSlider = document.getElementById("musicVolumeSlider");
   var darkModeToggle = document.getElementById("darkModeToggle");
 
   function renderSoundUI(){
@@ -2372,6 +2389,15 @@
     volumeSlider.value = Math.round(soundVolume*100);
   }
   renderSoundUI();
+  function renderMusicUI(){
+    var muted = musicVolume <= 0;
+    settingsMusicMuteBtn.querySelector(".on").style.display = muted ? "none" : "";
+    settingsMusicMuteBtn.querySelector(".off").style.display = muted ? "" : "none";
+    settingsMusicMuteBtn.title = muted ? "Müziği aç" : "Müziği kapat";
+    settingsMusicMuteBtn.setAttribute("aria-label", settingsMusicMuteBtn.title);
+    musicVolumeSlider.value = Math.round(musicVolume*100);
+  }
+  renderMusicUI();
   darkModeToggle.checked = appSettings.darkMode;
 
   document.getElementById("btnSettings").addEventListener("click", function(){
@@ -2456,17 +2482,34 @@
     }
     appSettings.volume = soundVolume; saveSettings();
     renderSoundUI();
-    updateBgmVolume();
   });
   volumeSlider.addEventListener("input", function(){
     soundVolume = Number(volumeSlider.value)/100;
     if(soundVolume>0) lastVolumeBeforeMute = soundVolume;
     appSettings.volume = soundVolume; saveSettings();
     renderSoundUI();
-    updateBgmVolume();
   });
   volumeSlider.addEventListener("change", function(){
     if(soundVolume>0) playTone(700,0.07,"triangle",0.05);
+  });
+
+  settingsMusicMuteBtn.addEventListener("click", function(){
+    if(musicVolume > 0){
+      lastMusicVolumeBeforeMute = musicVolume;
+      musicVolume = 0;
+    } else {
+      musicVolume = lastMusicVolumeBeforeMute > 0 ? lastMusicVolumeBeforeMute : 0.6;
+    }
+    appSettings.musicVolume = musicVolume; saveSettings();
+    renderMusicUI();
+    updateBgmVolume();
+  });
+  musicVolumeSlider.addEventListener("input", function(){
+    musicVolume = Number(musicVolumeSlider.value)/100;
+    if(musicVolume>0) lastMusicVolumeBeforeMute = musicVolume;
+    appSettings.musicVolume = musicVolume; saveSettings();
+    renderMusicUI();
+    updateBgmVolume();
   });
 
   darkModeToggle.addEventListener("change", function(){
