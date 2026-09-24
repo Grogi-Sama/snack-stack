@@ -452,6 +452,9 @@
      kullanıyor, sadece kendi ikon/nokta-göstergesi/"İlerle" butonunu ekliyor. */
   .onboarding-card{ max-width:300px; text-align:center; padding-top:34px; }
   .onboarding-icon{ font-size:2.6rem; line-height:1; margin-bottom:6px; }
+  .onboarding-icon img{ height:52px; width:auto; display:inline-block; vertical-align:middle; filter:drop-shadow(0 2px 3px rgba(0,0,0,.18)); }
+  .onboarding-icon.icon-row{ display:flex; justify-content:center; align-items:flex-end; gap:4px; flex-wrap:wrap; }
+  .onboarding-icon.icon-row img{ height:30px; }
   .onboarding-card h2{ text-align:center; }
   .onboarding-card p{ margin:0 0 14px; font-size:0.85rem; color:var(--ink-soft); line-height:1.4; }
   .onboarding-dots{ display:flex; justify-content:center; gap:6px; margin-bottom:16px; }
@@ -461,6 +464,9 @@
     border:none; background:none; padding:0; cursor:pointer; touch-action:manipulation;
     display:block; margin:0 auto; width:100%; max-width:180px;
   }
+  /* .overlay .card button barındırdığı genel turuncu arka planı ezmek için
+     bu kuralın .overlay .card button'dan daha özgül olması gerekiyor. */
+  .overlay .card button.onboarding-next-btn{ background:none; padding:0; border-radius:0; box-shadow:none; }
   .onboarding-next-btn img{ width:100%; display:block; filter:drop-shadow(0 3px 4px rgba(0,0,0,.2)); }
   .onboarding-next-btn:active img{ transform:translateY(2px); }
   .onboarding-next-btn:focus-visible{ outline:2px solid var(--ink); outline-offset:3px; border-radius:999px; }
@@ -3533,11 +3539,12 @@
   // (5 ekran), her adımda tek bir mekanik anlatılıyor.
   var ONBOARDING_KEY = "snackstack_onboarded_v1";
   var ONBOARDING_STEPS = [
-    { icon:"🍓", title:"Snack Stack'e Hoş Geldin!",
+    { iconImg:"../assets/icons/ic_strawberry.png", title:"Snack Stack'e Hoş Geldin!",
       body:"Aynı gördüğün 3 kartı sepete atarak eşleştir. Amaç: sepetler dolmadan tüm tahtayı temizlemek!" },
     { icon:"⚠️", title:"Dikkat, Sepet Dolabilir!",
       body:"Sepet taşlarla dolarsa bir canını kaybedersin. Hangi taşı ne zaman sepete atacağına dikkat et!" },
-    { icon:"🃏", title:"Jokerlerin Yardımına Güven",
+    { iconRow:["../assets/Joker Shuffle Asset.webp","../assets/Joker Expand Asset.webp","../assets/Joker Remove Asset.webp","../assets/Joker Undo Asset.webp"],
+      title:"Jokerlerin Yardımına Güven",
       body:"Karıştır, Sepeti Genişlet, Taşı Kaldır ve Geri Al jokerleriyle zor anları aş. Mercek 🔍 ile örtülü taşları ücretsiz inceleyebilirsin!" },
     { icon:"❤️", title:"Canlar ve Snack Coin",
       body:"Canların bitince biraz beklemen ya da reklam izlemen gerekir. Snack Coin ile joker ve can satın alabilirsin." },
@@ -3552,7 +3559,14 @@
   var onboardingDots = document.getElementById("onboardingDots");
   function renderOnboardingStep(){
     var s = ONBOARDING_STEPS[onboardingStep];
-    onboardingIcon.textContent = s.icon;
+    onboardingIcon.classList.toggle("icon-row", !!s.iconRow);
+    if(s.iconRow){
+      onboardingIcon.innerHTML = s.iconRow.map(function(src){ return '<img src="'+src+'" alt="">'; }).join("");
+    }else if(s.iconImg){
+      onboardingIcon.innerHTML = '<img src="'+s.iconImg+'" alt="">';
+    }else{
+      onboardingIcon.textContent = s.icon;
+    }
     onboardingTitle.textContent = s.title;
     onboardingBody.textContent = s.body;
     onboardingDots.innerHTML = "";
