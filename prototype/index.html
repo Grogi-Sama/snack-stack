@@ -2382,8 +2382,8 @@
 
   function renderSoundUI(){
     var muted = soundVolume <= 0;
-    settingsMuteBtn.querySelector(".on").style.display = muted ? "none" : "";
-    settingsMuteBtn.querySelector(".off").style.display = muted ? "" : "none";
+    settingsMuteBtn.querySelector(".on").style.display = muted ? "none" : "block";
+    settingsMuteBtn.querySelector(".off").style.display = muted ? "block" : "none";
     settingsMuteBtn.title = muted ? "Sesi aç" : "Sesi kapat";
     settingsMuteBtn.setAttribute("aria-label", settingsMuteBtn.title);
     volumeSlider.value = Math.round(soundVolume*100);
@@ -2391,8 +2391,8 @@
   renderSoundUI();
   function renderMusicUI(){
     var muted = musicVolume <= 0;
-    settingsMusicMuteBtn.querySelector(".on").style.display = muted ? "none" : "";
-    settingsMusicMuteBtn.querySelector(".off").style.display = muted ? "" : "none";
+    settingsMusicMuteBtn.querySelector(".on").style.display = muted ? "none" : "block";
+    settingsMusicMuteBtn.querySelector(".off").style.display = muted ? "block" : "none";
     settingsMusicMuteBtn.title = muted ? "Müziği aç" : "Müziği kapat";
     settingsMusicMuteBtn.setAttribute("aria-label", settingsMusicMuteBtn.title);
     musicVolumeSlider.value = Math.round(musicVolume*100);
