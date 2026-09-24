@@ -909,6 +909,11 @@
 </head>
 <body>
 
+<!-- Arka plan müziği: telifsiz (CC0) aday parça -- ilk kullanıcı etkileşiminde
+     otomatik başlıyor (tarayıcı autoplay kısıtı), ses ayarındaki mevcut
+     kısma/aç-kapa ile birlikte kontrol ediliyor. Bkz. aşağıdaki "SES AYARLARI" -->
+<audio id="bgm" src="../assets/audio/bgm_candidate1_swinging_sweet.ogg" loop preload="auto"></audio>
+
 <!-- Özgün karakter/yemek ikon seti: hiçbir telifli görsele dayanmaz, kendi çizimimiz -->
 <svg width="0" height="0" style="position:absolute">
   <defs>
@@ -2332,6 +2337,22 @@
   var soundVolume = appSettings.volume;
   var lastVolumeBeforeMute = soundVolume > 0 ? soundVolume : 0.6;
 
+  // Arka plan müziği: SFX ile aynı tek "SES AYARLARI" kısıcısını paylaşıyor
+  // ama sürekli çaldığı için efektlerden daha kısık kalması amacıyla bir
+  // tavan çarpanıyla ölçekleniyor. Tarayıcı autoplay kısıtı yüzünden ilk
+  // kullanıcı tıklamasına kadar bekliyor.
+  var bgmEl = document.getElementById("bgm");
+  var BGM_MAX_VOLUME = 0.35;
+  function updateBgmVolume(){
+    if(bgmEl) bgmEl.volume = soundVolume * BGM_MAX_VOLUME;
+  }
+  updateBgmVolume();
+  document.addEventListener("click", function startBgmOnce(){
+    if(!bgmEl) return;
+    updateBgmVolume();
+    bgmEl.play().catch(function(){});
+  }, { once:true, capture:true });
+
   function applyDarkMode(){
     document.documentElement.setAttribute("data-theme", appSettings.darkMode ? "dark" : "light");
   }
@@ -2435,12 +2456,14 @@
     }
     appSettings.volume = soundVolume; saveSettings();
     renderSoundUI();
+    updateBgmVolume();
   });
   volumeSlider.addEventListener("input", function(){
     soundVolume = Number(volumeSlider.value)/100;
     if(soundVolume>0) lastVolumeBeforeMute = soundVolume;
     appSettings.volume = soundVolume; saveSettings();
     renderSoundUI();
+    updateBgmVolume();
   });
   volumeSlider.addEventListener("change", function(){
     if(soundVolume>0) playTone(700,0.07,"triangle",0.05);
