@@ -379,27 +379,16 @@
   .lives-add-btn:hover{ filter:brightness(1.08); }
   .lives-add-btn:active{ transform:scale(0.92); }
   .life-heart-wrap{
-    width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-    background: radial-gradient(circle at 33% 28%, #FFAFAF 0%, #F0455A 45%, #C21E36 82%, #A11529 100%);
-    box-shadow: 0 3px 0 #7E0F22, 0 6px 8px rgba(80,0,10,.4), inset 0 2px 2px rgba(255,255,255,.55), inset 0 -4px 5px rgba(0,0,0,.3);
+    width:32px; height:32px; display:flex; align-items:center; justify-content:center;
   }
-  .life-heart-wrap.empty{
-    background: radial-gradient(circle at 33% 28%, #f4f0e8 0%, #ddd6c8 45%, #b8ae9a 82%, #a39880 100%);
-    box-shadow: 0 3px 0 #8a7f68, 0 6px 8px rgba(40,30,10,.22), inset 0 2px 2px rgba(255,255,255,.5), inset 0 -4px 5px rgba(0,0,0,.18);
-  }
-  .life-heart{ width:17px; height:17px; color:#fff; filter:drop-shadow(0 1px 1px rgba(0,0,0,.3)); }
-  .life-heart-wrap.empty .life-heart{ color:#fff; opacity:.75; }
+  .life-heart-wrap.empty{ filter:grayscale(1) opacity(.5); }
+  .life-heart{ width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 2px 3px rgba(0,0,0,.25)); }
   .lives-timer{ margin:0; font-size:0.74rem; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
   .lives-timer b{ color:var(--ink); font-weight:800; }
 
   .game-lives-row{ display:flex; align-items:center; gap:6px; margin-bottom:2px; }
   .lives-hearts.mini{ gap:4px; }
-  .lives-hearts.mini .life-heart-wrap{
-    width:18px; height:18px;
-    box-shadow: 0 2px 0 #7E0F22, 0 3px 4px rgba(80,0,10,.35), inset 0 1px 1px rgba(255,255,255,.55), inset 0 -2px 3px rgba(0,0,0,.3);
-  }
-  .lives-hearts.mini .life-heart-wrap.empty{ box-shadow: 0 2px 0 #8a7f68, 0 3px 4px rgba(40,30,10,.2), inset 0 1px 1px rgba(255,255,255,.5), inset 0 -2px 3px rgba(0,0,0,.18); }
-  .lives-hearts.mini .life-heart{ width:10px; height:10px; }
+  .lives-hearts.mini .life-heart-wrap{ width:18px; height:18px; }
   .lives-timer.mini{ font-size:0.64rem; }
 
   .play-btn{
@@ -462,7 +451,7 @@
   .onboarding-dot.active{ background:var(--accent); }
   .onboarding-next-btn{
     border:none; background:none; padding:0; cursor:pointer; touch-action:manipulation;
-    display:block; margin:0 auto; width:100%; max-width:180px;
+    display:block; margin:0 auto; width:100%; max-width:145px;
   }
   /* .overlay .card button barındırdığı genel turuncu arka planı ezmek için
      bu kuralın .overlay .card button'dan daha özgül olması gerekiyor. */
@@ -2627,7 +2616,7 @@
       var full = i < livesData.lives;
       container.insertAdjacentHTML("beforeend",
         '<span class="life-heart-wrap'+(full?"":" empty")+'">'
-        + '<svg class="life-heart" viewBox="0 0 24 24"><use href="#ic-heart"></use></svg>'
+        + '<img class="life-heart" src="../assets/Life Heart Asset.webp" alt="">'
         + '</span>');
     }
   }
@@ -3546,7 +3535,7 @@
     { iconRow:["../assets/Joker Shuffle Asset.webp","../assets/Joker Expand Asset.webp","../assets/Joker Remove Asset.webp","../assets/Joker Undo Asset.webp"],
       title:"Jokerlerin Yardımına Güven",
       body:"Karıştır, Sepeti Genişlet, Taşı Kaldır ve Geri Al jokerleriyle zor anları aş. Mercek 🔍 ile örtülü taşları ücretsiz inceleyebilirsin!" },
-    { icon:"❤️", title:"Canlar ve Snack Coin",
+    { iconImg:"../assets/Life Heart Asset.webp", title:"Canlar ve Snack Coin",
       body:"Canların bitince biraz beklemen ya da reklam izlemen gerekir. Snack Coin ile joker ve can satın alabilirsin." },
     { icon:"🎉", title:"Hazırsın!",
       body:"Artık oynamaya hazırsın. Bol şans!" }
