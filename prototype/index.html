@@ -465,6 +465,18 @@
   .onboarding-next-btn img{ width:100%; display:block; filter:drop-shadow(0 3px 4px rgba(0,0,0,.2)); }
   .onboarding-next-btn:active img{ transform:translateY(2px); }
   .onboarding-next-btn:focus-visible{ outline:2px solid var(--ink); outline-offset:3px; border-radius:999px; }
+  /* Eğitim akışı tek seferlik, sabit-temalı bir illüstrasyon -- ahşap "İlerle"
+     butonu ve çilek/joker/kalp görselleri sıcak krem zemine göre tasarlandı.
+     Karanlık modda kart lacivert olunca bu görseller (özellikle ahşap doku)
+     donuk/yanlış görünüyordu (bkz. kullanıcı geri bildirimi). Çözüm: bu
+     kartı karanlık moddan bağımsız, HER ZAMAN aydınlık moddaki gibi sabitle. */
+  .onboarding-overlay .card{ background:#FFFBF0 !important; }
+  .onboarding-overlay h2{ color:#1B1F3B !important; }
+  .onboarding-overlay .onboarding-card p{ color:#585F82 !important; }
+  .onboarding-overlay .onboarding-dot{ background:rgba(27,31,59,0.12) !important; }
+  .onboarding-overlay .onboarding-dot.active{ background:#FF8A3D !important; }
+  .onboarding-overlay .settings-card button.settings-close{ background:#F5FAF7 !important; color:#585F82 !important; }
+  .onboarding-overlay .settings-card button.settings-close:hover{ background:#EAD9AE !important; }
 
   .get-lives-card{ max-width:300px; }
   .get-lives-card h2{ margin:0 0 14px; }
