@@ -310,11 +310,14 @@
   }
   .onboarding-open-btn{
     position:absolute; top:12px; left:14px; z-index:2;
-    border:none; background:none; padding:0; cursor:pointer; touch-action:manipulation;
-    transition:transform .1s ease;
+    border:1px solid var(--line); background:rgba(255,255,255,0.28); color:var(--accent-ink);
+    border-radius:14px; padding:8px 14px; cursor:pointer; touch-action:manipulation;
+    font-family:"Baloo 2",sans-serif; font-size:0.78rem; font-weight:700; letter-spacing:0.1px;
+    display:flex; align-items:center; gap:5px;
+    transition: background .12s ease, transform .1s ease;
   }
-  .onboarding-open-btn img{ width:60px; display:block; filter:drop-shadow(0 2px 3px rgba(0,0,0,.25)); }
-  .onboarding-open-btn:active{ transform:translateY(2px); }
+  .onboarding-open-btn:hover{ background:rgba(255,255,255,0.44); }
+  .onboarding-open-btn:active{ transform:translateY(1px); }
   .onboarding-open-btn:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; border-radius:999px; }
   .token-badge{
     display:flex; align-items:center; gap:5px; padding:5px 10px 5px 6px; border-radius:999px;
@@ -465,6 +468,17 @@
   .onboarding-next-btn img{ width:100%; display:block; filter:drop-shadow(0 3px 4px rgba(0,0,0,.2)); }
   .onboarding-next-btn:active img{ transform:translateY(2px); }
   .onboarding-next-btn:focus-visible{ outline:2px solid var(--ink); outline-offset:3px; border-radius:999px; }
+  /* Ahşap "İlerle" görseli Türkçe metinle çizildiği için (bkz. asset), İngilizce'de
+     bu görsel yerine metni gerçek (çevrilebilir) yazı olan bir CSS düğmesi
+     gösteriliyor -- Türkçe'de görsel aynen korunuyor, hiçbir değişiklik yok. */
+  .onboarding-next-fallback{
+    display:none; width:100%; text-align:center; padding:11px 18px; border-radius:999px;
+    background:linear-gradient(160deg, var(--wicker-a), var(--wicker-b));
+    border:2px solid var(--wicker-rim); color:#fff; font-family:"Baloo 2",sans-serif;
+    font-size:1rem; font-weight:800; letter-spacing:0.2px;
+    box-shadow:0 3px 0 var(--wicker-rim), 0 6px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .onboarding-next-btn:active .onboarding-next-fallback{ transform:translateY(2px); }
   /* Eğitim akışı tek seferlik, sabit-temalı bir illüstrasyon -- ahşap "İlerle"
      butonu ve çilek/joker/kalp görselleri sıcak krem zemine göre tasarlandı.
      Karanlık modda kart lacivert olunca bu görseller (özellikle ahşap doku)
@@ -906,6 +920,13 @@
   }
   .overlay .settings-sound-row button.icon-btn:hover{ background:var(--board-bg-1); }
   .volume-slider{ flex:1; accent-color:var(--accent); height:20px; cursor:pointer; }
+  .lang-switch-row{ display:flex; gap:10px; }
+  .overlay .settings-card button.lang-btn{
+    flex:1; cursor:pointer; padding:10px 12px; font-family:inherit; font-size:0.86rem; font-weight:800;
+    border-radius:12px; border:1px solid var(--line); background:var(--tray-bg); color:var(--ink); box-shadow:none;
+  }
+  .overlay .settings-card button.lang-btn:hover{ background:var(--board-bg-1); }
+  .overlay .settings-card button.lang-btn.active{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
   .settings-switch-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
   .settings-switch-label{ display:flex; align-items:center; gap:8px; font-size:0.88rem; font-weight:700; color:var(--ink); }
   .switch{ position:relative; display:inline-block; width:42px; height:24px; flex-shrink:0; }
@@ -1322,14 +1343,15 @@
           <svg viewBox="0 0 100 100" width="20" height="20"><use href="#ic-coin"></use></svg>
           <span id="tokenBalance">50</span>
         </div>
-        <button class="lives-add-btn token-add-btn" id="buyCoinsBtn" title="Snack Coin satın al" aria-label="Snack Coin satın al">+</button>
+        <button class="lives-add-btn token-add-btn" id="buyCoinsBtn" data-i18n-title="buy_coin" data-i18n-aria-label="buy_coin" title="Snack Coin satın al" aria-label="Snack Coin satın al">+</button>
       </div>
-      <button class="icon-btn calendar-btn" id="calendarBtn" title="Günlük ödüller" aria-label="Günlük ödüller" hidden>
+      <button class="icon-btn calendar-btn" id="calendarBtn" data-i18n-title="daily_rewards" data-i18n-aria-label="daily_rewards" title="Günlük ödüller" aria-label="Günlük ödüller" hidden>
         <svg viewBox="0 0 24 24" width="17" height="17"><use href="#ic-calendar"></use></svg>
       </button>
     </div>
-    <button class="onboarding-open-btn" id="onboardingOpenBtn" title="Eğitim" aria-label="Eğitimi tekrar izle">
-      <img src="../assets/Egitim Button Asset.png" alt="Eğitim">
+    <button class="onboarding-open-btn" id="onboardingOpenBtn" data-i18n-title="tutorial" data-i18n-aria-label="tutorial_replay" title="Eğitim" aria-label="Eğitimi tekrar izle">
+      <svg viewBox="0 0 24 24" width="14" height="14"><use href="#ic-video"></use></svg>
+      <span data-i18n="tutorial">Eğitim</span>
     </button>
     <div class="start-tile-fan" aria-hidden="true">
       <div class="fan-tile t1"><svg viewBox="0 0 100 100"><use href="#ic-strawberry"></use></svg></div>
@@ -1343,70 +1365,70 @@
     <div class="start-title-block">
       <img class="start-logo-img" src="../assets/branding/logo_snackstack.png" alt="Snack Stack logosu">
       <h1 class="display start-h1">Snack Stack</h1>
-      <p class="start-tr">Atıştırma Yığını</p>
+      <p class="start-tr" data-i18n="start_subtitle">Atıştırma Yığını</p>
     </div>
-    <p class="start-tagline">3'le, sepetleri fulle!</p>
+    <p class="start-tagline" data-i18n="start_tagline">3'le, sepetleri fulle!</p>
 
     <div class="lives-block">
       <div class="lives-hearts-wrap">
         <div class="lives-hearts" id="livesHearts" aria-hidden="true"></div>
-        <button class="lives-add-btn" id="livesAddBtn" title="Can kazan" aria-label="Can kazan">+</button>
+        <button class="lives-add-btn" id="livesAddBtn" data-i18n-title="get_lives" data-i18n-aria-label="get_lives" title="Can kazan" aria-label="Can kazan">+</button>
       </div>
-      <p class="lives-timer" id="livesTimer" hidden>Canlar yenilenir: <b id="livesCountdown">00:00:00</b></p>
+      <p class="lives-timer" id="livesTimer" hidden><span data-i18n="lives_refill_in">Canlar yenilenir: </span><b id="livesCountdown">00:00:00</b></p>
     </div>
 
     <div class="overlay settings-overlay" id="getLivesOverlay">
       <div class="card settings-card get-lives-card">
-        <button class="settings-close" id="getLivesCloseBtn" aria-label="Kapat">
+        <button class="settings-close" id="getLivesCloseBtn" data-i18n-aria-label="close" aria-label="Kapat">
           <svg viewBox="0 0 24 24" width="16" height="16"><use href="#ic-close"></use></svg>
         </button>
-        <h2>Can Kazan</h2>
+        <h2 data-i18n="get_lives_title">Can Kazan</h2>
         <button class="get-lives-option" id="buyLifeBtn">
           <span class="get-lives-icon"><svg viewBox="0 0 100 100" width="22" height="22"><use href="#ic-coin"></use></svg></span>
-          <span class="get-lives-text"><b>Can satın al!</b><small>10 Snack Coin karşılığında 1 can</small></span>
+          <span class="get-lives-text"><b data-i18n="buy_life">Can satın al!</b><small data-i18n="buy_life_cost">10 Snack Coin karşılığında 1 can</small></span>
         </button>
         <button class="get-lives-option" id="watchAdLifeBtn">
           <span class="get-lives-icon"><svg viewBox="0 0 24 24" width="20" height="20"><use href="#ic-video"></use></svg></span>
-          <span class="get-lives-text"><b>Reklam izleyerek 1 can kazan!</b><small>30 saniyelik tek reklam</small></span>
+          <span class="get-lives-text"><b data-i18n="watch_ad_life">Reklam izleyerek 1 can kazan!</b><small data-i18n="one_ad">30 saniyelik tek reklam</small></span>
         </button>
         <button class="get-lives-option" id="watchAdRefillBtn">
           <span class="get-lives-icon"><svg viewBox="0 0 24 24" width="20" height="20"><use href="#ic-gift"></use></svg></span>
-          <span class="get-lives-text"><b>Reklam izleyerek tüm canlarını yenile!</b><small>2 adet 30 saniyelik reklam</small></span>
+          <span class="get-lives-text"><b data-i18n="watch_ad_refill">Reklam izleyerek tüm canlarını yenile!</b><small data-i18n="two_ads">2 adet 30 saniyelik reklam</small></span>
         </button>
       </div>
     </div>
 
     <div class="overlay settings-overlay" id="dailyOverlay">
       <div class="card settings-card daily-card">
-        <button class="settings-close" id="dailyCloseBtn" aria-label="Kapat">
+        <button class="settings-close" id="dailyCloseBtn" data-i18n-aria-label="close" aria-label="Kapat">
           <svg viewBox="0 0 24 24" width="16" height="16"><use href="#ic-close"></use></svg>
         </button>
-        <h2>Günlük Giriş Ödülleri</h2>
-        <p class="daily-sub">İlk 7 gün boyunca her gün giriş yap, ödülünü topla!</p>
+        <h2 data-i18n="daily_title">Günlük Giriş Ödülleri</h2>
+        <p class="daily-sub" data-i18n="daily_sub">İlk 7 gün boyunca her gün giriş yap, ödülünü topla!</p>
         <div class="daily-grid" id="dailyGrid"></div>
-        <button class="daily-claim-btn" id="dailyClaimBtn">Günlük Ödülümü Topla!</button>
+        <button class="daily-claim-btn" id="dailyClaimBtn" data-i18n="daily_claim_default">Günlük Ödülümü Topla!</button>
       </div>
     </div>
 
     <div class="play-btn-wrap">
       <button class="play-btn" id="playBtn">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
-        Oyna
+        <span data-i18n="play">Oyna</span>
       </button>
       <span class="current-level-badge" id="currentLevelBadge" aria-hidden="true">Seviye 1</span>
     </div>
     <button class="heroes-btn" id="heroesBtn">
       <svg viewBox="0 0 24 24" width="15" height="15"><use href="#ic-trophy"></use></svg>
-      Kahramanlar Anıtı
+      <span data-i18n="hall_of_fame">Kahramanlar Anıtı</span>
     </button>
 
     <div class="overlay settings-overlay" id="heroesOverlay">
       <div class="card settings-card heroes-card">
-        <button class="settings-close" id="heroesCloseBtn" aria-label="Kapat">
+        <button class="settings-close" id="heroesCloseBtn" data-i18n-aria-label="close" aria-label="Kapat">
           <svg viewBox="0 0 24 24" width="16" height="16"><use href="#ic-close"></use></svg>
         </button>
-        <h2>Kahramanlar Anıtı</h2>
-        <p class="heroes-sub">En yüksek seviyeye ulaşan 10 oyuncu</p>
+        <h2 data-i18n="hall_of_fame">Kahramanlar Anıtı</h2>
+        <p class="heroes-sub" data-i18n="hall_of_fame_sub">En yüksek seviyeye ulaşan 10 oyuncu</p>
         <ol class="heroes-list" id="heroesList"></ol>
       </div>
     </div>
@@ -1414,16 +1436,16 @@
 
   <div class="overlay settings-overlay" id="buyCoinsOverlay">
     <div class="card settings-card buy-coins-card">
-      <button class="settings-close" id="buyCoinsCloseBtn" aria-label="Kapat">
+      <button class="settings-close" id="buyCoinsCloseBtn" data-i18n-aria-label="close" aria-label="Kapat">
         <svg viewBox="0 0 24 24" width="16" height="16"><use href="#ic-close"></use></svg>
       </button>
-      <h2>Snack Coin Satın Al</h2>
-      <p class="buy-coins-sub" id="buyCoinsMsg">Snack Coin'ler yalnızca gerçek para ile satın alınabilir.</p>
+      <h2 data-i18n="buy_coin_title">Snack Coin Satın Al</h2>
+      <p class="buy-coins-sub" id="buyCoinsMsg" data-i18n="buy_coin_sub">Snack Coin'ler yalnızca gerçek para ile satın alınabilir.</p>
 
       <button class="coin-pack-btn" data-tl="29,99 TL" data-usd="$0.99">
         <span class="coin-pack-icon"><svg viewBox="0 0 100 100"><use href="#ic-coin"></use></svg></span>
         <span class="coin-pack-info">
-          <span class="coin-pack-name">Başlangıç Paketi</span>
+          <span class="coin-pack-name" data-i18n="pack_starter">Başlangıç Paketi</span>
           <span class="coin-pack-amount"><s>100</s> 75 <svg viewBox="0 0 100 100"><use href="#ic-coin"></use></svg></span>
         </span>
         <span class="coin-pack-price"></span>
@@ -1432,17 +1454,17 @@
       <button class="coin-pack-btn" data-tl="89,99 TL" data-usd="$2.99">
         <span class="coin-pack-icon"><svg viewBox="0 0 100 100"><use href="#ic-coin-stack"></use></svg></span>
         <span class="coin-pack-info">
-          <span class="coin-pack-name">Atıştırmalık Paketi</span>
+          <span class="coin-pack-name" data-i18n="pack_snack">Atıştırmalık Paketi</span>
           <span class="coin-pack-amount"><s>350</s> 250 <svg viewBox="0 0 100 100"><use href="#ic-coin"></use></svg></span>
         </span>
         <span class="coin-pack-price"></span>
       </button>
 
       <button class="coin-pack-btn best" data-tl="199,99 TL" data-usd="$6.99">
-        <span class="coin-pack-badge">En Çok Satan</span>
+        <span class="coin-pack-badge" data-i18n="best_value">En Çok Satan</span>
         <span class="coin-pack-icon"><svg viewBox="0 0 100 100"><use href="#ic-coin-pouch"></use></svg></span>
         <span class="coin-pack-info">
-          <span class="coin-pack-name">Ziyafet Paketi</span>
+          <span class="coin-pack-name" data-i18n="pack_feast">Ziyafet Paketi</span>
           <span class="coin-pack-amount"><s>900</s> 650 <svg viewBox="0 0 100 100"><use href="#ic-coin"></use></svg></span>
         </span>
         <span class="coin-pack-price"></span>
@@ -1451,7 +1473,7 @@
       <button class="coin-pack-btn" data-tl="399,99 TL" data-usd="$13.99">
         <span class="coin-pack-icon"><svg viewBox="0 0 100 100"><use href="#ic-coin-chest1"></use></svg></span>
         <span class="coin-pack-info">
-          <span class="coin-pack-name">Gurme Paketi</span>
+          <span class="coin-pack-name" data-i18n="pack_gourmet">Gurme Paketi</span>
           <span class="coin-pack-amount"><s>2.200</s> 1.500 <svg viewBox="0 0 100 100"><use href="#ic-coin"></use></svg></span>
         </span>
         <span class="coin-pack-price"></span>
@@ -1460,7 +1482,7 @@
       <button class="coin-pack-btn" data-tl="799,99 TL" data-usd="$27.99">
         <span class="coin-pack-icon"><svg viewBox="0 0 100 100"><use href="#ic-coin-chest2"></use></svg></span>
         <span class="coin-pack-info">
-          <span class="coin-pack-name">Kralın Sofrası</span>
+          <span class="coin-pack-name" data-i18n="pack_king">Kralın Sofrası</span>
           <span class="coin-pack-amount"><s>5.000</s> 3.500 <svg viewBox="0 0 100 100"><use href="#ic-coin"></use></svg></span>
         </span>
         <span class="coin-pack-price"></span>
@@ -1471,37 +1493,37 @@
   <div class="overlay ad-overlay" id="adPlayerOverlay">
     <div class="ad-player">
       <div class="ad-player-topbar">
-        <span class="ad-player-progress" id="adProgress" hidden>Reklam <b id="adProgressNum">1</b>/2</span>
+        <span class="ad-player-progress" id="adProgress" hidden><span data-i18n="ad_label">Reklam</span> <b id="adProgressNum">1</b>/2</span>
         <span class="ad-player-timer" id="adTimer">0:30</span>
       </div>
       <div class="ad-player-content">
         <svg class="ad-player-logo" viewBox="0 0 100 100"><use href="#ic-coin"></use></svg>
-        <p class="ad-player-label">Reklam oynatılıyor…</p>
+        <p class="ad-player-label" data-i18n="ad_playing">Reklam oynatılıyor…</p>
       </div>
-      <button class="ad-skip-btn" id="adSkipBtn" hidden>Reklamı Atla ▸</button>
+      <button class="ad-skip-btn" id="adSkipBtn" data-i18n="ad_skip" hidden>Reklamı Atla ▸</button>
     </div>
   </div>
 
   <div class="overlay settings-overlay" id="getJokerOverlay">
     <div class="card settings-card get-lives-card">
-      <button class="settings-close" id="getJokerCloseBtn" aria-label="Kapat">
+      <button class="settings-close" id="getJokerCloseBtn" data-i18n-aria-label="close" aria-label="Kapat">
         <svg viewBox="0 0 24 24" width="16" height="16"><use href="#ic-close"></use></svg>
       </button>
-      <h2 id="getJokerTitle">Joker Kazan</h2>
+      <h2 id="getJokerTitle" data-i18n="get_joker_title_default">Joker Kazan</h2>
       <button class="get-lives-option" id="buyJokerBtn">
         <span class="get-lives-icon"><svg viewBox="0 0 100 100" width="22" height="22"><use href="#ic-coin"></use></svg></span>
-        <span class="get-lives-text"><b>Satın al!</b><small id="buyJokerCost">Snack Coin karşılığında 1 hak</small></span>
+        <span class="get-lives-text"><b data-i18n="buy_generic">Satın al!</b><small id="buyJokerCost" data-i18n="joker_cost_default">Snack Coin karşılığında 1 hak</small></span>
       </button>
       <button class="get-lives-option" id="watchAdJokerBtn">
         <span class="get-lives-icon"><svg viewBox="0 0 24 24" width="20" height="20"><use href="#ic-video"></use></svg></span>
-        <span class="get-lives-text"><b>Reklam izleyerek 1 hak kazan!</b><small>30 saniyelik tek reklam</small></span>
+        <span class="get-lives-text"><b data-i18n="watch_ad_joker">Reklam izleyerek 1 hak kazan!</b><small data-i18n="one_ad">30 saniyelik tek reklam</small></span>
       </button>
     </div>
   </div>
 
   <div class="overlay onboarding-overlay" id="onboardingOverlay">
     <div class="card settings-card onboarding-card">
-      <button class="settings-close" id="onboardingSkipBtn" aria-label="Eğitimi atla">
+      <button class="settings-close" id="onboardingSkipBtn" data-i18n-aria-label="skip_tutorial" aria-label="Eğitimi atla">
         <svg viewBox="0 0 24 24" width="16" height="16"><use href="#ic-close"></use></svg>
       </button>
       <div class="onboarding-icon" id="onboardingIcon" aria-hidden="true"></div>
@@ -1509,7 +1531,8 @@
       <p id="onboardingBody"></p>
       <div class="onboarding-dots" id="onboardingDots" aria-hidden="true"></div>
       <button class="onboarding-next-btn" id="onboardingNextBtn">
-        <img src="../assets/Onboarding Ilerle Button.png" alt="İlerle">
+        <img id="onboardingNextImg" src="../assets/Onboarding Ilerle Button.png" alt="İlerle">
+        <span class="onboarding-next-fallback" id="onboardingNextFallback" data-i18n="next">Next</span>
       </button>
     </div>
   </div>
@@ -1531,9 +1554,9 @@
       <div class="title-block">
         <div class="game-lives-row">
           <div class="lives-hearts mini" id="gameLivesHearts" aria-hidden="true"></div>
-          <p class="lives-timer mini" id="gameLivesTimer" hidden>Yenilenir: <b id="gameLivesCountdown">00:00:00</b></p>
+          <p class="lives-timer mini" id="gameLivesTimer" hidden><span data-i18n="refill_in">Yenilenir: </span><b id="gameLivesCountdown">00:00:00</b></p>
         </div>
-        <p class="sub" id="subLine">Aynı gördüğün 3 kartı üçle!</p>
+        <p class="sub" id="subLine" data-i18n="sub_default">Aynı gördüğün 3 kartı üçle!</p>
       </div>
       <div class="icon-btns">
         <div class="token-badge-wrap">
@@ -1541,12 +1564,12 @@
             <svg viewBox="0 0 100 100" width="16" height="16"><use href="#ic-coin"></use></svg>
             <span id="gameTokenBalance">30</span>
           </div>
-          <button class="lives-add-btn token-add-btn" id="gameBuyCoinsBtn" title="Snack Coin satın al" aria-label="Snack Coin satın al">+</button>
+          <button class="lives-add-btn token-add-btn" id="gameBuyCoinsBtn" data-i18n-title="buy_coin" data-i18n-aria-label="buy_coin" title="Snack Coin satın al" aria-label="Snack Coin satın al">+</button>
         </div>
-        <button class="icon-btn" id="btnLens" title="Mercek modu" aria-label="Mercek modu">
+        <button class="icon-btn" id="btnLens" data-i18n-title="lens_mode" data-i18n-aria-label="lens_mode" title="Mercek modu" aria-label="Mercek modu">
           <img src="../assets/Lens Icon Asset.webp" width="22" height="22" alt="">
         </button>
-        <button class="icon-btn" id="btnSettings" title="Ayarlar" aria-label="Ayarlar">
+        <button class="icon-btn" id="btnSettings" data-i18n-title="settings" data-i18n-aria-label="settings" title="Ayarlar" aria-label="Ayarlar">
           <svg viewBox="0 0 24 24" width="18" height="18"><use href="#ic-gear"></use></svg>
         </button>
       </div>
@@ -1555,14 +1578,14 @@
     <div class="lens-screen-dim" id="lensScreenDim" hidden></div>
 
     <div class="lens-banner" id="lensBanner" hidden>
-      <span class="lens-banner-text">🔍 Mercek modu: taşa dokun, ne olduğunu gör. Sepete eklenmez.</span>
+      <span class="lens-banner-text" data-i18n="lens_banner">🔍 Mercek modu: taşa dokun, ne olduğunu gör. Sepete eklenmez.</span>
     </div>
-    <button class="lens-close-btn" id="lensCloseBtn" hidden>Mercek Modunu Kapat ✕</button>
+    <button class="lens-close-btn" id="lensCloseBtn" data-i18n="lens_close" hidden>Mercek Modunu Kapat ✕</button>
 
     <div class="stats">
-      <span>Seviye <b id="statLevel">1</b></span>
-      <span>Kalan: <b id="statRemaining">0</b></span>
-      <span>Eşleşme: <b id="statMatches">0</b></span>
+      <span><span data-i18n="level_label">Seviye</span> <b id="statLevel">1</b></span>
+      <span><span data-i18n="remaining_label">Kalan:</span> <b id="statRemaining">0</b></span>
+      <span><span data-i18n="matches_label">Eşleşme:</span> <b id="statMatches">0</b></span>
     </div>
 
     <div class="board-frame">
@@ -1571,11 +1594,11 @@
       </div>
       <div class="overlay" id="overlay">
         <div class="card">
-          <h2 id="overlayTitle">Tebrikler!</h2>
-          <p id="overlayText">Tahtayı temizledin.</p>
+          <h2 id="overlayTitle" data-i18n="overlay_title_default">Tebrikler!</h2>
+          <p id="overlayText" data-i18n="overlay_text_default">Tahtayı temizledin.</p>
           <div class="overlay-actions">
-            <button id="overlayBtn">Tekrar Oyna</button>
-            <button id="overlayBtn2" class="ghost" hidden>Ana Menüye Dön</button>
+            <button id="overlayBtn" data-i18n="play_again">Tekrar Oyna</button>
+            <button id="overlayBtn2" class="ghost" data-i18n="back_to_menu" hidden>Ana Menüye Dön</button>
           </div>
         </div>
       </div>
@@ -1590,36 +1613,36 @@
 
     <div class="jokers">
       <div class="joker-wrap">
-        <button class="joker" id="jokerShuffle" data-type="shuffle" title="Kalan taşları karıştır">
+        <button class="joker" id="jokerShuffle" data-type="shuffle" data-i18n-title="joker_shuffle_title" title="Kalan taşları karıştır">
           <span class="joker-icon-slot"><img class="joker-icon" src="../assets/Joker Shuffle Asset.webp" alt=""></span>
-          <span class="joker-label">Karıştır</span>
+          <span class="joker-label" data-i18n="joker_shuffle">Karıştır</span>
           <span class="joker-count" id="cntShuffle">1</span>
         </button>
-        <button class="joker-plus" data-buy="shuffle" title="Joker satın al" aria-label="Karıştır jokeri satın al"><svg viewBox="0 0 24 24"><use href="#ic-plus"></use></svg></button>
+        <button class="joker-plus" data-buy="shuffle" data-i18n-title="buy_joker" data-i18n-aria-label="buy_joker_shuffle" title="Joker satın al" aria-label="Karıştır jokeri satın al"><svg viewBox="0 0 24 24"><use href="#ic-plus"></use></svg></button>
       </div>
       <div class="joker-wrap">
-        <button class="joker" id="jokerExpand" data-type="expandTray" title="Sepete 1 slot ekle">
+        <button class="joker" id="jokerExpand" data-type="expandTray" data-i18n-title="joker_expand_title" title="Sepete 1 slot ekle">
           <span class="joker-icon-slot"><img class="joker-icon" src="../assets/Joker Expand Asset.webp" alt=""></span>
-          <span class="joker-label">Genişlet</span>
+          <span class="joker-label" data-i18n="joker_expand">Genişlet</span>
           <span class="joker-count" id="cntExpand">1</span>
         </button>
-        <button class="joker-plus" data-buy="expandTray" title="Joker satın al" aria-label="Sepet genişletme jokeri satın al"><svg viewBox="0 0 24 24"><use href="#ic-plus"></use></svg></button>
+        <button class="joker-plus" data-buy="expandTray" data-i18n-title="buy_joker" data-i18n-aria-label="buy_joker_expand" title="Joker satın al" aria-label="Sepet genişletme jokeri satın al"><svg viewBox="0 0 24 24"><use href="#ic-plus"></use></svg></button>
       </div>
       <div class="joker-wrap">
-        <button class="joker" id="jokerRemove" data-type="removeTile" title="Açık bir taşı doğrudan kaldır">
+        <button class="joker" id="jokerRemove" data-type="removeTile" data-i18n-title="joker_remove_title" title="Açık bir taşı doğrudan kaldır">
           <span class="joker-icon-slot"><img class="joker-icon" src="../assets/Joker Remove Asset.webp" alt=""></span>
-          <span class="joker-label">Taşı Kaldır</span>
+          <span class="joker-label" data-i18n="joker_remove">Taşı Kaldır</span>
           <span class="joker-count" id="cntRemove">1</span>
         </button>
-        <button class="joker-plus" data-buy="removeTile" title="Joker satın al" aria-label="Taşı kaldır jokeri satın al"><svg viewBox="0 0 24 24"><use href="#ic-plus"></use></svg></button>
+        <button class="joker-plus" data-buy="removeTile" data-i18n-title="buy_joker" data-i18n-aria-label="buy_joker_remove" title="Joker satın al" aria-label="Taşı kaldır jokeri satın al"><svg viewBox="0 0 24 24"><use href="#ic-plus"></use></svg></button>
       </div>
       <div class="joker-wrap">
-        <button class="joker" id="jokerUndo" data-type="undo" title="Son taşı geri al">
+        <button class="joker" id="jokerUndo" data-type="undo" data-i18n-title="joker_undo_title" title="Son taşı geri al">
           <span class="joker-icon-slot"><img class="joker-icon" src="../assets/Joker Undo Asset.webp" alt=""></span>
-          <span class="joker-label">Geri Al</span>
+          <span class="joker-label" data-i18n="joker_undo">Geri Al</span>
           <span class="joker-count" id="cntUndo">1</span>
         </button>
-        <button class="joker-plus" data-buy="undo" title="Joker satın al" aria-label="Geri al jokeri satın al"><svg viewBox="0 0 24 24"><use href="#ic-plus"></use></svg></button>
+        <button class="joker-plus" data-buy="undo" data-i18n-title="buy_joker" data-i18n-aria-label="buy_joker_undo" title="Joker satın al" aria-label="Geri al jokeri satın al"><svg viewBox="0 0 24 24"><use href="#ic-plus"></use></svg></button>
       </div>
     </div>
 
@@ -1631,30 +1654,38 @@
 
     <div class="overlay settings-overlay" id="settingsOverlay">
       <div class="card settings-card">
-        <button class="settings-close" id="settingsCloseBtn" aria-label="Kapat">
+        <button class="settings-close" id="settingsCloseBtn" data-i18n-aria-label="close" aria-label="Kapat">
           <svg viewBox="0 0 24 24" width="16" height="16"><use href="#ic-close"></use></svg>
         </button>
-        <h2>Ayarlar</h2>
+        <h2 data-i18n="settings">Ayarlar</h2>
 
         <div class="settings-section">
-          <h3>Ses Ayarları</h3>
+          <h3 data-i18n="language">Dil</h3>
+          <div class="lang-switch-row">
+            <button class="lang-btn" id="langTrBtn" data-lang="tr">Türkçe</button>
+            <button class="lang-btn" id="langEnBtn" data-lang="en">English</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3 data-i18n="sound_settings">Ses Ayarları</h3>
           <div class="settings-sound-row">
             <button class="icon-btn" id="settingsMuteBtn" title="Sesi kapat" aria-label="Sesi kapat">
               <svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
               <svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><line x1="16" y1="9" x2="22" y2="15"/><line x1="22" y1="9" x2="16" y2="15"/></svg>
             </button>
-            <input type="range" id="volumeSlider" class="volume-slider" min="0" max="100" value="80" aria-label="Ses düzeyi">
+            <input type="range" id="volumeSlider" class="volume-slider" min="0" max="100" value="80" data-i18n-aria-label="sound_volume" aria-label="Ses düzeyi">
           </div>
         </div>
 
         <div class="settings-section">
-          <h3>Müzik Ayarları</h3>
+          <h3 data-i18n="music_settings">Müzik Ayarları</h3>
           <div class="settings-sound-row">
             <button class="icon-btn" id="settingsMusicMuteBtn" title="Müziği kapat" aria-label="Müziği kapat">
               <svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
               <svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/><line x1="3" y1="3" x2="21" y2="21"/></svg>
             </button>
-            <input type="range" id="musicVolumeSlider" class="volume-slider" min="0" max="100" value="80" aria-label="Müzik düzeyi">
+            <input type="range" id="musicVolumeSlider" class="volume-slider" min="0" max="100" value="80" data-i18n-aria-label="music_volume" aria-label="Müzik düzeyi">
           </div>
         </div>
 
@@ -1662,7 +1693,7 @@
           <div class="settings-switch-row">
             <span class="settings-switch-label">
               <svg viewBox="0 0 24 24" width="16" height="16"><use href="#ic-moon"></use></svg>
-              Karanlık Mod
+              <span data-i18n="dark_mode">Karanlık Mod</span>
             </span>
             <label class="switch">
               <input type="checkbox" id="darkModeToggle">
@@ -1671,7 +1702,7 @@
           </div>
         </div>
 
-        <button class="settings-quit-btn" id="settingsQuitBtn">Ana Menüye Dön</button>
+        <button class="settings-quit-btn" id="settingsQuitBtn" data-i18n="back_to_menu">Ana Menüye Dön</button>
       </div>
     </div>
   </div>
@@ -1680,6 +1711,157 @@
 <script>
 (function(){
   "use strict";
+
+  // ---- Dil sistemi (i18n) -------------------------------------------------------
+  // Not: Statik metinler HTML'de data-i18n / data-i18n-title / data-i18n-aria-label /
+  // data-i18n-alt öznitelikleriyle işaretli -- applyLanguage() bunları tarar. Dinamik
+  // (JS'in kendi ürettiği, seviye numarası/maliyet gibi değişken içeren) metinler ise
+  // doğrudan t(key, {değişken:değer}) ile çağrılır. Harita ekranı (bkz. WORLDS/renderMap)
+  // artık hiçbir akıştan açılmadığı için (kalıcı olarak devre dışı) o metinler bilerek
+  // çevrilmedi -- kullanıcı hiçbir zaman göremiyor.
+  var LANG_KEY = "snackstack_lang_v1";
+  function loadLang(){
+    var v = null;
+    try{ v = localStorage.getItem(LANG_KEY); }catch(e){}
+    if(v === "tr" || v === "en") return v;
+    var nav = ((navigator.language || navigator.userLanguage || "")).toLowerCase();
+    return nav.indexOf("tr") === 0 ? "tr" : "en"; // TR dışındaki tüm diller (Avrupa dahil) varsayılan İngilizce
+  }
+  var currentLang = loadLang();
+  function saveLang(){ try{ localStorage.setItem(LANG_KEY, currentLang); }catch(e){} }
+  var STRINGS = {
+    tr: {
+      buy_coin:"Snack Coin satın al", daily_rewards:"Günlük ödüller", tutorial:"Eğitim",
+      tutorial_replay:"Eğitimi tekrar izle", start_subtitle:"Atıştırma Yığını",
+      start_tagline:"3'le, sepetleri fulle!", get_lives:"Can kazan",
+      lives_refill_in:"Canlar yenilenir: ", close:"Kapat", get_lives_title:"Can Kazan",
+      buy_life:"Can satın al!", buy_life_cost:"10 Snack Coin karşılığında 1 can",
+      watch_ad_life:"Reklam izleyerek 1 can kazan!", one_ad:"30 saniyelik tek reklam",
+      watch_ad_refill:"Reklam izleyerek tüm canlarını yenile!", two_ads:"2 adet 30 saniyelik reklam",
+      daily_title:"Günlük Giriş Ödülleri",
+      daily_sub:"İlk 7 gün boyunca her gün giriş yap, ödülünü topla!",
+      daily_claim_default:"Günlük Ödülümü Topla!", play:"Oyna",
+      hall_of_fame:"Kahramanlar Anıtı", hall_of_fame_sub:"En yüksek seviyeye ulaşan 10 oyuncu",
+      buy_coin_title:"Snack Coin Satın Al",
+      buy_coin_sub:"Snack Coin'ler yalnızca gerçek para ile satın alınabilir.",
+      pack_starter:"Başlangıç Paketi", pack_snack:"Atıştırmalık Paketi", best_value:"En Çok Satan",
+      pack_feast:"Ziyafet Paketi", pack_gourmet:"Gurme Paketi", pack_king:"Kralın Sofrası",
+      ad_label:"Reklam", ad_playing:"Reklam oynatılıyor…", ad_skip:"Reklamı Atla ▸",
+      get_joker_title_default:"Joker Kazan", buy_generic:"Satın al!",
+      joker_cost_default:"Snack Coin karşılığında 1 hak",
+      watch_ad_joker:"Reklam izleyerek 1 hak kazan!", skip_tutorial:"Eğitimi atla", next:"İlerle",
+      refill_in:"Yenilenir: ", sub_default:"Aynı gördüğün 3 kartı üçle!", lens_mode:"Mercek modu",
+      settings:"Ayarlar", lens_banner:"🔍 Mercek modu: taşa dokun, ne olduğunu gör. Sepete eklenmez.",
+      lens_close:"Mercek Modunu Kapat ✕", level_label:"Seviye", remaining_label:"Kalan:",
+      matches_label:"Eşleşme:", overlay_title_default:"Tebrikler!",
+      overlay_text_default:"Tahtayı temizledin.", play_again:"Tekrar Oyna",
+      back_to_menu:"Ana Menüye Dön", joker_shuffle_title:"Kalan taşları karıştır",
+      joker_shuffle:"Karıştır", buy_joker:"Joker satın al",
+      buy_joker_shuffle:"Karıştır jokeri satın al", joker_expand_title:"Sepete 1 slot ekle",
+      joker_expand:"Genişlet", buy_joker_expand:"Sepet genişletme jokeri satın al",
+      joker_remove_title:"Açık bir taşı doğrudan kaldır", joker_remove:"Taşı Kaldır",
+      buy_joker_remove:"Taşı kaldır jokeri satın al", joker_undo_title:"Son taşı geri al",
+      joker_undo:"Geri Al", buy_joker_undo:"Geri al jokeri satın al",
+      language:"Dil", sound_settings:"Ses Ayarları", sound_volume:"Ses düzeyi",
+      music_settings:"Müzik Ayarları", music_volume:"Müzik düzeyi", dark_mode:"Karanlık Mod",
+      mute_sound:"Sesi kapat", unmute_sound:"Sesi aç", mute_music:"Müziği kapat",
+      unmute_music:"Müziği aç", ok_default:"Tamam",
+      level_won_title:"Seviye {n} tamam!", level_won_text:"Tebrikler, tahtayı temizledin.",
+      back_to_map:"Haritaya Dön", next_level:"Sonraki Seviye", basket_full_title:"Sepet doldu",
+      basket_full_text:"Sepet {n} malzemeyle doldu. Tekrar deneyebilir ya da ana menüye dönebilirsin.",
+      start_over:"Baştan Başla", out_of_lives_title:"Canların bitti",
+      out_of_lives_text:"Sepet doldu ve son canını da kullandın. Yeni canlar gelene kadar giriş ekranından takip edebilirsin.",
+      confirm_title:"Emin misin?",
+      confirm_quit_text:"Ana menüye dönmek üzeresiniz, canın gitmiş sayılacak.",
+      cancel:"Vazgeç", yes_exit:"Evet, Çık", get_joker_title:"{name} Jokeri Kazan",
+      joker_cost:"{cost} Snack Coin karşılığında 1 hak",
+      insufficient_coin_joker:"Yeterli Snack Coin yok! ({cost} gerekli)",
+      insufficient_coin_life:"Yetersiz Snack Coin! (10 gerekli)",
+      no_payment_prototype:"Bu prototipte gerçek ödeme altyapısı bulunmuyor.",
+      daily_day:"Gün {d}", daily_claimed:"Bugünün ödülü toplandı ✓",
+      daily_claim_amount:"Günlük Ödülümü Topla! (+{n})", you:"Sen", level_short:"Sv. {n}",
+      current_level_badge:"Seviye {n}", remove_hint:"Kaldırmak istediğin açık taşa dokun",
+      tile_label:"Taş: {icon}", tile_covered_label:"Kısmen örtülü taş: {icon}",
+      onb1_title:"Snack Stack'e Hoş Geldin!",
+      onb1_body:"Aynı gördüğün 3 kartı sepete atarak eşleştir. Amaç: sepetler dolmadan tüm tahtayı temizlemek!",
+      onb2_title:"Dikkat, Sepet Dolabilir!",
+      onb2_body:"Sepet taşlarla dolarsa bir canını kaybedersin. Hangi taşı ne zaman sepete atacağına dikkat et!",
+      onb3_title:"Jokerlerin Yardımına Güven",
+      onb3_body:"Karıştır, Sepeti Genişlet, Taşı Kaldır ve Geri Al jokerleriyle zor anları aş. Mercek 🔍 ile örtülü taşları ücretsiz inceleyebilirsin!",
+      onb4_title:"Canlar ve Snack Coin",
+      onb4_body:"Canların bitince biraz beklemen ya da reklam izlemen gerekir. Snack Coin ile joker ve can satın alabilirsin.",
+      onb5_title:"Hazırsın!", onb5_body:"Artık oynamaya hazırsın. Bol şans!"
+    },
+    en: {
+      buy_coin:"Buy Snack Coin", daily_rewards:"Daily rewards", tutorial:"Tutorial",
+      tutorial_replay:"Replay tutorial", start_subtitle:"Stack it up!",
+      start_tagline:"Match 3 to fill the basket!", get_lives:"Get lives",
+      lives_refill_in:"Lives refill in: ", close:"Close", get_lives_title:"Get Lives",
+      buy_life:"Buy a life!", buy_life_cost:"1 life for 10 Snack Coin",
+      watch_ad_life:"Watch an ad for 1 life!", one_ad:"One 30-second ad",
+      watch_ad_refill:"Watch ads to refill all your lives!", two_ads:"Two 30-second ads",
+      daily_title:"Daily Login Rewards",
+      daily_sub:"Log in every day during your first 7 days to claim rewards!",
+      daily_claim_default:"Claim Daily Reward!", play:"Play",
+      hall_of_fame:"Hall of Fame", hall_of_fame_sub:"Top 10 players by highest level",
+      buy_coin_title:"Buy Snack Coin",
+      buy_coin_sub:"Snack Coin can only be purchased with real money.",
+      pack_starter:"Starter Pack", pack_snack:"Snack Pack", best_value:"Best Value",
+      pack_feast:"Feast Pack", pack_gourmet:"Gourmet Pack", pack_king:"King's Table",
+      ad_label:"Ad", ad_playing:"Ad playing…", ad_skip:"Skip Ad ▸",
+      get_joker_title_default:"Get Joker", buy_generic:"Buy!",
+      joker_cost_default:"1 use for Snack Coin",
+      watch_ad_joker:"Watch an ad for 1 use!", skip_tutorial:"Skip tutorial", next:"Next",
+      refill_in:"Refill: ", sub_default:"Match 3 of the same card!", lens_mode:"Lens mode",
+      settings:"Settings", lens_banner:"🔍 Lens mode: tap a tile to see what it is. It won't go to the basket.",
+      lens_close:"Close Lens Mode ✕", level_label:"Level", remaining_label:"Left:",
+      matches_label:"Matches:", overlay_title_default:"Congrats!",
+      overlay_text_default:"You cleared the board.", play_again:"Play Again",
+      back_to_menu:"Back to Menu", joker_shuffle_title:"Shuffle the remaining tiles",
+      joker_shuffle:"Shuffle", buy_joker:"Buy joker",
+      buy_joker_shuffle:"Buy Shuffle joker", joker_expand_title:"Add 1 slot to the basket",
+      joker_expand:"Expand", buy_joker_expand:"Buy Expand joker",
+      joker_remove_title:"Directly remove an open tile", joker_remove:"Remove Tile",
+      buy_joker_remove:"Buy Remove Tile joker", joker_undo_title:"Undo the last tile",
+      joker_undo:"Undo", buy_joker_undo:"Buy Undo joker",
+      language:"Language", sound_settings:"Sound Settings", sound_volume:"Sound volume",
+      music_settings:"Music Settings", music_volume:"Music volume", dark_mode:"Dark Mode",
+      mute_sound:"Mute sound", unmute_sound:"Unmute sound", mute_music:"Mute music",
+      unmute_music:"Unmute music", ok_default:"OK",
+      level_won_title:"Level {n} complete!", level_won_text:"Congrats, you cleared the board!",
+      back_to_map:"Back to Map", next_level:"Next Level", basket_full_title:"Basket full",
+      basket_full_text:"The basket filled up with {n} items. You can try again or return to the main menu.",
+      start_over:"Start Over", out_of_lives_title:"Out of lives",
+      out_of_lives_text:"The basket filled up and that was your last life. You can track the refill timer from the main menu.",
+      confirm_title:"Are you sure?",
+      confirm_quit_text:"You're about to return to the main menu — you'll lose a life.",
+      cancel:"Cancel", yes_exit:"Yes, Exit", get_joker_title:"Get {name} Joker",
+      joker_cost:"1 use for {cost} Snack Coin",
+      insufficient_coin_joker:"Not enough Snack Coin! ({cost} needed)",
+      insufficient_coin_life:"Not enough Snack Coin! (10 needed)",
+      no_payment_prototype:"This prototype doesn't have a real payment system yet.",
+      daily_day:"Day {d}", daily_claimed:"Today's reward claimed ✓",
+      daily_claim_amount:"Claim Daily Reward! (+{n})", you:"You", level_short:"Lv. {n}",
+      current_level_badge:"Level {n}", remove_hint:"Tap the open tile you want to remove",
+      tile_label:"Tile: {icon}", tile_covered_label:"Partially covered tile: {icon}",
+      onb1_title:"Welcome to Snack Stack!",
+      onb1_body:"Match 3 identical cards by sending them to the basket. Goal: clear the whole board before the basket fills up!",
+      onb2_title:"Watch Out, the Basket Can Fill Up!",
+      onb2_body:"If the basket fills up with tiles, you'll lose a life. Watch what you send and when!",
+      onb3_title:"Count on Your Jokers",
+      onb3_body:"Get through tough spots with Shuffle, Expand Tray, Remove Tile, and Undo. Use the Lens 🔍 to peek at covered tiles for free!",
+      onb4_title:"Lives and Snack Coin",
+      onb4_body:"When your lives run out, you'll need to wait a bit or watch an ad. You can buy jokers and lives with Snack Coin.",
+      onb5_title:"You're Ready!", onb5_body:"You're all set to play. Good luck!"
+    }
+  };
+  function t(key, vars){
+    var s = (STRINGS[currentLang] && STRINGS[currentLang][key] != null) ? STRINGS[currentLang][key] : (STRINGS.tr[key] || key);
+    if(vars){
+      Object.keys(vars).forEach(function(k){ s = s.split("{"+k+"}").join(vars[k]); });
+    }
+    return s;
+  }
 
   // Sıra önemli: buildLevelTiles her seviyede bu dizinin BAŞINDAN itibaren bir havuz
   // dilimi alır (config.pool kadar). Temel 9 meyve/sebze en başta (her seviyede var),
@@ -1932,7 +2114,7 @@
       if(clickable){
         el.setAttribute("role","button");
         el.setAttribute("tabindex","0");
-        el.setAttribute("aria-label","Taş: " + tile.icon);
+        el.setAttribute("aria-label", t("tile_label",{icon:tile.icon}));
         el.addEventListener("click", function(){
           if(lensMode){ peekTile(this.dataset.id); return; }
           handleTileClick(this.dataset.id);
@@ -1946,7 +2128,7 @@
         });
       } else {
         el.setAttribute("tabindex","-1");
-        el.setAttribute("aria-label","Kısmen örtülü taş: " + tile.icon);
+        el.setAttribute("aria-label", t("tile_covered_label",{icon:tile.icon}));
         // Örtülü taşlar normalde tıklanamaz -- ama mercek modunda, görünen
         // köşesine dokunarak altında ne olduğunu görebilmek için bu taşlara
         // da bir tıklama dinleyicisi ekliyoruz (yalnızca mercek AÇIKKEN işlev
@@ -2024,8 +2206,8 @@
     });
     boardFrame.classList.toggle("armed-remove", armedJoker==="removeTile");
     document.getElementById("subLine").textContent = armedJoker==="removeTile"
-      ? "Kaldırmak istediğin açık taşa dokun"
-      : "Aynı gördüğün 3 kartı üçle!";
+      ? t("remove_hint")
+      : t("sub_default");
   }
 
   function ensureFlyLayer(){
@@ -2226,11 +2408,11 @@
       state.status="won";
       playWinSound();
       if(state.isReplay){
-        showOverlay("Seviye " + state.level + " tamam!", "Tebrikler, tahtayı temizledin.", "Haritaya Dön", function(){
+        showOverlay(t("level_won_title",{n:state.level}), t("level_won_text"), t("back_to_map"), function(){
           goToMapFromGame();
         });
       } else {
-        showOverlay("Seviye " + state.level + " tamam!", "Tebrikler, tahtayı temizledin.", "Sonraki Seviye", function(){
+        showOverlay(t("level_won_title",{n:state.level}), t("level_won_text"), t("next_level"), function(){
           newLevel(state.level+1);
         });
       }
@@ -2246,13 +2428,13 @@
       playLoseSound();
       spendLife();
       if(livesData.lives > 0){
-        showOverlay("Sepet doldu", "Sepet " + trayMax + " malzemeyle doldu. Tekrar deneyebilir ya da ana menüye dönebilirsin.", "Baştan Başla", function(){
+        showOverlay(t("basket_full_title"), t("basket_full_text",{n:trayMax}), t("start_over"), function(){
           newLevel(state.level, state.isReplay);
-        }, "Ana Menüye Dön", function(){
+        }, t("back_to_menu"), function(){
           goToStartScreen();
         });
       } else {
-        showOverlay("Canların bitti", "Sepet doldu ve son canını da kullandın. Yeni canlar gelene kadar giriş ekranından takip edebilirsin.", "Ana Menüye Dön", function(){
+        showOverlay(t("out_of_lives_title"), t("out_of_lives_text"), t("back_to_menu"), function(){
           goToStartScreen();
         });
       }
@@ -2262,7 +2444,7 @@
   function showOverlay(title, text, btnLabel, action, btn2Label, btn2Action){
     overlayTitle.textContent = title;
     overlayText.textContent = text;
-    overlayBtn.textContent = btnLabel || "Tamam";
+    overlayBtn.textContent = btnLabel || t("ok_default");
     overlayAction = action || null;
     if(btn2Label){
       overlayBtn2.textContent = btn2Label;
@@ -2322,7 +2504,7 @@
   }
 
   var JOKER_COST = { removeTile:2, undo:2, shuffle:5, expandTray:5 };
-  var JOKER_NAMES = { shuffle:"Karıştır", expandTray:"Sepeti Genişlet", removeTile:"Taşı Kaldır", undo:"Geri Al" };
+  var JOKER_NAMES = { shuffle:"joker_shuffle", expandTray:"joker_expand", removeTile:"joker_remove", undo:"joker_undo" };
   function grantJoker(type, n){
     jokers[type] = (jokers[type] || 0) + n;
     saveJokers();
@@ -2337,8 +2519,8 @@
   function buyJoker(type){
     pendingJokerType = type;
     var cost = JOKER_COST[type];
-    getJokerTitle.textContent = JOKER_NAMES[type] + " Jokeri Kazan";
-    buyJokerCostEl.textContent = cost + " Snack Coin karşılığında 1 hak";
+    getJokerTitle.textContent = t("get_joker_title", { name: t(JOKER_NAMES[type]) });
+    buyJokerCostEl.textContent = t("joker_cost", { cost: cost });
     getJokerOverlay.classList.add("show");
   }
 
@@ -2473,7 +2655,7 @@
     var muted = soundVolume <= 0;
     settingsMuteBtn.querySelector(".on").style.display = muted ? "none" : "block";
     settingsMuteBtn.querySelector(".off").style.display = muted ? "block" : "none";
-    settingsMuteBtn.title = muted ? "Sesi aç" : "Sesi kapat";
+    settingsMuteBtn.title = muted ? t("unmute_sound") : t("mute_sound");
     settingsMuteBtn.setAttribute("aria-label", settingsMuteBtn.title);
     volumeSlider.value = Math.round(soundVolume*100);
   }
@@ -2482,12 +2664,54 @@
     var muted = musicVolume <= 0;
     settingsMusicMuteBtn.querySelector(".on").style.display = muted ? "none" : "block";
     settingsMusicMuteBtn.querySelector(".off").style.display = muted ? "block" : "none";
-    settingsMusicMuteBtn.title = muted ? "Müziği aç" : "Müziği kapat";
+    settingsMusicMuteBtn.title = muted ? t("unmute_music") : t("mute_music");
     settingsMusicMuteBtn.setAttribute("aria-label", settingsMusicMuteBtn.title);
     musicVolumeSlider.value = Math.round(musicVolume*100);
   }
   renderMusicUI();
   darkModeToggle.checked = appSettings.darkMode;
+
+  // ---- Dil değiştirici (Ayarlar > Dil) --------------------------------------
+  var langTrBtn = document.getElementById("langTrBtn");
+  var langEnBtn = document.getElementById("langEnBtn");
+  function setLang(lang){
+    if(currentLang === lang) return;
+    currentLang = lang;
+    saveLang();
+    applyLanguage();
+  }
+  langTrBtn.addEventListener("click", function(){ setLang("tr"); });
+  langEnBtn.addEventListener("click", function(){ setLang("en"); });
+  // Statik [data-i18n*] taramasının yanı sıra, o an açık/görünür olan dinamik
+  // içerikleri (günlük ödül, kahramanlar, joker satın alma, eğitim adımı) da
+  // güncel dile göre yeniden çiziyor -- aksi halde dil değişince açık bir pop-up
+  // eski dilde asılı kalırdı.
+  function applyLanguage(){
+    document.querySelectorAll("[data-i18n]").forEach(function(el){ el.textContent = t(el.getAttribute("data-i18n")); });
+    document.querySelectorAll("[data-i18n-title]").forEach(function(el){ el.title = t(el.getAttribute("data-i18n-title")); });
+    document.querySelectorAll("[data-i18n-aria-label]").forEach(function(el){ el.setAttribute("aria-label", t(el.getAttribute("data-i18n-aria-label"))); });
+    document.querySelectorAll("[data-i18n-alt]").forEach(function(el){ el.alt = t(el.getAttribute("data-i18n-alt")); });
+    document.documentElement.setAttribute("lang", currentLang);
+    langTrBtn.classList.toggle("active", currentLang==="tr");
+    langEnBtn.classList.toggle("active", currentLang==="en");
+    // "İlerle" ahşap görseli sadece TR metniyle çizildi -- diğer dillerde
+    // yerine gerçek (çevrilebilir) metinli bir CSS düğmesi gösteriliyor.
+    var nextImg = document.getElementById("onboardingNextImg");
+    var nextFallback = document.getElementById("onboardingNextFallback");
+    if(nextImg && nextFallback){
+      nextImg.style.display = currentLang==="tr" ? "block" : "none";
+      nextFallback.style.display = currentLang==="tr" ? "none" : "block";
+    }
+    renderSoundUI();
+    renderMusicUI();
+    updateCurrentLevelBadge();
+    renderJokers();
+    if(dailyOverlay.classList.contains("show")) renderDailyModal();
+    if(heroesOverlay.classList.contains("show")) renderHeroes();
+    if(getJokerOverlay.classList.contains("show")) buyJoker(pendingJokerType);
+    if(onboardingOverlay.classList.contains("show")) renderOnboardingStep();
+    updateCoinPackPrices();
+  }
 
   document.getElementById("btnSettings").addEventListener("click", function(){
     settingsOverlay.classList.add("show");
@@ -2610,10 +2834,10 @@
   document.getElementById("settingsQuitBtn").addEventListener("click", function(){
     settingsOverlay.classList.remove("show");
     showOverlay(
-      "Emin misin?",
-      "Ana menüye dönmek üzeresiniz, canın gitmiş sayılacak.",
-      "Vazgeç", null,
-      "Evet, Çık", function(){
+      t("confirm_title"),
+      t("confirm_quit_text"),
+      t("cancel"), null,
+      t("yes_exit"), function(){
         spendLife();
         goToStartScreen();
       }
@@ -2647,7 +2871,7 @@
       grantJoker(type, 1);
       getJokerOverlay.classList.remove("show");
     } else {
-      label.textContent = "Yeterli Snack Coin yok! (" + cost + " gerekli)";
+      label.textContent = t("insufficient_coin_joker", { cost: cost });
       label.style.color = "var(--danger)";
       setTimeout(function(){
         label.textContent = prevText;
@@ -3390,7 +3614,7 @@
   var currentLevel = loadCurrentLevel();
   var currentLevelBadgeEl = document.getElementById("currentLevelBadge");
   function updateCurrentLevelBadge(){
-    if(currentLevelBadgeEl) currentLevelBadgeEl.textContent = "Seviye " + currentLevel;
+    if(currentLevelBadgeEl) currentLevelBadgeEl.textContent = t("current_level_badge",{n:currentLevel});
   }
   updateCurrentLevelBadge();
   // Yalnızca ileri yönde günceller — tamamlanmış eski bir seviyeyi tekrar oynamak
@@ -3402,29 +3626,43 @@
     updateCurrentLevelBadge();
   }
 
-  var MOCK_HEROES = [
-    { name:"Elmalı Ece",    level:42 },
-    { name:"Kaşıkçı Kemal", level:38 },
-    { name:"Brokoli Baran", level:35 },
-    { name:"Sepetçi Su",    level:31 },
-    { name:"Turşucu Tuna",  level:27 },
-    { name:"Avokado Ada",   level:23 },
-    { name:"Mangal Mert",   level:19 },
-    { name:"Limonata Leyla",level:14 },
-    { name:"Cimcik Cem",    level:9 }
-  ];
+  var MOCK_HEROES = {
+    tr: [
+      { name:"Elmalı Ece",    level:42 },
+      { name:"Kaşıkçı Kemal", level:38 },
+      { name:"Brokoli Baran", level:35 },
+      { name:"Sepetçi Su",    level:31 },
+      { name:"Turşucu Tuna",  level:27 },
+      { name:"Avokado Ada",   level:23 },
+      { name:"Mangal Mert",   level:19 },
+      { name:"Limonata Leyla",level:14 },
+      { name:"Cimcik Cem",    level:9 }
+    ],
+    en: [
+      { name:"Apple Amy",     level:42 },
+      { name:"Spoon Sam",     level:38 },
+      { name:"Broccoli Ben",  level:35 },
+      { name:"Basket Bella",  level:31 },
+      { name:"Pickle Pete",   level:27 },
+      { name:"Avocado Ada",   level:23 },
+      { name:"Grill Max",     level:19 },
+      { name:"Lemonade Lucy", level:14 },
+      { name:"Nibbler Nick",  level:9 }
+    ]
+  };
 
   function renderHeroes(){
     var list = document.getElementById("heroesList");
-    var rows = MOCK_HEROES.map(function(h){ return { name:h.name, level:h.level, me:false }; });
-    rows.push({ name:"Sen", level: Math.max(bestLevel,1), me:true });
+    var pool = MOCK_HEROES[currentLang] || MOCK_HEROES.tr;
+    var rows = pool.map(function(h){ return { name:h.name, level:h.level, me:false }; });
+    rows.push({ name:t("you"), level: Math.max(bestLevel,1), me:true });
     rows.sort(function(a,b){ return b.level - a.level; });
     rows = rows.slice(0, 10);
     list.innerHTML = rows.map(function(r, i){
       return '<li class="heroes-row'+(r.me?" me":"")+'">'
         + '<span class="heroes-rank">'+(i+1)+'</span>'
         + '<span class="heroes-name">'+r.name+'</span>'
-        + '<span class="heroes-level">Sv. '+r.level+'</span>'
+        + '<span class="heroes-level">'+t("level_short",{n:r.level})+'</span>'
         + '</li>';
     }).join("");
   }
@@ -3518,18 +3756,17 @@
   // Gerçek entegrasyonda her paket butonu ilgili mağaza satın alma akışını başlatır.
   var buyCoinsOverlay = document.getElementById("buyCoinsOverlay");
   var buyCoinsMsg = document.getElementById("buyCoinsMsg");
-  var buyCoinsMsgDefault = buyCoinsMsg.textContent;
-  // Kullanıcının tarayıcı diline göre TL ya da $ göster (kaba bir bölge tahmini;
-  // gerçek bir mağaza entegrasyonunda bu bilgi mağazanın kendisinden gelir).
-  (function setCoinPackPrices(){
-    var isTurkish = ((navigator.language || navigator.userLanguage || "").toLowerCase().indexOf("tr") === 0);
+  // Uygulama dili Türkçe ise TL, değilse $ göster -- artık tarayıcı diliyle değil,
+  // kullanıcının Ayarlar'dan seçtiği uygulama diliyle tutarlı (bkz. applyLanguage).
+  function updateCoinPackPrices(){
     document.querySelectorAll(".coin-pack-btn").forEach(function(btn){
       var priceEl = btn.querySelector(".coin-pack-price");
-      priceEl.textContent = isTurkish ? btn.dataset.tl : btn.dataset.usd;
+      priceEl.textContent = currentLang === "tr" ? btn.dataset.tl : btn.dataset.usd;
     });
-  })();
+  }
+  updateCoinPackPrices();
   function openBuyCoins(message, isWarning){
-    buyCoinsMsg.textContent = message || buyCoinsMsgDefault;
+    buyCoinsMsg.textContent = message || t("buy_coin_sub");
     buyCoinsMsg.style.color = isWarning ? "var(--danger)" : "";
     buyCoinsOverlay.classList.add("show");
   }
@@ -3547,10 +3784,10 @@
   });
   document.querySelectorAll(".coin-pack-btn").forEach(function(btn){
     btn.addEventListener("click", function(){
-      buyCoinsMsg.textContent = "Bu prototipte gerçek ödeme altyapısı bulunmuyor.";
+      buyCoinsMsg.textContent = t("no_payment_prototype");
       buyCoinsMsg.style.color = "var(--danger)";
       setTimeout(function(){
-        buyCoinsMsg.textContent = buyCoinsMsgDefault;
+        buyCoinsMsg.textContent = t("buy_coin_sub");
         buyCoinsMsg.style.color = "";
       }, 1800);
     });
@@ -3563,7 +3800,7 @@
       grantLives(1);
       getLivesOverlay.classList.remove("show");
     } else {
-      label.textContent = "Yetersiz Snack Coin! (10 gerekli)";
+      label.textContent = t("insufficient_coin_life");
       label.style.color = "var(--danger)";
       setTimeout(function(){
         label.textContent = prevText;
@@ -3638,7 +3875,7 @@
       if(cls === "claimed") badge = '<span class="daily-chip-check"><svg viewBox="0 0 24 24"><use href="#ic-check"></use></svg></span>';
       else if(cls === "locked") badge = '<span class="daily-chip-lock"><svg viewBox="0 0 24 24"><use href="#ic-lock"></use></svg></span>';
       return '<div class="daily-chip '+cls+'">'
-        + '<span class="daily-chip-day">Gün '+d+'</span>'
+        + '<span class="daily-chip-day">'+t("daily_day",{d:d})+'</span>'
         + '<svg class="daily-chip-coin" viewBox="0 0 100 100"><use href="#ic-coin"></use></svg>'
         + '<span class="daily-chip-amount">'+amount+'</span>'
         + badge
@@ -3650,11 +3887,11 @@
     } else if(dailyData.claimed[day]){
       dailyClaimBtn.hidden = false;
       dailyClaimBtn.disabled = true;
-      dailyClaimBtn.textContent = "Bugünün ödülü toplandı ✓";
+      dailyClaimBtn.textContent = t("daily_claimed");
     } else {
       dailyClaimBtn.hidden = false;
       dailyClaimBtn.disabled = false;
-      dailyClaimBtn.textContent = "Günlük Ödülümü Topla! (+" + DAILY_REWARDS[day-1] + ")";
+      dailyClaimBtn.textContent = t("daily_claim_amount",{n:DAILY_REWARDS[day-1]});
     }
   }
 
@@ -3706,17 +3943,12 @@
   // (5 ekran), her adımda tek bir mekanik anlatılıyor.
   var ONBOARDING_KEY = "snackstack_onboarded_v1";
   var ONBOARDING_STEPS = [
-    { iconImg:"../assets/icons/ic_strawberry.png", title:"Snack Stack'e Hoş Geldin!",
-      body:"Aynı gördüğün 3 kartı sepete atarak eşleştir. Amaç: sepetler dolmadan tüm tahtayı temizlemek!" },
-    { icon:"⚠️", title:"Dikkat, Sepet Dolabilir!",
-      body:"Sepet taşlarla dolarsa bir canını kaybedersin. Hangi taşı ne zaman sepete atacağına dikkat et!" },
+    { iconImg:"../assets/icons/ic_strawberry.png", titleKey:"onb1_title", bodyKey:"onb1_body" },
+    { icon:"⚠️", titleKey:"onb2_title", bodyKey:"onb2_body" },
     { iconRow:["../assets/Joker Shuffle Asset.webp","../assets/Joker Expand Asset.webp","../assets/Joker Remove Asset.webp","../assets/Joker Undo Asset.webp"],
-      title:"Jokerlerin Yardımına Güven",
-      body:"Karıştır, Sepeti Genişlet, Taşı Kaldır ve Geri Al jokerleriyle zor anları aş. Mercek 🔍 ile örtülü taşları ücretsiz inceleyebilirsin!" },
-    { iconImg:"../assets/Life Heart Asset.webp", title:"Canlar ve Snack Coin",
-      body:"Canların bitince biraz beklemen ya da reklam izlemen gerekir. Snack Coin ile joker ve can satın alabilirsin." },
-    { icon:"🎉", title:"Hazırsın!",
-      body:"Artık oynamaya hazırsın. Bol şans!" }
+      titleKey:"onb3_title", bodyKey:"onb3_body" },
+    { iconImg:"../assets/Life Heart Asset.webp", titleKey:"onb4_title", bodyKey:"onb4_body" },
+    { icon:"🎉", titleKey:"onb5_title", bodyKey:"onb5_body" }
   ];
   var onboardingStep = 0;
   var onboardingOverlay = document.getElementById("onboardingOverlay");
@@ -3734,8 +3966,8 @@
     }else{
       onboardingIcon.textContent = s.icon;
     }
-    onboardingTitle.textContent = s.title;
-    onboardingBody.textContent = s.body;
+    onboardingTitle.textContent = t(s.titleKey);
+    onboardingBody.textContent = t(s.bodyKey);
     onboardingDots.innerHTML = "";
     ONBOARDING_STEPS.forEach(function(_, i){
       var dot = document.createElement("span");
@@ -3763,6 +3995,8 @@
     renderOnboardingStep();
     onboardingOverlay.classList.add("show");
   });
+
+  applyLanguage();
 
   (function maybeShowOnboarding(){
     var seen = null;
