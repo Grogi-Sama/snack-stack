@@ -2926,7 +2926,7 @@
       banner:"../assets/map/banners/hellpass.png",
       signpost:null, signpostTint:"hell",
       kinds:{ tree:["tree.png"], bush:["bush.png", {file:"flowers.png", scale:0.6}], rock:["rock.png"], critter:["bat.png","magma_rabbit.png"] } },
-    { key:"magicpass", name:"Büyülü Geçit", from:101, to:Infinity, folder:"magicpass",
+    { key:"magicpass", name:"Büyülü Geçit", from:101, to:150, folder:"magicpass",
       texture:"textures/crystal.jpg", tileSize:480, bgOverlay:null,
       banner:"../assets/map/banners/magicpass.png",
       signpost:"signpost.png", signpostTint:null,
@@ -2934,7 +2934,14 @@
       // ölçekle büyütüldü. bush.png (çiçek) bu evrene tam oturmadı — kullanıcı
       // yeni bir asset üretene kadar geçici olarak duruyor, gelince sadece
       // dosyayı değiştirmek yeterli (kodda değişiklik gerekmiyor).
-      kinds:{ tree:[{file:"tree.png", scale:1.35}], bush:["bush.png"], rock:["rock.png"], critter:["rabbit.png","slime.png","moth.png","wisp.png"] } }
+      kinds:{ tree:[{file:"tree.png", scale:1.35}], bush:["bush.png"], rock:["rock.png"], critter:["rabbit.png","slime.png","moth.png","wisp.png"] } },
+    // Sonsuz (son) evren artık burası -- Büyülü Geçit 150'de sınırlandı, oyun
+    // buradan itibaren sonsuz devam ediyor (bkz. renderMap → toLvl hesaplaması).
+    { key:"candyland", name:"Şekerleme Diyarı", from:151, to:Infinity, folder:"candyland",
+      texture:"textures/candy.jpg", tileSize:480, bgOverlay:null,
+      banner:"../assets/map/banners/candyland.webp",
+      signpost:"signpost.webp", signpostTint:null,
+      kinds:{ tree:["tree.webp"], bush:["bush.webp"], rock:["rock.webp"], critter:["gummybear.webp","marshmallow_rabbit.webp"] } }
   ];
   function worldForLevel(lvl){
     for(var i=0;i<WORLDS.length;i++){ if(lvl>=WORLDS[i].from && lvl<=WORLDS[i].to) return WORLDS[i]; }
