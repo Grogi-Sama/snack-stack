@@ -391,8 +391,9 @@
   .lives-hearts.mini .life-heart-wrap{ width:40px; height:40px; }
   .lives-timer.mini{ font-size:0.64rem; }
 
+  .play-btn-wrap{ position:relative; margin-top:8px; width:100%; max-width:220px; }
   .play-btn{
-    margin-top:8px; width:100%; max-width:220px; padding:15px 20px; border:none; border-radius:18px;
+    width:100%; padding:15px 20px; border:none; border-radius:18px;
     background:linear-gradient(160deg, var(--joker-top), var(--joker-base)); color:#fff;
     font-family:inherit; font-size:1.08rem; font-weight:800; letter-spacing:.3px;
     box-shadow:0 4px 0 var(--joker-edge), 0 9px 16px rgba(20,20,10,.3), inset 0 1px 0 rgba(255,255,255,.35);
@@ -406,6 +407,11 @@
     box-shadow:0 4px 0 #6E6E6E, 0 9px 16px rgba(20,20,10,.2), inset 0 1px 0 rgba(255,255,255,.25);
   }
   .play-btn:disabled:active{ transform:none; }
+  .current-level-badge{
+    position:absolute; top:-10px; right:-6px; background:var(--accent-2); color:#08281f;
+    font-size:0.68rem; font-weight:800; padding:4px 10px; border-radius:999px;
+    border:2px solid var(--card); box-shadow:0 2px 4px rgba(0,0,0,.2); white-space:nowrap;
+  }
   .start-footnote{ margin:6px 0 0; font-size:0.68rem; color:var(--ink-soft); opacity:.75; }
 
   .heroes-btn{
@@ -1300,10 +1306,13 @@
       </div>
     </div>
 
-    <button class="play-btn" id="playBtn">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
-      Oyna
-    </button>
+    <div class="play-btn-wrap">
+      <button class="play-btn" id="playBtn">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+        Oyna
+      </button>
+      <span class="current-level-badge" id="currentLevelBadge" aria-hidden="true">Seviye 1</span>
+    </div>
     <button class="heroes-btn" id="heroesBtn">
       <svg viewBox="0 0 24 24" width="15" height="15"><use href="#ic-trophy"></use></svg>
       Kahramanlar Anıtı
@@ -2673,6 +2682,10 @@
   // ekrana girer girmez taze bir tahtayla karşılaşır.
   var startScreen = document.getElementById("startScreen");
   var gameScreen = document.getElementById("gameScreen");
+  // NOT: Harita sistemi şimdilik devre dışı (bkz. playBtnEl.addEventListener aşağıda) --
+  // mapScreen artık hiçbir akıştan açılmıyor, ama kodu/asseti silinmedi, hızlıca
+  // geri açılabilir. mapScreen'i doğrudan açan tek yer, artık asla tetiklenmeyen
+  // isReplay="Haritaya Dön" dalıdır (bkz. checkEnd()).
   var mapScreen = document.getElementById("mapScreen");
   var mapPath = document.getElementById("mapPath");
   var mapBackBtn = document.getElementById("mapBackBtn");
@@ -3164,14 +3177,18 @@
       }
     }
   }
+  // Harita sistemi şimdilik devre dışı (bkz. dosya başındaki not): "Oyna" artık
+  // haritayı hiç açmadan doğrudan oyuncunun kaldığı seviyeyi başlatıyor. Harita
+  // ekranının HTML/CSS/JS'i (mapScreen, renderMap, WORLDS, vb.) silinmedi --
+  // ileride geri istenirse burası eski haline (mapScreen.hidden=false + renderMap())
+  // çevrilerek hızlıca yeniden açılabilir.
   playBtnEl.addEventListener("click", function(){
     if(livesData.lives <= 0) return;
     startScreen.classList.add("leaving");
     setTimeout(function(){
       startScreen.hidden = true;
-      mapScreen.hidden = false;
-      mapViewIndex = worldIndexForLevel(currentLevel);
-      renderMap();
+      gameScreen.hidden = false;
+      newLevel(currentLevel, false);
     }, 200);
   });
   mapBackBtn.addEventListener("click", function(){
@@ -3216,12 +3233,18 @@
     return Math.max(v, 1);
   }
   var currentLevel = loadCurrentLevel();
+  var currentLevelBadgeEl = document.getElementById("currentLevelBadge");
+  function updateCurrentLevelBadge(){
+    if(currentLevelBadgeEl) currentLevelBadgeEl.textContent = "Seviye " + currentLevel;
+  }
+  updateCurrentLevelBadge();
   // Yalnızca ileri yönde günceller — tamamlanmış eski bir seviyeyi tekrar oynamak
   // (bkz. enterLevel isReplay) gerçek ilerlemeyi asla geri almaz.
   function saveCurrentLevel(level){
     if(level <= currentLevel) return;
     currentLevel = level;
     try{ localStorage.setItem(CURRENT_LEVEL_KEY, String(currentLevel)); }catch(e){}
+    updateCurrentLevelBadge();
   }
 
   var MOCK_HEROES = [
