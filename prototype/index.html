@@ -436,6 +436,23 @@
     background:var(--tray-bg); border-radius:8px; padding:3px 8px; font-variant-numeric:tabular-nums;
   }
 
+  /* İlk açılış eğitimi: mevcut .settings-card/.settings-close kalıbını
+     kullanıyor, sadece kendi ikon/nokta-göstergesi/"İlerle" butonunu ekliyor. */
+  .onboarding-card{ max-width:300px; text-align:center; padding-top:34px; }
+  .onboarding-icon{ font-size:2.6rem; line-height:1; margin-bottom:6px; }
+  .onboarding-card h2{ text-align:center; }
+  .onboarding-card p{ margin:0 0 14px; font-size:0.85rem; color:var(--ink-soft); line-height:1.4; }
+  .onboarding-dots{ display:flex; justify-content:center; gap:6px; margin-bottom:16px; }
+  .onboarding-dot{ width:7px; height:7px; border-radius:50%; background:var(--line); }
+  .onboarding-dot.active{ background:var(--accent); }
+  .onboarding-next-btn{
+    border:none; background:none; padding:0; cursor:pointer; touch-action:manipulation;
+    display:block; margin:0 auto; width:100%; max-width:180px;
+  }
+  .onboarding-next-btn img{ width:100%; display:block; filter:drop-shadow(0 3px 4px rgba(0,0,0,.2)); }
+  .onboarding-next-btn:active img{ transform:translateY(2px); }
+  .onboarding-next-btn:focus-visible{ outline:2px solid var(--ink); outline-offset:3px; border-radius:999px; }
+
   .get-lives-card{ max-width:300px; }
   .get-lives-card h2{ margin:0 0 14px; }
   .overlay .settings-card button.get-lives-option{
@@ -1377,6 +1394,21 @@
       <button class="get-lives-option" id="watchAdJokerBtn">
         <span class="get-lives-icon"><svg viewBox="0 0 24 24" width="20" height="20"><use href="#ic-video"></use></svg></span>
         <span class="get-lives-text"><b>Reklam izleyerek 1 hak kazan!</b><small>30 saniyelik tek reklam</small></span>
+      </button>
+    </div>
+  </div>
+
+  <div class="overlay onboarding-overlay" id="onboardingOverlay">
+    <div class="card settings-card onboarding-card">
+      <button class="settings-close" id="onboardingSkipBtn" aria-label="Eğitimi atla">
+        <svg viewBox="0 0 24 24" width="16" height="16"><use href="#ic-close"></use></svg>
+      </button>
+      <div class="onboarding-icon" id="onboardingIcon" aria-hidden="true"></div>
+      <h2 id="onboardingTitle"></h2>
+      <p id="onboardingBody"></p>
+      <div class="onboarding-dots" id="onboardingDots" aria-hidden="true"></div>
+      <button class="onboarding-next-btn" id="onboardingNextBtn">
+        <img src="../assets/Onboarding Ilerle Button.png" alt="İlerle">
       </button>
     </div>
   </div>
@@ -3469,8 +3501,11 @@
   });
 
   // Yeni bir güne girildiyse ve bugünün ödülü henüz toplanmadıysa, giriş ekranı
-  // yüklendiğinde pop-up'ı otomatik göster (günde en fazla 1 kez).
-  (function maybeAutoShowDaily(){
+  // yüklendiğinde pop-up'ı otomatik göster (günde en fazla 1 kez). İlk açılış
+  // eğitimi (bkz. aşağısı) bitmeden bu pop-up'ın üstüne binmesin diye, yeni bir
+  // hesapta bu çağrı eğitim bitince (finishOnboarding) yapılıyor -- burada
+  // sadece EĞİTİMİ ZATEN GÖRMÜŞ (döner) kullanıcılar için hemen çalışıyor.
+  function maybeAutoShowDaily(){
     var day = currentDayIndex();
     if(day < 1 || day > 7) return;
     if(dailyData.claimed[day]) return;
@@ -3478,6 +3513,62 @@
     dailyData.lastPromptDate = todayStr();
     saveDaily();
     setTimeout(openDailyModal, 500);
+  }
+
+  // ---- İlk açılış eğitimi ---------------------------------------------------
+  // Not: Ücretsiz, tek seferlik -- localStorage'a işaretlenip bir daha
+  // gösterilmiyor; "Atla" ile her an tamamen kapatılabiliyor. Kısa tutulmuş
+  // (5 ekran), her adımda tek bir mekanik anlatılıyor.
+  var ONBOARDING_KEY = "snackstack_onboarded_v1";
+  var ONBOARDING_STEPS = [
+    { icon:"🍓", title:"Snack Stack'e Hoş Geldin!",
+      body:"Aynı gördüğün 3 kartı sepete atarak eşleştir. Amaç: sepetler dolmadan tüm tahtayı temizlemek!" },
+    { icon:"⚠️", title:"Dikkat, Sepet Dolabilir!",
+      body:"Sepet taşlarla dolarsa bir canını kaybedersin. Hangi taşı ne zaman sepete atacağına dikkat et!" },
+    { icon:"🃏", title:"Jokerlerin Yardımına Güven",
+      body:"Karıştır, Sepeti Genişlet, Taşı Kaldır ve Geri Al jokerleriyle zor anları aş. Mercek 🔍 ile örtülü taşları ücretsiz inceleyebilirsin!" },
+    { icon:"❤️", title:"Canlar ve Snack Coin",
+      body:"Canların bitince biraz beklemen ya da reklam izlemen gerekir. Snack Coin ile joker ve can satın alabilirsin." },
+    { icon:"🎉", title:"Hazırsın!",
+      body:"Artık oynamaya hazırsın. Bol şans!" }
+  ];
+  var onboardingStep = 0;
+  var onboardingOverlay = document.getElementById("onboardingOverlay");
+  var onboardingIcon = document.getElementById("onboardingIcon");
+  var onboardingTitle = document.getElementById("onboardingTitle");
+  var onboardingBody = document.getElementById("onboardingBody");
+  var onboardingDots = document.getElementById("onboardingDots");
+  function renderOnboardingStep(){
+    var s = ONBOARDING_STEPS[onboardingStep];
+    onboardingIcon.textContent = s.icon;
+    onboardingTitle.textContent = s.title;
+    onboardingBody.textContent = s.body;
+    onboardingDots.innerHTML = "";
+    ONBOARDING_STEPS.forEach(function(_, i){
+      var dot = document.createElement("span");
+      dot.className = "onboarding-dot" + (i===onboardingStep ? " active" : "");
+      onboardingDots.appendChild(dot);
+    });
+  }
+  function finishOnboarding(){
+    onboardingOverlay.classList.remove("show");
+    try{ localStorage.setItem(ONBOARDING_KEY, "1"); }catch(e){}
+    maybeAutoShowDaily();
+  }
+  document.getElementById("onboardingNextBtn").addEventListener("click", function(){
+    onboardingStep++;
+    if(onboardingStep >= ONBOARDING_STEPS.length){ finishOnboarding(); return; }
+    renderOnboardingStep();
+  });
+  document.getElementById("onboardingSkipBtn").addEventListener("click", finishOnboarding);
+
+  (function maybeShowOnboarding(){
+    var seen = null;
+    try{ seen = localStorage.getItem(ONBOARDING_KEY); }catch(e){}
+    if(seen){ maybeAutoShowDaily(); return; }
+    onboardingStep = 0;
+    renderOnboardingStep();
+    onboardingOverlay.classList.add("show");
   })();
 })();
 </script>
