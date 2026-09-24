@@ -162,7 +162,7 @@
     max-height: calc(100dvh - 48px);
   }
   .start-screen.leaving{ opacity:0; transform:scale(0.96); }
-  .start-screen > *:not(.falling-layer):not(.start-topbar):not(.overlay):not(.onboarding-open-btn){ position:relative; z-index:1; }
+  .start-screen > *:not(.falling-layer):not(.start-topbar):not(.overlay):not(.onboarding-open-btn):not(.mini-lang-btn){ position:relative; z-index:1; }
 
   .map-screen{
     padding:14px 14px 18px; transition: opacity .22s ease, transform .22s ease;
@@ -319,6 +319,16 @@
   .onboarding-open-btn:hover{ background:rgba(255,255,255,0.44); }
   .onboarding-open-btn:active{ transform:translateY(1px); }
   .onboarding-open-btn:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; border-radius:999px; }
+  .mini-lang-btn{
+    position:absolute; bottom:12px; left:14px; z-index:2;
+    border:1px solid var(--line); background:rgba(255,255,255,0.28); color:var(--accent-ink);
+    border-radius:10px; padding:6px 11px; cursor:pointer; touch-action:manipulation;
+    font-family:"Baloo 2",sans-serif; font-size:0.74rem; font-weight:800; letter-spacing:0.4px;
+    transition: background .12s ease, transform .1s ease;
+  }
+  .mini-lang-btn:hover{ background:rgba(255,255,255,0.44); }
+  .mini-lang-btn:active{ transform:translateY(1px); }
+  .mini-lang-btn:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; border-radius:999px; }
   .token-badge{
     display:flex; align-items:center; gap:5px; padding:5px 10px 5px 6px; border-radius:999px;
     background:rgba(255,255,255,0.4); border:1px solid var(--line); color:var(--accent-ink);
@@ -842,11 +852,13 @@
     box-shadow: 0 3px 0 var(--joker-edge), 0 6px 10px rgba(20,20,10,0.22), inset 0 1px 0 rgba(255,255,255,.35);
     cursor:pointer; transition: filter .15s ease, transform .1s ease, box-shadow .12s ease;
   }
-  .joker-icon-slot{ height:111px; display:flex; align-items:center; justify-content:center; }
-  .joker-icon{ height:92px; width:auto; max-width:125px; object-fit:contain; filter:drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
-  #jokerShuffle .joker-icon{ height:101px; max-width:138px; }
-  #jokerRemove .joker-icon{ height:111px; max-width:151px; }
-  .joker-label{ font-size:0.7rem; font-weight:800; line-height:1.15; text-align:center; letter-spacing:0.1px; text-shadow:0 1px 1px rgba(0,0,0,.3); }
+  .joker-icon-slot{ height:88px; display:flex; align-items:center; justify-content:center; }
+  .joker-icon{ height:72px; width:auto; max-width:125px; object-fit:contain; filter:drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
+  #jokerShuffle .joker-icon{ height:79px; max-width:138px; }
+  #jokerRemove .joker-icon{ height:88px; max-width:151px; }
+  /* Etiket metni kullanıcının talebiyle kaldırıldı -- ne işe yaradığı artık
+     eğitim akışında (bkz. onb3_body) ve title/aria-label'da anlatılıyor. */
+  .joker-label{ display:none; }
   /* Hak sayacı artık metin değil, rakam başına bir "jeton" görseli --
      digit_0..9 yan yana dizilerek herhangi bir sayıyı oluşturur (kodda
      birleştiriliyor, bkz. renderJokerCount). 100'e ulaşınca tek, sabit
@@ -1353,6 +1365,7 @@
       <svg viewBox="0 0 24 24" width="14" height="14"><use href="#ic-video"></use></svg>
       <span data-i18n="tutorial">Eğitim</span>
     </button>
+    <button class="mini-lang-btn" id="miniLangBtn" data-i18n-title="language" data-i18n-aria-label="language" title="Dil" aria-label="Dil">TR</button>
     <div class="start-tile-fan" aria-hidden="true">
       <div class="fan-tile t1"><svg viewBox="0 0 100 100"><use href="#ic-strawberry"></use></svg></div>
       <div class="fan-tile t2"><svg viewBox="0 0 100 100"><use href="#ic-carrot"></use></svg></div>
@@ -1787,7 +1800,7 @@
       onb2_title:"Dikkat, Sepet Dolabilir!",
       onb2_body:"Sepet taşlarla dolarsa bir canını kaybedersin. Hangi taşı ne zaman sepete atacağına dikkat et!",
       onb3_title:"Jokerlerin Yardımına Güven",
-      onb3_body:"Karıştır, Sepeti Genişlet, Taşı Kaldır ve Geri Al jokerleriyle zor anları aş. Mercek 🔍 ile örtülü taşları ücretsiz inceleyebilirsin!",
+      onb3_body:"Karıştır (taşları yeniden diz), Genişlet (sepete +1 slot), Taşı Kaldır (açık bir taşı sil) ve Geri Al (son taşını geri getir) ile zor anları aş. Mercek 🔍 ile örtülü taşları da ücretsiz inceleyebilirsin!",
       onb4_title:"Canlar ve Snack Coin",
       onb4_body:"Canların bitince biraz beklemen ya da reklam izlemen gerekir. Snack Coin ile joker ve can satın alabilirsin.",
       onb5_title:"Hazırsın!", onb5_body:"Artık oynamaya hazırsın. Bol şans!"
@@ -1849,7 +1862,7 @@
       onb2_title:"Watch Out, the Basket Can Fill Up!",
       onb2_body:"If the basket fills up with tiles, you'll lose a life. Watch what you send and when!",
       onb3_title:"Count on Your Jokers",
-      onb3_body:"Get through tough spots with Shuffle, Expand Tray, Remove Tile, and Undo. Use the Lens 🔍 to peek at covered tiles for free!",
+      onb3_body:"Shuffle (rearranges the tiles), Expand (+1 basket slot), Remove Tile (clears an open tile), and Undo (brings back your last tile) help you through tough spots. Use the Lens 🔍 to peek at covered tiles for free!",
       onb4_title:"Lives and Snack Coin",
       onb4_body:"When your lives run out, you'll need to wait a bit or watch an ad. You can buy jokers and lives with Snack Coin.",
       onb5_title:"You're Ready!", onb5_body:"You're all set to play. Good luck!"
@@ -2042,11 +2055,18 @@
     // Katman 2 ve sonrası: bir öncekinden küçük, sabit bir miktar kayarak oturur.
     // Böylece hiçbir katman bir öncekini %100 örtmez -- her zaman kısmi bir "ucundan görünme" kalır,
     // ve bir üst katman kalkınca hemen altındaki katman kademeli olarak ortaya çıkar.
+    // Kayma YÖNÜ artık her bölüm yüklenişinde rastgele seçiliyor (8 yönden biri) --
+    // eskiden hep sağ-alta kaydığı için üst katmanlar seviyeden seviyeye hep aynı
+    // (orta/sağ-alt) bölgede yığılıyordu; artık bazen sağ üst, bazen sol alt vb.
+    // farklı bir köşede kümeleniyor -- hem daha çeşitli görünüyor hem oyuncu her
+    // seferinde tahtanın farklı bir yerini taramak zorunda kalıyor.
+    var CLUSTER_DIRS = [[1,1],[1,-1],[-1,1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+    var clusterDir = CLUSTER_DIRS[Math.floor(Math.random()*CLUSTER_DIRS.length)];
     for(var k=2; k<config.layers; k++){
       shuffle(prevPositions);
       var tk = prevPositions.slice(0, config.tiers[k]).map(function(pos){
-        var nx = Math.min(Math.max(pos.x + CAP_OFFSET, minX), maxX);
-        var ny = Math.min(Math.max(pos.y + CAP_OFFSET, minY), maxY);
+        var nx = Math.min(Math.max(pos.x + clusterDir[0]*CAP_OFFSET, minX), maxX);
+        var ny = Math.min(Math.max(pos.y + clusterDir[1]*CAP_OFFSET, minY), maxY);
         return { x: nx, y: ny };
       });
       tk.forEach(function(pos){ tiles.push({ id:"t"+(uidCounter++), icon:bag[idx++], layer:k, x:pos.x, y:pos.y }); });
@@ -2682,6 +2702,10 @@
   }
   langTrBtn.addEventListener("click", function(){ setLang("tr"); });
   langEnBtn.addEventListener("click", function(){ setLang("en"); });
+  // Ana ekranın sol altındaki minik hızlı dil düğmesi -- Ayarlar'ı açmadan
+  // tek dokunuşla TR<->EN geçişi, üstteki tam anahtarla aynı setLang()'ı kullanır.
+  var miniLangBtn = document.getElementById("miniLangBtn");
+  miniLangBtn.addEventListener("click", function(){ setLang(currentLang==="tr" ? "en" : "tr"); });
   // Statik [data-i18n*] taramasının yanı sıra, o an açık/görünür olan dinamik
   // içerikleri (günlük ödül, kahramanlar, joker satın alma, eğitim adımı) da
   // güncel dile göre yeniden çiziyor -- aksi halde dil değişince açık bir pop-up
@@ -2694,6 +2718,7 @@
     document.documentElement.setAttribute("lang", currentLang);
     langTrBtn.classList.toggle("active", currentLang==="tr");
     langEnBtn.classList.toggle("active", currentLang==="en");
+    miniLangBtn.textContent = currentLang.toUpperCase();
     // "İlerle" ahşap görseli sadece TR metniyle çizildi -- diğer dillerde
     // yerine gerçek (çevrilebilir) metinli bir CSS düğmesi gösteriliyor.
     var nextImg = document.getElementById("onboardingNextImg");
