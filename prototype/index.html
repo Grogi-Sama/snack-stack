@@ -229,13 +229,6 @@
   .map-decor.hell{
     filter: drop-shadow(0 3px 4px rgba(0,0,0,.55)) drop-shadow(0 0 3px rgba(0,0,0,.9)) drop-shadow(0 0 5px rgba(0,0,0,.7));
   }
-  .map-boss-sign{ position:absolute; z-index:1; pointer-events:none; }
-  .map-boss-sign img{ display:block; width:100%; filter:drop-shadow(0 3px 3px rgba(20,40,10,.25)); }
-  .map-boss-sign.hell img{ filter:drop-shadow(0 3px 4px rgba(60,0,0,.5)) sepia(1) saturate(5) hue-rotate(-45deg) brightness(.8) contrast(1.2); }
-  .map-boss-skull{
-    position:absolute; top:-8%; left:50%; transform:translateX(-50%);
-    font-size:1.6rem; line-height:1; filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));
-  }
   .map-line-edge{ fill:none; stroke:#b98a4e; stroke-width:17; stroke-linecap:round; stroke-linejoin:round; opacity:.55; }
   .map-line-path{ fill:none; stroke:#f3d597; stroke-width:11; stroke-linecap:round; stroke-linejoin:round; }
   /* Düğümün yatay konumu artık sabit iki şerit (side-a/side-b) değil, JS'te
@@ -275,6 +268,17 @@
     display:flex; align-items:center; justify-content:center; color:#fff; z-index:2;
   }
   .map-lock-badge svg{ width:11px; height:11px; }
+  /* Boss seviyesi (10'un katları) rozeti -- yıldız/kilit rozetiyle AYNI
+     anda görünebildiği için (bir seviye hem "boss" hem "tamamlandı" ya da
+     "kilitli" olabilir) bilerek KARŞI köşede duruyor, hiçbir zaman
+     çakışmıyor. */
+  .map-boss-badge{
+    position:absolute; bottom:-6px; left:-6px; width:22px; height:22px; border-radius:50%;
+    background:linear-gradient(160deg, #4A4A55, #232330); box-shadow:0 2px 4px rgba(0,0,0,.3), 0 0 0 2px var(--card);
+    display:flex; align-items:center; justify-content:center; font-size:0.78rem; line-height:1; z-index:2;
+    text-align:center;
+  }
+  .map-boss-badge::before{ content:"💀"; transform:translate(0.5px, 1px); }
   .map-node.state-current{
     background:linear-gradient(160deg, var(--joker-top), var(--joker-base));
     box-shadow:0 4px 0 var(--joker-edge), 0 8px 16px rgba(20,10,0,.3), 0 0 0 5px rgba(255,138,61,.22);
@@ -2798,6 +2802,13 @@
           btn.disabled = livesData.lives <= 0;
           btn.addEventListener("click", function(){ enterLevel(currentLevel, false); });
         }
+        // Boss seviyesi (10'un katları): ayrı bir tabela/dekor yerine,
+        // düğümün kendi üzerinde karşı köşede küçük bir kafatası rozeti --
+        // hem her durumda (tamamlandı/güncel/kilitli) görünür hem de
+        // haritanın geri kalanıyla asla çakışmıyor.
+        if(lvl % 10 === 0){
+          btn.insertAdjacentHTML("beforeend", '<span class="map-boss-badge" aria-hidden="true"></span>');
+        }
         wrap.appendChild(btn);
         if(state === "current"){
           var badge = document.createElement("button");
@@ -2959,13 +2970,10 @@
   // Evren 3: Büyülü Geçit (101+) — kristal/galaksi temalı.
   // Bir dekor türünün birden fazla varyantı varsa (ör. cehennemde çalı/çiçek karışık),
   // seedRand ile hangi varyantın seçileceği level bazında sabitlenir.
-  // signpost: boss tabelası için ayrı bir asset (yoksa signpostFallback'teki
-  // dünyanın tabelası, signpostTint sınıfıyla renklendirilip kullanılır).
   var WORLDS = [
     { key:"greenvalley", name:"Yeşil Vadi", from:1, to:50, folder:"greenvalley",
       texture:"textures/grass.png", tileSize:480, bgOverlay:null,
       banner:"../assets/map/banners/greenvalley.png",
-      signpost:"signpost.png", signpostTint:null,
       kinds:{ tree:["tree.png"], bush:["bush.png"], rock:["rock.png"], critter:["rabbit.png"] } },
     // Lav dokusu çok baskın/gürültülü olup dekorların önüne geçtiği için, zeminin
     // üzerine koyu yarı saydam bir örtü (bgOverlay) konuyor — dekorlar bundan
@@ -2975,16 +2983,13 @@
     // rim-glow ekleniyor (bkz. tryPlaceDecor + CSS), örtü de sıcak yerine SOĞUK/koyu
     // mor bir ton (dekorun turuncu parıltısıyla tezat oluşturur).
     // Çiçek (flowers.png), çalıdan çok daha büyük görünüyordu; kendi ölçeğiyle küçültüldü.
-    // Kendi tabela asseti yok, Yeşil Vadi'ninki kızıl filtreyle yeniden kullanılıyor.
     { key:"hellpass", name:"Cehennem Geçidi", from:51, to:100, folder:"hellpass",
       texture:"textures/lava2.jpg", tileSize:480, bgOverlay:"rgba(16,8,22,.56)",
       banner:"../assets/map/banners/hellpass.png",
-      signpost:null, signpostTint:"hell",
       kinds:{ tree:["tree.png"], bush:["bush.png", {file:"flowers.png", scale:0.6}], rock:["rock.png"], critter:["bat.png","magma_rabbit.png"] } },
     { key:"magicpass", name:"Büyülü Geçit", from:101, to:150, folder:"magicpass",
       texture:"textures/crystal.jpg", tileSize:480, bgOverlay:null,
       banner:"../assets/map/banners/magicpass.png",
-      signpost:"signpost.png", signpostTint:null,
       // Ağacın kendi görseli diğer dünyalardakine göre küçük kalıyordu, ek bir
       // ölçekle büyütüldü. bush.png (çiçek) bu evrene tam oturmadı — kullanıcı
       // yeni bir asset üretene kadar geçici olarak duruyor, gelince sadece
@@ -2995,7 +3000,6 @@
     { key:"candyland", name:"Şekerleme Diyarı", from:151, to:Infinity, folder:"candyland",
       texture:"textures/candy.jpg", tileSize:480, bgOverlay:null,
       banner:"../assets/map/banners/candyland.webp",
-      signpost:"signpost.webp", signpostTint:null,
       kinds:{ tree:["tree.webp"], bush:["bush.webp"], rock:["rock.webp"], critter:["gummybear.webp","marshmallow_rabbit.webp"] } }
   ];
   function worldForLevel(lvl){
@@ -3028,7 +3032,7 @@
   // binen dekorlar var). Dekorlar mapPath'in KENDİ (artık kaydırılmayan, bkz.
   // .map-scroll) kutusuna göre piksel hesabıyla konumlanıyor.
   function drawMapDecor(){
-    mapPath.querySelectorAll(".map-decor, .map-boss-sign").forEach(function(el){ el.remove(); });
+    mapPath.querySelectorAll(".map-decor").forEach(function(el){ el.remove(); });
     var wraps = mapPath.querySelectorAll(".map-node-wrap");
     var pathRect = mapPath.getBoundingClientRect();
     var pathWidth = mapPath.clientWidth;
@@ -3070,44 +3074,11 @@
       var cy = r.top - pathRect.top + r.height/2;
       var nodeLeft = r.left - pathRect.left, nodeRight = nodeLeft + r.width;
       // Düğümün boş (karşı) tarafı — artık sabit iki şerit yok, düğümün gerçek
-      // konumuna (orta çizgiye göre) bakılarak belirleniyor. Boss tabelası ve
-      // evren tabelası ikisi de bunu kullanıyor.
+      // konumuna (orta çizgiye göre) bakılarak belirleniyor. Evren tabelası
+      // bunu kullanıyor. Boss seviyeleri artık ayrı bir tabela/dekorla değil,
+      // düğümün kendi üzerindeki kafatası rozetiyle işaretleniyor (bkz.
+      // renderMap → .map-boss-badge) -- harita dekoruyla asla çakışmıyor.
       var onEmptySide = (nodeLeft + r.width/2) > pathWidth/2;
-
-      // 10'un katları: boss seviyesi — tabela + kafatası, düğümün karşı kenarında.
-      // Tabela artık düğümün HEMEN yanında, büyük ve göze çarpar boyutta --
-      // eskiden asset dosyalarının etrafında çok fazla şeffaf boşluk vardı
-      // (ör. 2048px'lik tuval içinde ~900px'lik gerçek içerik), bu yüzden
-      // "50px" gibi görünüşte makul bir boyut bile gerçekte minik bir tabela
-      // olarak render oluyor, kafatasıyla üst üste biniyordu. Kaynak PNG/WEBP
-      // dosyaları artık gerçek içeriğe sıkıca kırpılmış durumda (bkz. assets/
-      // map/*/signpost.*), bu yüzden bossW burada GERÇEKTEN görünen boyutu
-      // belirliyor.
-      if(lvl % 10 === 0){
-        // Komşu düğümler arası dikey mesafe ~82px (bkz. computeLanes/margin) --
-        // tabela bundan çok daha uzun olursa üstteki/alttaki düğümün üzerine
-        // biner. 64px genişlik (~1.6x en/boy oranıyla ~102px yükseklik) hem
-        // eskisinden (50px, üstelik çoğu şeffaf boşluktu) belirgin şekilde
-        // büyük hem de komşu düğümlere ancak hafifçe değiyor.
-        var bossW = 45;
-        var bossH = bossW * 1.6;
-        var boss = document.createElement("div");
-        boss.className = "map-boss-sign" + (lvlWorld.signpostTint ? " " + lvlWorld.signpostTint : "");
-        var signpostWorld = lvlWorld.signpost ? lvlWorld : WORLDS[0]; // asset yoksa Yeşil Vadi'ninki + tint
-        boss.style.width = bossW + "px";
-        var bossX = onEmptySide ? (nodeLeft - bossW - 10) : (nodeRight + 10);
-        boss.style.left = Math.max(2, Math.min(pathWidth - bossW - 2, bossX)) + "px";
-        // Tabelanın üst kısmı (tahta+kafatası) düğümle aynı hizada dursun,
-        // gövde/direk aşağıya doğru uzasın -- tüm görseli düğümün TAM
-        // ortasına hizalamak tahtayı düğümün üstüne itip çakışmaya yol
-        // açıyordu.
-        boss.style.top = (cy - bossH*0.3) + "px";
-        boss.innerHTML = '<img src="' + gvAsset("../assets/map/" + signpostWorld.folder + "/" + signpostWorld.signpost) + '" alt="" style="width:100%;display:block;">'
-          + '<span class="map-boss-skull">💀</span>';
-        mapPath.appendChild(boss);
-        // Ağaç gibi davransın diye: kapladığı alan ortak çakışma listesine kaydediliyor.
-        registerDecorFootprint(bossX + bossW/2, cy, bossW);
-      }
 
       // Sağ kenar: seyrek orman — her seviyede 1-2 ağaç, birbirine binmeden.
       // Her ağaç yerleştirilmeden önce, daha önce konan ağaçlarla mesafesi kontrol edilir.
