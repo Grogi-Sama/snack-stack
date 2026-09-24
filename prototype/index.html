@@ -369,7 +369,7 @@
 
   .lives-block{ display:flex; flex-direction:column; align-items:center; gap:6px; margin-top:2px; }
   .lives-hearts-wrap{ position:relative; display:inline-flex; }
-  .lives-hearts{ display:flex; gap:8px; }
+  .lives-hearts{ display:flex; gap:2px; }
   .lives-add-btn{
     position:absolute; top:-8px; right:-14px; width:20px; height:20px; border-radius:50%;
     background:var(--accent-2); color:#08281f; border:2px solid var(--card);
@@ -379,7 +379,7 @@
   .lives-add-btn:hover{ filter:brightness(1.08); }
   .lives-add-btn:active{ transform:scale(0.92); }
   .life-heart-wrap{
-    width:32px; height:32px; display:flex; align-items:center; justify-content:center;
+    width:42px; height:42px; display:flex; align-items:center; justify-content:center;
   }
   .life-heart-wrap.empty{ filter:grayscale(1) opacity(.5); }
   .life-heart{ width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 2px 3px rgba(0,0,0,.25)); }
@@ -387,8 +387,8 @@
   .lives-timer b{ color:var(--ink); font-weight:800; }
 
   .game-lives-row{ display:flex; align-items:center; gap:6px; margin-bottom:2px; }
-  .lives-hearts.mini{ gap:4px; }
-  .lives-hearts.mini .life-heart-wrap{ width:36px; height:36px; }
+  .lives-hearts.mini{ gap:1px; }
+  .lives-hearts.mini .life-heart-wrap{ width:44px; height:44px; }
   .lives-timer.mini{ font-size:0.64rem; }
 
   .play-btn{
