@@ -870,6 +870,8 @@
     display:flex; align-items:center; justify-content:center;
   }
   .overlay .settings-card button.settings-close:hover{ background:var(--board-bg-1); }
+  .overlay .settings-card button#settingsCloseBtn{ color:var(--danger); }
+  .overlay .settings-card button#settingsCloseBtn:hover{ background:rgba(232,80,58,0.12); }
   .settings-section{ margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--line); }
   .settings-section:last-of-type{ border-bottom:none; margin-bottom:18px; padding-bottom:0; }
   .settings-section h3{
@@ -2338,7 +2340,7 @@
     try{ d = JSON.parse(localStorage.getItem(SETTINGS_KEY)); }catch(e){}
     if(!d) d = {};
     if(typeof d.volume !== "number") d.volume = 0.8;
-    if(typeof d.musicVolume !== "number") d.musicVolume = 0.8;
+    if(typeof d.musicVolume !== "number") d.musicVolume = 0.15;
     if(typeof d.darkMode !== "boolean"){
       d.darkMode = !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
     }
