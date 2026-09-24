@@ -162,7 +162,7 @@
     max-height: calc(100dvh - 48px);
   }
   .start-screen.leaving{ opacity:0; transform:scale(0.96); }
-  .start-screen > *:not(.falling-layer):not(.start-topbar):not(.overlay){ position:relative; z-index:1; }
+  .start-screen > *:not(.falling-layer):not(.start-topbar):not(.overlay):not(.onboarding-open-btn){ position:relative; z-index:1; }
 
   .map-screen{
     padding:14px 14px 18px; transition: opacity .22s ease, transform .22s ease;
@@ -304,6 +304,14 @@
     position:absolute; top:12px; right:14px; z-index:2;
     display:flex; align-items:center; gap:8px;
   }
+  .onboarding-open-btn{
+    position:absolute; top:12px; left:14px; z-index:2;
+    border:none; background:none; padding:0; cursor:pointer; touch-action:manipulation;
+    transition:transform .1s ease;
+  }
+  .onboarding-open-btn img{ width:60px; display:block; filter:drop-shadow(0 2px 3px rgba(0,0,0,.25)); }
+  .onboarding-open-btn:active{ transform:translateY(2px); }
+  .onboarding-open-btn:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; border-radius:999px; }
   .token-badge{
     display:flex; align-items:center; gap:5px; padding:5px 10px 5px 6px; border-radius:999px;
     background:rgba(255,255,255,0.4); border:1px solid var(--line); color:var(--accent-ink);
@@ -1233,6 +1241,9 @@
         <svg viewBox="0 0 24 24" width="17" height="17"><use href="#ic-calendar"></use></svg>
       </button>
     </div>
+    <button class="onboarding-open-btn" id="onboardingOpenBtn" title="Eğitim" aria-label="Eğitimi tekrar izle">
+      <img src="../assets/Egitim Button Asset.png" alt="Eğitim">
+    </button>
     <div class="start-tile-fan" aria-hidden="true">
       <div class="fan-tile t1"><svg viewBox="0 0 100 100"><use href="#ic-strawberry"></use></svg></div>
       <div class="fan-tile t2"><svg viewBox="0 0 100 100"><use href="#ic-carrot"></use></svg></div>
@@ -3078,7 +3089,7 @@
         // biner. 64px genişlik (~1.6x en/boy oranıyla ~102px yükseklik) hem
         // eskisinden (50px, üstelik çoğu şeffaf boşluktu) belirgin şekilde
         // büyük hem de komşu düğümlere ancak hafifçe değiyor.
-        var bossW = 56;
+        var bossW = 45;
         var bossH = bossW * 1.6;
         var boss = document.createElement("div");
         boss.className = "map-boss-sign" + (lvlWorld.signpostTint ? " " + lvlWorld.signpostTint : "");
@@ -3591,6 +3602,15 @@
     renderOnboardingStep();
   });
   document.getElementById("onboardingSkipBtn").addEventListener("click", finishOnboarding);
+  // Giriş ekranındaki küçük "Eğitim" butonu: eğitimi daha önce görmüş/atlamış
+  // olsa bile istediği an baştan izleyebilmesi için -- finishOnboarding'in
+  // aksine burada localStorage bayrağına DOKUNULMUYOR, sadece pencere
+  // yeniden 1. adımdan açılıyor.
+  document.getElementById("onboardingOpenBtn").addEventListener("click", function(){
+    onboardingStep = 0;
+    renderOnboardingStep();
+    onboardingOverlay.classList.add("show");
+  });
 
   (function maybeShowOnboarding(){
     var seen = null;
