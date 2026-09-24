@@ -2318,29 +2318,35 @@
   var lensBanner = document.getElementById("lensBanner");
   var lensCloseBtn = document.getElementById("lensCloseBtn");
   var lensScreenDim = document.getElementById("lensScreenDim");
-  var lensPeekedId = null;
   function hideLensPeek(){
     lensPeek.hidden = true;
-    lensPeekedId = null;
     boardInner.classList.remove("lens-peeking");
   }
-  // Aynı taşa ikinci kez dokununca baloncuğu kapatıp tahtayı eski haline
-  // döndürüyor (aç/kapa) -- farklı bir taşa dokunmak ise doğrudan yeni
-  // taşı gösteriyor. Baloncuk açıkken tahtadaki DİĞER taşlar (seçilen
-  // "öne çıkmış" hissi versin diye) hafifçe kararıyor.
+  // Baloncuk açıkken tahtadaki DİĞER taşlar (seçilen "öne çıkmış" hissi
+  // versin diye) hafifçe kararıyor. Baloncuğu kapatma işi artık aşağıdaki
+  // "her yere dokunma kapatır" dinleyicisinde -- bu yüzden burada sadece
+  // açma var, aç/kapa mantığı yok.
   function peekTile(id){
     if(!state) return;
-    if(!lensPeek.hidden && lensPeekedId === id){
-      hideLensPeek();
-      return;
-    }
     var tile = state.tiles.filter(function(t){ return String(t.id)===String(id); })[0];
     if(!tile) return;
     lensPeekIcon.setAttribute("href", "#ic-" + tile.icon);
     lensPeek.hidden = false;
-    lensPeekedId = id;
     boardInner.classList.add("lens-peeking");
   }
+  // Baloncuk açıkken yapılan İLK dokunuş -- nereye dokunulursa dokunulsun --
+  // sadece baloncuğu kapatıyor, ALTINDAKİ öğenin kendi tıklama davranışını
+  // (başka bir taşı mercekLemek, joker kullanmak vb.) TETİKLEMİYOR. Böylece
+  // "geri dönmek" için her seferinde yukarıdaki "Mercek Modunu Kapat"
+  // butonuna gitmeye gerek yok -- herhangi bir yere dokunmak yeterli, mod
+  // AÇIK kalıyor. Mercek ikonu ve "Mercek Modunu Kapat" -- moddan
+  // TAMAMEN çıkmak için -- bu davranışın dışında tutuluyor.
+  document.addEventListener("click", function(e){
+    if(lensPeek.hidden) return;
+    if(btnLens.contains(e.target) || lensCloseBtn.contains(e.target)) return;
+    hideLensPeek();
+    e.stopPropagation();
+  }, true);
   // Modu hem ikondan hem de "Mercek Modunu Kapat" butonundan açıp
   // kapatabilmek için tek, paylaşılan bir fonksiyon -- ikisi de state'i
   // aynı şekilde günceller, aralarında senkronizasyon kayması olmaz.
