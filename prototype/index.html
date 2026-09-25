@@ -912,6 +912,14 @@
   .overlay .card button.ghost{
     background:transparent; color:var(--ink-soft); box-shadow:none; border:1px solid var(--line);
   }
+  /* Seviye kazanma ekranında "Sonraki Seviye" butonu, ilerlemeyi diğer
+     (turuncu) genel amaçlı overlay butonlarından ayırt etmek için parlak
+     yeşil -- kullanıcının talebiyle. */
+  .overlay .card button.win-btn{
+    background:linear-gradient(160deg, #6BD86A, #3DAE4A); color:#fff;
+    box-shadow:0 3px 0 #2C7E36, 0 6px 10px rgba(20,60,10,.25), inset 0 1px 0 rgba(255,255,255,.35);
+  }
+  .overlay .card button.win-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 #2C7E36, 0 2px 4px rgba(20,60,10,.2); }
 
   .settings-card{
     max-width:300px; width:100%; text-align:left; position:relative;
@@ -1927,7 +1935,6 @@
   var TRAY_MAX = 7;
   var CELL = 58;
   var GRID_MARGIN_X = 15, GRID_MARGIN_Y = 24;
-  var CAP_OFFSET = 14; // her ek katman bir öncekinden bu kadar kayar: kısmi görünürlük hep korunur
 
   // Zorluk cetveli: her seviye bir öncekinden bir tık daha zor. İki temel eğri var —
   // toplam taş sayısı (T) ve ikon çeşidi (n) — seviye numarasına göre parça parça doğrusal
@@ -2062,21 +2069,30 @@
       prevPositions = t1;
     }
 
-    // Katman 2 ve sonrası: bir öncekinden küçük, sabit bir miktar kayarak oturur.
-    // Böylece hiçbir katman bir öncekini %100 örtmez -- her zaman kısmi bir "ucundan görünme" kalır,
-    // ve bir üst katman kalkınca hemen altındaki katman kademeli olarak ortaya çıkar.
-    // Kayma YÖNÜ artık her bölüm yüklenişinde rastgele seçiliyor (8 yönden biri) --
-    // eskiden hep sağ-alta kaydığı için üst katmanlar seviyeden seviyeye hep aynı
-    // (orta/sağ-alt) bölgede yığılıyordu; artık bazen sağ üst, bazen sol alt vb.
-    // farklı bir köşede kümeleniyor -- hem daha çeşitli görünüyor hem oyuncu her
-    // seferinde tahtanın farklı bir yerini taramak zorunda kalıyor.
+    // Katman 2 ve sonrası: bir öncekinden kayarak oturur. Kayma YÖNÜ, SIKILIĞI
+    // (offset büyüklüğü) ve TEK mi İKİ AYRI bölgede mi kümeleneceği her bölüm
+    // yüklenişinde rastgele seçiliyor -- böylece her seviye/deneme farklı görünür:
+    // - "Gevşek" yığın (büyük offset): katmanların kenarları belirgin şekilde
+    //   görünür, oyuncu altta ne olduğunu tahmin edebilir.
+    // - "Sık/duvar gibi" yığın (küçük offset): tıpkı üst üste dizilmiş bir kart
+    //   destesi gibi neredeyse tamamen üst üste biner, oyuncu yalnızca en üsttekini
+    //   görebilir ve tabakayı sırayla, "alttan/kenardan açarak" temizlemek zorunda
+    //   kalır -- daha stratejik ve gerilimli bir alt-bölüm.
+    // - Yeterince katman varsa (config.layers>=5), yığın bazen İKİYE bölünüyor
+    //   (ör. bir kısmı sağ üstte, bir kısmı sol altta) -- tek bir merkezi yığın
+    //   yerine tahtanın iki farklı köşesinde ayrı kümeler oluşuyor.
     var CLUSTER_DIRS = [[1,1],[1,-1],[-1,1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
-    var clusterDir = CLUSTER_DIRS[Math.floor(Math.random()*CLUSTER_DIRS.length)];
+    var isTightStack = Math.random() < 0.45;
+    var offsetMag = isTightStack ? (3 + Math.random()*3) : (10 + Math.random()*10);
+    var twoClusters = config.layers >= 5 && Math.random() < 0.5;
+    var dirA = CLUSTER_DIRS[Math.floor(Math.random()*CLUSTER_DIRS.length)];
+    var dirB = CLUSTER_DIRS[Math.floor(Math.random()*CLUSTER_DIRS.length)];
     for(var k=2; k<config.layers; k++){
       shuffle(prevPositions);
-      var tk = prevPositions.slice(0, config.tiers[k]).map(function(pos){
-        var nx = Math.min(Math.max(pos.x + clusterDir[0]*CAP_OFFSET, minX), maxX);
-        var ny = Math.min(Math.max(pos.y + clusterDir[1]*CAP_OFFSET, minY), maxY);
+      var tk = prevPositions.slice(0, config.tiers[k]).map(function(pos, tIdx){
+        var dir = (twoClusters && tIdx % 2 === 1) ? dirB : dirA;
+        var nx = Math.min(Math.max(pos.x + dir[0]*offsetMag, minX), maxX);
+        var ny = Math.min(Math.max(pos.y + dir[1]*offsetMag, minY), maxY);
         return { x: nx, y: ny };
       });
       tk.forEach(function(pos){ tiles.push({ id:"t"+(uidCounter++), icon:bag[idx++], layer:k, x:pos.x, y:pos.y }); });
@@ -2440,11 +2456,21 @@
       if(state.isReplay){
         showOverlay(t("level_won_title",{n:state.level}), t("level_won_text"), t("back_to_map"), function(){
           goToMapFromGame();
+        }, t("back_to_menu"), function(){
+          goToStartScreen();
         });
       } else {
+        // Seviyeyi kazandiktan sonra "Sonraki Seviye" TEK secenek olunca,
+        // devam etmek istemeyen oyuncu bile (bkz. kullanici geri bildirimi)
+        // can kaybetme riskiyle Ayarlar'dan cikmak zorunda kaliyordu. Artik
+        // "Ana Menüye Dön" da burada, canı HİÇ etkilemeden (seviye zaten
+        // kazanildi, kaybedilecek bir sey yok).
         showOverlay(t("level_won_title",{n:state.level}), t("level_won_text"), t("next_level"), function(){
           newLevel(state.level+1);
+        }, t("back_to_menu"), function(){
+          goToStartScreen();
         });
+        overlayBtn.classList.add("win-btn");
       }
       return;
     }
@@ -2475,6 +2501,7 @@
     overlayTitle.textContent = title;
     overlayText.textContent = text;
     overlayBtn.textContent = btnLabel || t("ok_default");
+    overlayBtn.classList.remove("win-btn");
     overlayAction = action || null;
     if(btn2Label){
       overlayBtn2.textContent = btn2Label;
