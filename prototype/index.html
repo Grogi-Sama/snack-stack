@@ -162,7 +162,7 @@
     max-height: calc(100dvh - 48px);
   }
   .start-screen.leaving{ opacity:0; transform:scale(0.96); }
-  .start-screen > *:not(.falling-layer):not(.start-topbar):not(.overlay):not(.onboarding-open-btn):not(.mini-lang-btn){ position:relative; z-index:1; }
+  .start-screen > *:not(.falling-layer):not(.start-topbar):not(.overlay):not(.onboarding-open-btn):not(.mini-lang-switch){ position:relative; z-index:1; }
 
   .map-screen{
     padding:14px 14px 18px; transition: opacity .22s ease, transform .22s ease;
@@ -319,16 +319,23 @@
   .onboarding-open-btn:hover{ background:rgba(255,255,255,0.44); }
   .onboarding-open-btn:active{ transform:translateY(1px); }
   .onboarding-open-btn:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; border-radius:999px; }
-  .mini-lang-btn{
+  /* Tek başına dönüşen "TR" yazısı yabancı bir kullanıcıya ne işe yaradığını
+     anlatmıyordu (bkz. kullanıcı geri bildirimi) -- artık ikisi de HER ZAMAN
+     yan yana görünen, aktif olanı vurgulanan gerçek bir anahtar/switch. */
+  .mini-lang-switch{
     position:absolute; bottom:12px; left:14px; z-index:2;
-    border:1px solid var(--line); background:rgba(255,255,255,0.28); color:var(--accent-ink);
-    border-radius:10px; padding:6px 11px; cursor:pointer; touch-action:manipulation;
-    font-family:"Baloo 2",sans-serif; font-size:0.74rem; font-weight:800; letter-spacing:0.4px;
-    transition: background .12s ease, transform .1s ease;
+    display:flex; border:1px solid var(--line); border-radius:10px; overflow:hidden;
+    background:rgba(255,255,255,0.28); box-shadow:0 2px 4px rgba(0,0,0,.08);
   }
-  .mini-lang-btn:hover{ background:rgba(255,255,255,0.44); }
-  .mini-lang-btn:active{ transform:translateY(1px); }
-  .mini-lang-btn:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; border-radius:999px; }
+  .mini-lang-opt{
+    border:none; background:none; padding:6px 9px; cursor:pointer; touch-action:manipulation;
+    font-family:"Baloo 2",sans-serif; font-size:0.7rem; font-weight:800; letter-spacing:0.3px;
+    color:var(--accent-ink); transition: background .12s ease;
+  }
+  .mini-lang-opt:hover{ background:rgba(255,255,255,0.44); }
+  .mini-lang-opt.active{ background:var(--accent); color:var(--accent-ink); }
+  .mini-lang-opt.active:hover{ background:var(--accent); }
+  .mini-lang-opt:focus-visible{ outline:2px solid var(--ink); outline-offset:-2px; }
   .token-badge{
     display:flex; align-items:center; gap:5px; padding:5px 10px 5px 6px; border-radius:999px;
     background:rgba(255,255,255,0.4); border:1px solid var(--line); color:var(--accent-ink);
@@ -1365,7 +1372,10 @@
       <svg viewBox="0 0 24 24" width="14" height="14"><use href="#ic-video"></use></svg>
       <span data-i18n="tutorial">Eğitim</span>
     </button>
-    <button class="mini-lang-btn" id="miniLangBtn" data-i18n-title="language" data-i18n-aria-label="language" title="Dil" aria-label="Dil">TR</button>
+    <div class="mini-lang-switch" id="miniLangSwitch" data-i18n-title="language" title="Dil">
+      <button class="mini-lang-opt" id="miniLangTr" data-lang="tr" aria-label="Türkçe">TR</button>
+      <button class="mini-lang-opt" id="miniLangEn" data-lang="en" aria-label="English">EN</button>
+    </div>
     <div class="start-tile-fan" aria-hidden="true">
       <div class="fan-tile t1"><svg viewBox="0 0 100 100"><use href="#ic-strawberry"></use></svg></div>
       <div class="fan-tile t2"><svg viewBox="0 0 100 100"><use href="#ic-carrot"></use></svg></div>
@@ -2702,10 +2712,15 @@
   }
   langTrBtn.addEventListener("click", function(){ setLang("tr"); });
   langEnBtn.addEventListener("click", function(){ setLang("en"); });
-  // Ana ekranın sol altındaki minik hızlı dil düğmesi -- Ayarlar'ı açmadan
+  // Ana ekranın sol altındaki minik hızlı dil anahtarı -- Ayarlar'ı açmadan
   // tek dokunuşla TR<->EN geçişi, üstteki tam anahtarla aynı setLang()'ı kullanır.
-  var miniLangBtn = document.getElementById("miniLangBtn");
-  miniLangBtn.addEventListener("click", function(){ setLang(currentLang==="tr" ? "en" : "tr"); });
+  // Tek başına dönüşen bir "TR" yazısı yerine, ikisi de HER ZAMAN yan yana
+  // görünüyor (aktif olan vurgulu) -- yabancı bir kullanıcı bile ne olduğunu
+  // anlar (bkz. kullanıcı geri bildirimi).
+  var miniLangTr = document.getElementById("miniLangTr");
+  var miniLangEn = document.getElementById("miniLangEn");
+  miniLangTr.addEventListener("click", function(){ setLang("tr"); });
+  miniLangEn.addEventListener("click", function(){ setLang("en"); });
   // Statik [data-i18n*] taramasının yanı sıra, o an açık/görünür olan dinamik
   // içerikleri (günlük ödül, kahramanlar, joker satın alma, eğitim adımı) da
   // güncel dile göre yeniden çiziyor -- aksi halde dil değişince açık bir pop-up
@@ -2718,7 +2733,8 @@
     document.documentElement.setAttribute("lang", currentLang);
     langTrBtn.classList.toggle("active", currentLang==="tr");
     langEnBtn.classList.toggle("active", currentLang==="en");
-    miniLangBtn.textContent = currentLang.toUpperCase();
+    miniLangTr.classList.toggle("active", currentLang==="tr");
+    miniLangEn.classList.toggle("active", currentLang==="en");
     // "İlerle" ahşap görseli sadece TR metniyle çizildi -- diğer dillerde
     // yerine gerçek (çevrilebilir) metinli bir CSS düğmesi gösteriliyor.
     var nextImg = document.getElementById("onboardingNextImg");
