@@ -2072,6 +2072,25 @@
     return arr;
   }
 
+  // ---- Örüntülü katman şekilleri -------------------------------------------
+  // Not: Rastgele yön/sıklık/tek-çift kümelenme (bkz. buildLevelTiles içindeki
+  // katman 2+ mantığı) sadece "her seferinde farklı" hissi veriyordu, gerçek
+  // TANINABİLİR bir siluet oluşturmuyordu (bkz. kullanıcı geri bildirimi).
+  // Bu yüzden 2. katmanın (en geniş, en görünür üst katman) hangi hücrelerde
+  // oluşacağını -- tüm iç alandan rastgele seçmek yerine -- burada tanımlı
+  // basit geometrik maskelerden biriyle sınırlıyoruz. Ek görsel/asset
+  // gerektirmiyor, sadece matematik -- ve yeni büyütülmüş tahtalarda (bkz.
+  // GRID_STEPS) artık gerçekten okunabilir boyutta çıkıyor. (u,v) 0-1 arası
+  // normalize koordinat, hücrenin iç alandaki göreli konumu.
+  var CLUSTER_SHAPES = [
+    function ring(u,v){ var dx=u-0.5, dy=v-0.5; var d=Math.sqrt(dx*dx+dy*dy); return d>=0.22 && d<=0.48; }, // halka: ORTADA AÇIKLIK
+    function diamond(u,v){ return Math.abs(u-0.5)+Math.abs(v-0.5) <= 0.46; },
+    function hourglass(u,v){ var w = 0.10 + 0.40*Math.abs(2*v-1); return Math.abs(u-0.5) <= w; },
+    function cross(u,v){ return Math.abs(u-0.5)<=0.15 || Math.abs(v-0.5)<=0.15; },
+    function triangleUp(u,v){ return Math.abs(u-0.5) <= 0.5*v; },
+    function triangleDown(u,v){ return Math.abs(u-0.5) <= 0.5*(1-v); }
+  ];
+
   function buildLevelTiles(config){
     var pool = shuffle(ICONS.slice(0, config.pool || ICONS.length));
     var chosen = pool.slice(0, config.icons);
@@ -2103,6 +2122,20 @@
     if(config.layers>=2){
       var inter=[];
       for(var r2=0;r2<rows-1;r2++){ for(var c2=0;c2<cols-1;c2++){ inter.push({col:c2,row:r2}); } }
+      // 2. katman (en genis, en gorunur ust katman) bazen tum ic alandan degil,
+      // asagidaki geometrik maskelerden biriyle SINIRLI bir alandan seciliyor --
+      // boylece tesadufi dagilim yerine tanınabilir bir siluet (halka, elmas,
+      // kum saati, arti, ucgen) olusuyor. Secilen maske bu bolum icin yeterince
+      // hucre vermiyorsa (kucuk tahtalarda olabilir), guvenli tarafta kalip
+      // eski tam-rastgele dagilima donuluyor.
+      if(Math.random() < 0.55){
+        var shapeFn = CLUSTER_SHAPES[Math.floor(Math.random()*CLUSTER_SHAPES.length)];
+        var maxC = Math.max(cols-2, 1), maxR = Math.max(rows-2, 1);
+        var shaped = inter.filter(function(cell){
+          return shapeFn(cell.col/maxC, cell.row/maxR);
+        });
+        if(shaped.length >= config.tiers[1]) inter = shaped;
+      }
       shuffle(inter);
       var t1 = inter.slice(0, config.tiers[1]).map(function(cell){
         return { x: ox+(cell.col+0.5)*CELL, y: oy+(cell.row+0.5)*CELL };
