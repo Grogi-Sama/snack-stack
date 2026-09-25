@@ -1965,7 +1965,42 @@
     }
     return Math.max(1, level + wave);
   }
-  var GRID_STEPS = [ [3,3], [4,3], [4,4], [5,4], [6,5] ]; // taban katman büyüklükleri: 9,12,16,20,30
+  // 6x5'ten sonrasını eskiden hep aynı (30 hücrelik) tabana katman katman
+  // yığıyorduk -- bu yüzden ileri seviyeler her zaman aynı dar alana sıkışıyordu
+  // (bkz. kullanıcı geri bildirimi + ekran görüntüsü). Taban artık MIN_TILE_PX
+  // sınırına kadar büyüyebiliyor (bkz. pickGrid) -- bu yeni, daha büyük adımlar
+  // o büyümeye izin veriyor; taş gerçekten küçülemeyecek noktaya gelince
+  // (ör. çok dar bir ekranda ya da çok yüksek seviyede) fazlalık yine mevcut
+  // katman/yığın sistemine (bkz. buildLevelTiles) devrediyor.
+  var GRID_STEPS = [ [3,3], [4,3], [4,4], [5,4], [6,5], [7,5], [7,6], [8,6], [8,7], [9,7], [9,8], [10,8] ];
+  var MIN_TILE_PX = 34; // taş bu boyutun altına düşmesin -- okunaklılık/dokunulabilirlik tabanı
+  // Bir aday (cols,rows) tabanının EKRANDA GERÇEKTE ne kadar küçüleceğini,
+  // tahtayı hiç yeniden çizmeden tahmin eder -- scaleBoard()'daki hem genişliğe
+  // hem yüksekliğe göre sığdırma mantığının BİREBİR AYNISINI (bkz. scaleBoard)
+  // burada "what-if" olarak tekrar hesaplıyoruz ki hangi ızgaranın gerçekten
+  // MIN_TILE_PX üstünde kalacağını build'den ÖNCE bilelim.
+  function predictTilePx(cols, rows){
+    if(!board || !gameScreen || !boardFrame) return CELL;
+    var naturalWidth = board.getBoundingClientRect().width;
+    if(!naturalWidth) return CELL; // henüz ölçülemiyorsa (ör. ilk kare) güvenli taraftan CELL kabul et
+    var boardW = cols*CELL + GRID_MARGIN_X*2;
+    var boardH = rows*CELL + GRID_MARGIN_Y*2;
+    var cardRect = gameScreen.getBoundingClientRect();
+    var cardStyle = getComputedStyle(gameScreen);
+    var otherHeight = 0, inFlowCount = 0;
+    Array.prototype.forEach.call(gameScreen.children, function(child){
+      if(child === boardFrame || child.classList.contains("overlay")) return;
+      otherHeight += child.getBoundingClientRect().height;
+      inFlowCount++;
+    });
+    var gapPx = parseFloat(cardStyle.rowGap || cardStyle.gap) || 0;
+    otherHeight += inFlowCount * gapPx;
+    otherHeight += parseFloat(cardStyle.paddingBottom) || 0;
+    var availableHeight = window.innerHeight - cardRect.top - otherHeight - 16;
+    var heightConstrainedWidth = Math.max(availableHeight, 0) * (boardW/boardH);
+    var finalWidth = Math.min(naturalWidth, Math.max(heightConstrainedWidth, 160));
+    return CELL * (finalWidth/boardW);
+  }
   function buildTiers(total, baseCount, cap, level){
     var extra = total - baseCount;
     if(extra <= 0) return [baseCount];
@@ -1988,8 +2023,15 @@
     var total = 3*Math.round(interpAnchors(TILES_ANCHORS, eff, 0.5)/3);
     total = Math.max(total, 3*n, 9);
     // Taban katman toplamın en fazla %70'i: her zaman en az bir üst katman var (tam düz tahta yok).
+    // Ayrıca aday ızgara MIN_TILE_PX'in altına düşürmemeli -- düşürüyorsa o ve
+    // ondan sonraki (daha da büyük) tüm ızgaralar da düşürür, o yüzden atlanır.
     var grid = GRID_STEPS[0];
-    for(var g=0; g<GRID_STEPS.length; g++){ if(GRID_STEPS[g][0]*GRID_STEPS[g][1] <= total*0.7) grid = GRID_STEPS[g]; }
+    for(var g=0; g<GRID_STEPS.length; g++){
+      var gr = GRID_STEPS[g];
+      if(gr[0]*gr[1] > total*0.7) continue;
+      if(predictTilePx(gr[0], gr[1]) < MIN_TILE_PX) continue;
+      grid = gr;
+    }
     var base = grid[0]*grid[1];
     var cap = (grid[1]-1)*(grid[0]-1);
     var tiers = buildTiers(total, base, cap, eff);
