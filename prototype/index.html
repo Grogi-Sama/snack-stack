@@ -2761,12 +2761,38 @@
   var MUSIC_MAX_VOLUME = 0.5;
   var musicVolume = appSettings.musicVolume;
   var lastMusicVolumeBeforeMute = musicVolume > 0 ? musicVolume : 0.6;
+  // iOS Safari, <audio>/<video> elemanlarinin ".volume" özelligini YOK SAYAR
+  // (sadece donanim ses tuslariyla degisir) -- bu yuzden mobilde ses
+  // kisilamiyor/kapatilamiyor sikayeti buradan geliyordu (bkz. kullanici
+  // geri bildirimi). Cozum: elemani Web Audio API grafi uzerinden
+  // (MediaElementSource -> GainNode -> destination) cikisa baglayip sesi
+  // native .volume yerine GainNode.gain ile kontrol etmek -- bu, iOS'ta da
+  // gercekten calisan tek yontem. Grafi kurulamazsa (cok eski tarayici vb.)
+  // native .volume'e geri dönülüyor.
+  var bgmGainNode = null;
+  var bgmSourceNode = null;
+  function ensureBgmGraph(){
+    var ctx = ensureAudio();
+    if(!ctx || !bgmEl || bgmSourceNode) return ctx;
+    try{
+      bgmSourceNode = ctx.createMediaElementSource(bgmEl);
+      bgmGainNode = ctx.createGain();
+      bgmSourceNode.connect(bgmGainNode);
+      bgmGainNode.connect(ctx.destination);
+      bgmEl.volume = 1;
+      bgmGainNode.gain.value = musicVolume * MUSIC_MAX_VOLUME;
+    }catch(e){}
+    return ctx;
+  }
   function updateBgmVolume(){
-    if(bgmEl) bgmEl.volume = musicVolume * MUSIC_MAX_VOLUME;
+    if(bgmGainNode){ bgmGainNode.gain.value = musicVolume * MUSIC_MAX_VOLUME; }
+    else if(bgmEl){ bgmEl.volume = musicVolume * MUSIC_MAX_VOLUME; }
   }
   updateBgmVolume();
   document.addEventListener("click", function startBgmOnce(){
     if(!bgmEl) return;
+    var ctx = ensureBgmGraph();
+    if(ctx && ctx.state === "suspended"){ ctx.resume(); }
     updateBgmVolume();
     bgmEl.play().catch(function(){});
   }, { once:true, capture:true });
