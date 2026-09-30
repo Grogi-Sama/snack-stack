@@ -154,6 +154,22 @@
   }
   .phone[hidden]{ display:none; }
 
+  /* Oyun ekranı (#gameScreen) kartı, başlangıç ekranının aksine hiçbir sabit
+     en-boy oranına bağlı değildi -- yüksekliği tamamen o seviyenin tahta
+     boyutuna göre belirleniyordu. Küçük (az taşlı) seviyelerde kart kısa
+     kalıyor, body'nin dikey ortalaması yüzünden ekranın alt (ve üst) kısmında
+     kartın dışında, sayfa arka planının göründüğü rahatsız edici bir boşluk
+     oluşuyordu (bkz. kullanıcının ekran görüntüsü). min-height + içeriği
+     dikey ortalama, kartın büyük seviyelerdeki (çok taşlı, uzun tahtalı)
+     davranışını DEĞİŞTİRMİYOR -- içerik zaten bu yüksekliği aşınca kart yine
+     eskisi gibi büyüyor; sadece küçük seviyelerde kart ekranı dolduruyor.
+     Kalan pay içeride, kart rengiyle ortalanmış/uyumlu kalıyor. */
+  #gameScreen{
+    min-height: calc(100vh - 48px);
+    min-height: calc(100dvh - 48px);
+    justify-content: center;
+  }
+
   .start-screen{
     align-items:center; text-align:center; padding:40px 22px 44px; gap:16px;
     transition: opacity .22s ease, transform .22s ease;
