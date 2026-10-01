@@ -875,7 +875,13 @@
     box-shadow: 0 3px 0 var(--joker-edge), 0 6px 10px rgba(20,20,10,0.22), inset 0 1px 0 rgba(255,255,255,.35);
     cursor:pointer; transition: filter .15s ease, transform .1s ease, box-shadow .12s ease;
   }
-  .joker-icon-slot{ height:88px; display:flex; align-items:center; justify-content:center; }
+  /* width:100%+overflow:hidden: ikon kendi sütununa gore COK genis kaldiginda
+     (ör. #jokerRemove/#jokerShuffle, asagida) tasma artik komsu joker
+     butonunun uzerine gorsel olarak binmiyor VE tiklanamiyor -- bkz. kullanici
+     geri bildirimi: "Genişlet'e bastığımda Taş Kaldır algılıyor" (ikon
+     komsu butonun alanina tastigi icin oraya yapilan dokunus DOM'da hala
+     tasan ikonun ait oldugu butona gidiyordu). */
+  .joker-icon-slot{ height:88px; width:100%; overflow:hidden; display:flex; align-items:center; justify-content:center; }
   .joker-icon{ height:72px; width:auto; max-width:125px; object-fit:contain; filter:drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
   #jokerShuffle .joker-icon{ height:79px; max-width:138px; }
   #jokerRemove .joker-icon{ height:88px; max-width:151px; }
